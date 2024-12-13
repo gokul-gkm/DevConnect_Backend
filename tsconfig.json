@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2018",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "declaration": true,
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"] 
+    },
+
+    "typeRoots": ["./src/types", "./node_modules/@types"]
+    
+  },
+  "include": ["src/**/*", "src/types/**/*.d.ts"], // Ensure this includes the types
+  "exclude": ["node_modules", "**/*.spec.ts"] // Exclude test files if using Jest or similar testing libraries
+}
