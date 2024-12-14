@@ -7,12 +7,16 @@ import { OTPRepository } from "@/infrastructure/repositories/OTPRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { ResendOTPUseCase } from "@/application/useCases/user/auth/ResendOTPUseCase";
 import { LoginUserUseCase } from "@/application/useCases/user/auth/LoginUserUseCase";
+import { ForgotPasswordUseCase } from "@/application/useCases/user/auth/ForgotPasswordUseCase";
+import { ResetPasswordUseCase } from "@/application/useCases/user/auth/ResetPasswordUseCase";
 
 export class AuthController {
     private registerUserUseCase: RegisterUserUseCase;
     private verifyOTPUseCase: VerifyOTPUseCase;
     private resendOTPUseCase: ResendOTPUseCase;
     private loginUserUseCase: LoginUserUseCase;
+    private forgotPasswordUseCase: ForgotPasswordUseCase;
+    private resetPasswordUseCase: ResetPasswordUseCase;
 
     constructor(
         private userRepository: UserRepository,
@@ -20,9 +24,11 @@ export class AuthController {
         private mailService: MailService,
     ) {
         this.registerUserUseCase = new RegisterUserUseCase(userRepository,otpRepository, mailService);
-        this.verifyOTPUseCase = new VerifyOTPUseCase(otpRepository, userRepository)
-        this.resendOTPUseCase = new ResendOTPUseCase(otpRepository, mailService, userRepository)
-        this.loginUserUseCase = new LoginUserUseCase(userRepository)
+        this.verifyOTPUseCase = new VerifyOTPUseCase(otpRepository, userRepository);
+        this.resendOTPUseCase = new ResendOTPUseCase(otpRepository, mailService, userRepository);
+        this.loginUserUseCase = new LoginUserUseCase(userRepository);
+        this.forgotPasswordUseCase = new ForgotPasswordUseCase(userRepository, mailService);
+        this.resetPasswordUseCase = new ResetPasswordUseCase(userRepository);
     }
 
     async register(req: Request, res: Response) {
@@ -99,6 +105,32 @@ export class AuthController {
         } catch (error) {
             console.error('Logout error: ', error);
             return res.status(500).json({ message: 'Internal server error' });
+        }
+    }
+
+    async forgotPassword(req: Request, res: Response) {
+        try {
+            const { email } = req.body;
+            const resetToken = await this.forgotPasswordUseCase.execute(email);
+            return res.status(200).json({"message": 'Password reset link has been sent to your email', resetToken})
+        } catch (error) {
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({message: error.message})
+            }
+            return res.status(500).json({ message: "Internal server error" });
+        }
+    }
+
+    async resetPassword(req: Request, res: Response) {
+        try {
+            const { token, newPassword } = req.body;
+            await this.resetPasswordUseCase.execute({ token, newPassword });
+            return res.status(200).json({message: "Password has been reset successfully"})
+        } catch (error) {
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({message: error.message})
+            }
+            return res.status(500).json('Internal server error')
         }
     }
 }

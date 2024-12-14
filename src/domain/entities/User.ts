@@ -1,26 +1,26 @@
 import mongoose, { Schema, Document, ObjectId } from 'mongoose';
 
 export interface IUser extends Document {
-  _id: ObjectId;
-  email: String;
-  password: String;
-  username: String;
-  role: String;
-  bio: String | null;
-  profilePicture: String | null;
+  _id: string;
+  email: string;
+  password: string;
+  username: string;
+  role: string;
+  bio: string | null;
+  profilePicture: string | null;
   socialLinks: {
-     github: String | null;
-     linkedIn: String | null;
-     portfolio: String | null;
-     twitter: String | null;
+     github: string | null;
+     linkedIn: string | null;
+     portfolio: string | null;
+     twitter: string | null;
   };
-  location: String | null;
-  status: String;
+  location: string | null;
+  status: string;
   createdAt: Date;
   updatedAt: Date;
-  isVerified: Boolean | null;
-  contact: Number;
-  skills: String[] | null;
+  isVerified: boolean | null;
+  contact: number;
+  skills: string[] | null;
   verificationExpires: Date;
 }
 

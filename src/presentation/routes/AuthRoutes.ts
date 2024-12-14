@@ -33,4 +33,12 @@ authRouter.post('/logout', async (req, res) => {
   await authController.logout(req, res);
 })
 
+authRouter.post('/forgot-password', async (req, res) => {
+  await authController.forgotPassword(req, res);
+})
+
+authRouter.post('/reset-password', async (req, res) => {
+  await authController.resetPassword(req, res)
+})
+
 export default authRouter; 
