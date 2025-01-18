@@ -17,10 +17,6 @@ export class ResetPasswordUseCase{
                 userId: string;
                 email: string;
             }
-
-            const currentTime = Math.floor(Date.now() / 1000);
-            
-
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             await this.userRepository.update(decoded.userId,{password: hashedPassword})
         } catch (error) {

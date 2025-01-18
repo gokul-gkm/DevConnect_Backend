@@ -12,7 +12,7 @@ export class ForgotPasswordUseCase{
             throw new AppError('User not found',400)
         }
         const resetToken = generatePasswordResetToken(user._id, email);
-        const resetLink = `${process.env.FRONTEND_URL}/user/reset-password?token=${resetToken}`;
+        const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}`;
         await this.mailService.sendPasswordResetLink(email,resetLink)
         return resetToken
     }

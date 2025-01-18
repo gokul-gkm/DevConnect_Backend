@@ -1,12 +1,16 @@
 import { LoginUserDTO } from "@/application/dto/LoginUserDTO";
 import { IUser } from "@/domain/entities/User";
 import { AppError } from "@/domain/errors/AppError";
+import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
-export class LoginUserUseCase{
-    constructor(private userRepository: UserRepository) {
+export class DevLoginUseCase{
+    constructor(
+        private userRepository: UserRepository,
+        private developerRepository: DeveloperRepository
+    ) {
         
     }
 
@@ -30,13 +34,39 @@ export class LoginUserUseCase{
         if (!isPasswordValid) {
             throw new AppError('Invalid credentials')
         }
+
+        const developer = await this.developerRepository.findByUserId(user._id);
+        if (!developer) {
+            throw new AppError('Developer profile not found. Please register as a developer first.', 400);
+        }
+
+        switch (developer.status) {
+            case 'pending':
+                throw new AppError('Your developer application is still pending approval.', 400);
+            case 'rejected':
+                throw new AppError(
+                    `Your developer application was rejected. ${developer.rejectionReason ? 
+                    `Reason: ${developer.rejectionReason}` : 
+                    'Please contact support for more information.'}`, 
+                    400
+                );
+            case 'approved':
+                break;
+            default:
+                throw new AppError('Invalid developer status', 400);
+        }
+
         const accessToken = jwt.sign(
-            { userId: user._id },
+            { userId: user._id, role: 'developer', developerId: developer._id },
             process.env.JWT_ACCESS_SECRET as string,
             {expiresIn : "15m"}
         );
         const refreshToken = jwt.sign(
-            { userId: user._id },
+            {
+                userId: user._id,
+                role: 'developer',
+                developerId: developer._id
+            },
             process.env.JWT_REFRESH_SECRET as string,
             {expiresIn: '7d'}
         )

@@ -14,6 +14,7 @@ export class VerifyOTPUseCase {
 
     async execute({ email, otp } : VerifyOTPDTO){
         const otpRecord = await this.otpRepository.findByEmail(email);
+
         if (!otpRecord) {
             throw new AppError('OTP not found', 400);
         }
@@ -33,6 +34,7 @@ export class VerifyOTPUseCase {
         }
 
         const user = await this.userRepository.findByEmail(email);
+
         if (!user) {
             throw new AppError('User not found', 404);
         }
