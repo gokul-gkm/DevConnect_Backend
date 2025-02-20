@@ -10,33 +10,74 @@ export class UserRepository implements IUserRepository{
     }
 
     async findByEmail(email: string): Promise<IUser | null>{
-        return await User.findOne({ email })
+        try {
+            return await User.findOne({ email })
+        } catch (error) {
+            console.error('Error fetching User by email:', error);
+            throw new AppError('Failed to fetch user', 500);
+        }  
+        
     }
     async findById(id: string): Promise<IUser | null> {
-        return await User.findById(id
-    )}
+        try {
+            return await User.findById(id)
+        } catch (error) {
+            console.error('Error fetching User by Id:', error);
+            throw new AppError('Failed to fetch user', 500);
+        }    
+    }
     async findByUsername(username: string): Promise<IUser | null>{
-        return await User.findOne({username})
+        try {
+            return await User.findOne({username})
+        } catch (error) {
+            console.error('Error fetching User by username:', error);
+            throw new AppError('Failed to fetch user', 500);
+        }
+        
     }
     async deleteById(id: string): Promise<void> {  
-        await User.deleteOne({_id: id})
+        try {
+            await User.deleteOne({_id: id})
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            throw new AppError('Failed to remove user', 500);
+        }
+        
     }
 
-    async update(id: string, updateData: Partial <IUser>): Promise<IUser>{
-        const objectId = new Types.ObjectId(id);
-        const updatedUser = await User.findByIdAndUpdate(objectId, updateData, { new: true });
-        if (!updatedUser) {
-            throw new AppError('User not found', 404)
+    async update(id: string, updateData: Partial<IUser>): Promise<IUser>{
+        try {
+            const objectId = new Types.ObjectId(id);
+            const updatedUser = await User.findByIdAndUpdate(objectId, updateData, { new: true });
+            if (!updatedUser) {
+                throw new AppError('User not found', 404)
+            }
+            return updatedUser;
+        } catch (error) {
+            console.error('Error updating User:', error);
+            throw new AppError('Failed to update user', 500);
         }
-        return updatedUser;
+        
     }
 
     async findByRole(role: string): Promise<IUser[]> {
-        return await User.find({role})
+        try {
+            return await User.find({role})
+        } catch (error) {
+            console.error('Error fetching user by role:', error);
+            throw new AppError('Failed to fetch user', 500);
+        }
+        
     }
 
-    async findByLinkedIn(linkedinId: string):Promise<IUser | null>{
-        return await User.findOne({ linkedinId });
+    async findByLinkedIn(linkedinId: string): Promise<IUser | null>{
+        try {
+            return await User.findOne({ linkedinId });
+        } catch (error) {
+            console.error('Error fetching user by LinkedIn id :', error);
+            throw new AppError('Failed to fetch user', 500);
+        }
+        
     }
 
     async findUsers(queryParams: QueryParams): Promise<PaginatedResponse<IUser>> {
@@ -89,6 +130,29 @@ export class UserRepository implements IUserRepository{
         }
         
     }
+
+    async getUserProfile(userId: string): Promise<IUser | null> {
+        try {
+            return await User.findById(userId).select('-password -verificationExpires');
+        } catch (error) {
+            console.error('Error in getUserProfile: ', error);
+            throw error;
+        }
+    }
+
+    async getUserById(userId: string) {
+        try {
+          const user = await User.findById(userId).select('email username profilePicture');
+          
+          if (!user) {
+            throw new AppError('User not found', 404);
+          }
+          return user;
+        } catch (error) {
+          if (error instanceof AppError) throw error;
+          throw new AppError('Failed to fetch user', 500);
+        }
+      }
 
     
 }

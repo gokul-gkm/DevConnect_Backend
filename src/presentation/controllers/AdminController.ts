@@ -1,17 +1,18 @@
 import { Request, Response } from 'express';
 import {AdminLoginUseCase} from '@/application/useCases/admin/auth/AdminLoginUseCase';
 import { AdminRepository } from '@/infrastructure/repositories/AdminRepository';
-import { GetUsersUseCase } from '@/application/useCases/admin/users/getUsersUseCase';
+import { GetUsersUseCase } from '@/application/useCases/admin/users/GetUsersUseCase';
 import { UserRepository } from '@/infrastructure/repositories/UserRepository';
-import { ToggleUserStatusUseCase } from '@/application/useCases/admin/users/toggleUserStatusUseCase';
-import { GetUserDetailsUseCase } from '@/application/useCases/admin/users/getUserDetailsUseCase';
+import { ToggleUserStatusUseCase } from '@/application/useCases/admin/users/ToggleUserStatusUseCase';
+import { GetUserDetailsUseCase } from '@/application/useCases/admin/users/GetUserDetailsUseCase';
 import { DevQueryParams, QueryParams } from '@/domain/types/types';
-import { GetDevelopersUseCase } from '@/application/useCases/developer/getDevelopersUseCase';
+import { GetDevelopersUseCase } from '@/application/useCases/developer/GetDevelopersUseCase';
 import { DeveloperRepository } from '@/infrastructure/repositories/DeveloperRepository';
 import { AppError } from '@/domain/errors/AppError';
 import { ManageDeveloperRequestsUseCase } from '@/application/useCases/developer/ManageDeveloperRequestsUseCase';
-import { GetDeveloperDetailsUseCase } from '@/application/useCases/developer/GetDeveloperDetailsUseCase';
+import { GetDeveloperDetailsUseCase } from '@/application/useCases/admin/developers/GetDeveloperDetailsUseCase';
 import { GetDeveloperRequestDetailsUseCase } from '@/application/useCases/developer/GetDeveloperRequestDetails';
+import { StatusCodes } from 'http-status-codes';
 
 
 export class AdminController{
@@ -57,10 +58,10 @@ export class AdminController{
                 path: '/'
             });
 
-            return res.status(200).json({ message: 'Admin Login successful', admin, success: true });
+            return res.status(StatusCodes.OK).json({ message: 'Admin Login successful', admin, success: true });
         } catch (error) {
             if(error instanceof Error) {
-                return res.status(400).json({ message: error.message, success: false });
+                return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message, success: false });
             }
         }
     }
@@ -69,9 +70,9 @@ export class AdminController{
         try {
             res.clearCookie('adminAccessToken');
             res.clearCookie('adminRefreshToken');
-            return res.status(200).json({ message: 'Admin Logout successfully', success: true });
+            return res.status(StatusCodes.OK).json({ message: 'Admin Logout successfully', success: true });
         } catch (error) {
-            return res.status(500).json({ message: 'Internal server error', success: false });
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error', success: false });
         }
     }
 
@@ -90,10 +91,10 @@ export class AdminController{
                 queryParams.sortBy = 'createdAt'
             }
             const users = await this.getUsersUseCase.execute(queryParams);
-            console.log(users);
-            return res.status(200).json({ success: true, ...users });
+
+            return res.status(StatusCodes.OK).json({ success: true, ...users });
         } catch (error) {
-            return res.status(500).json({ message: 'Error Fetching Users', success: false });
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Error Fetching Users', success: false });
         }
     }
     
@@ -101,9 +102,9 @@ export class AdminController{
         try {
             const userId = req.params.id;
             const response = await this.toggleUserStatusUseCase.execute(userId);
-            return res.status(200).json({ message: "User Status Updated Successfully", success: true });
+            return res.status(StatusCodes.OK).json({ message: "User Status Updated Successfully", success: true });
         } catch (error: any) {
-            return res.status(400).json({ message: error.message, success: false });
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message, success: false });
         }
     }
 
@@ -111,16 +112,15 @@ export class AdminController{
         try {
             const userId = req.params.id;
             const user = await this.getUserDetailsUseCase.execute(userId);
-            return res.status(200).json({user, success: true})
+            return res.status(StatusCodes.OK).json({user, success: true})
         } catch (error: any) {
-            return res.status(500).json({ message: "Internal server error", success: false})
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Internal server error", success: false})
         }
     }
 
     async getAllDeveloper(req: Request, res: Response) {
         try {
         
-
             const queryParams: DevQueryParams = {
                 page: Math.max(1, parseInt(req.query.page as string) || 1),
                 limit: Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10)),
@@ -131,7 +131,7 @@ export class AdminController{
             }
 
             const result = await this.getDeveloperUseCase.execute(queryParams);
-            return res.status(200).json({success: true, ...result})
+            return res.status(StatusCodes.OK).json({success: true, ...result})
 
 
             
@@ -143,7 +143,7 @@ export class AdminController{
                     message: error.message
                 });
             }
-            return res.status(500).json({
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: error.message ||'Internal server error'
             });
@@ -162,7 +162,7 @@ export class AdminController{
 
             const result = await this.manageDeveloperRequestsUseCase.listRequests(queryParams);
 
-            return res.status(200).json({
+            return res.status(StatusCodes.OK).json({
                 success: true,
                 ...result
             });
@@ -173,7 +173,7 @@ export class AdminController{
                     message: error.message
                 });
             }
-            return res.status(500).json({
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: 'Internal server error'
             });
@@ -185,7 +185,7 @@ export class AdminController{
             const { id } = req.params;
             const developer = await this.manageDeveloperRequestsUseCase.approveRequest(id);
 
-            return res.status(200).json({
+            return res.status(StatusCodes.OK).json({
                 success: true,
                 message: 'Developer request approved successfully',
                 data: developer
@@ -197,7 +197,7 @@ export class AdminController{
                     message: error.message
                 });
             }
-            return res.status(500).json({
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: 'Internal server error'
             });
@@ -211,7 +211,7 @@ export class AdminController{
 
             const developer = await this.manageDeveloperRequestsUseCase.rejectRequest(id, reason);
 
-            return res.status(200).json({
+            return res.status(StatusCodes.OK).json({
                 success: true,
                 message: 'Developer request rejected successfully',
                 data: developer
@@ -223,7 +223,7 @@ export class AdminController{
                     message: error.message
                 });
             }
-            return res.status(500).json({
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: 'Internal server error'
             });
@@ -235,7 +235,7 @@ export class AdminController{
             const developerId = req.params.id;
             const developer = await this.getDeveloperDetailsUseCase.execute(developerId);
             
-            return res.status(200).json({
+            return res.status(StatusCodes.OK).json({
                 success: true,
                 developer
             });
@@ -246,7 +246,7 @@ export class AdminController{
                     message: error.message
                 });
             }
-            return res.status(500).json({
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: 'Internal server error'
             });
@@ -258,7 +258,7 @@ export class AdminController{
             const developerId = req.params.id;
             const developer = await this.getDeveloperRequestDetailsUseCase.execute(developerId);
             
-            return res.status(200).json({
+            return res.status(StatusCodes.OK).json({
                 success: true,
                 developer
             });
@@ -269,7 +269,7 @@ export class AdminController{
                     message: error.message
                 });
             }
-            return res.status(500).json({
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: 'Internal server error'
             });

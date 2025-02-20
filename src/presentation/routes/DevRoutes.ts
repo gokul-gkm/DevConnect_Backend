@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { AuthController } from "@/presentation/controllers/AuthController";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { MailService } from "@/infrastructure/mail/MailService";
 import { OTPRepository } from "@/infrastructure/repositories/OTPRepository";
@@ -7,53 +6,27 @@ import { GoogleAuthController } from "../controllers/GoogleAuthController";
 import { LinkedInAuthController } from "../controllers/LinkedInAuthController";
 import { DevAuthController } from "../controllers/DevAuthController";
 
-import multer from 'multer';
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
 
-const storage = multer.memoryStorage();
-
-const upload = multer({
-  storage: storage,
-  limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
-  fileFilter: (req, file, cb) => {
-      console.log("Processing file:", file.fieldname);
-      
-      if (file.fieldname === 'profilePicture') {
-          if (!file.mimetype.startsWith('image/')) {
-              return cb(new Error('Only images are allowed for profile picture'));
-          }
-          return cb(null, true);
-      } 
-      
-      if (file.fieldname === 'resume') {
-          const allowedMimeTypes = [
-              'application/pdf',
-              'application/msword',
-              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-          ];
-          if (!allowedMimeTypes.includes(file.mimetype)) {
-              return cb(new Error('Only PDF and Word documents are allowed for resume'));
-          }
-          return cb(null, true);
-      }
-
-      return cb(null, false);
-  }
-});
+import { upload } from "@/utils/multer";
+import { DevController } from "../controllers/DevController";
+import { authMiddleware } from "../middleware/authMiddleware";
+import { ProjectRepository } from "@/infrastructure/repositories/ProjectRepository";
 
 const devRouter = Router();
 
 const userRepository = new UserRepository();
 const otpRepository = new OTPRepository();
 const devRepository = new DeveloperRepository()
+const projectRepository = new ProjectRepository()
 const mailService = new MailService();
 const s3Service = new S3Service()
 
 
-const devAuthController = new DevAuthController(userRepository, otpRepository,devRepository, mailService, s3Service);
+const devAuthController = new DevAuthController(userRepository, otpRepository, devRepository, mailService, s3Service);
+
+const devController = new DevController(userRepository, devRepository,projectRepository,s3Service)
 
 const googleAuthController = new GoogleAuthController(userRepository);
 const linkedInAuthController = new LinkedInAuthController(userRepository)
@@ -71,7 +44,6 @@ devRouter.post('/auth/resend-otp', async (req, res) => {
 })
 
 devRouter.use('/auth/dev-request', (req, res, next) => {
-  console.log('Request received at /auth/dev-request');
   console.log('Headers:', req.headers);
   next();
 });
@@ -81,8 +53,6 @@ devRouter.post('/auth/dev-request', upload.fields([
     { name: 'resume', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    console.log('Request body:', req.body);
-    console.log('Files received:', req.files);
     
     if (!req.files) {
         console.log('No files were uploaded');
@@ -103,24 +73,57 @@ devRouter.post('/auth/login', async (req, res) => {
   await devAuthController.login(req, res);
 })
 
-// devRouter.post('/logout', async (req, res) => {
-//   await authController.logout(req, res);
-// })
+devRouter.get('/profile', authMiddleware, (req, res, next) => {
+  devController.getProfile(req, res).catch(next);
+});
 
-// devRouter.post('/forgot-password', async (req, res) => {
-//   await authController.forgotPassword(req, res);
-// })
+devRouter.put('/profile/update', 
+    authMiddleware, 
+    upload.fields([
+      { name: 'profilePicture', maxCount: 1 },
+      { name: 'resume', maxCount: 1 }
+  ]),
+    (req, res, next) => {
+        console.log("hi");
+        devController.updateProfile(req, res).catch(next);
+    }
+);
 
-// devRouter.post('/reset-password', async (req, res) => {
-//   await authController.resetPassword(req, res)
-// })
+devRouter.post( '/add-project',
+  authMiddleware,
+  upload.single('coverImage'),
+  (req, res, next) => {
+    devController.addProject(req,res).catch(next);
+})
 
-// devRouter.post('/google', async (req, res) => { 
-//   await googleAuthController.googleLogin(req, res);
-// })
+devRouter.get('/projects', authMiddleware, (req, res) => {
+  devController.getDeveloperProjects(req, res)
+})
 
-// devRouter.post('/linkedin', async (req, res) => {
-//   await linkedInAuthController.linkedInLogin(req, res);
-// })
+devRouter.get(
+  '/projects/:projectId',
+  authMiddleware,
+  (req, res) => {
+    devController.getProject(req, res)
+  }
+);
+
+devRouter.put(
+  '/project/edit/:projectId',
+  authMiddleware,
+  upload.single('coverImage'),
+  (req, res, next) => {
+    devController.updateProject(req,res).catch(next);
+}
+);
+
+devRouter.delete(
+  '/project/remove/:projectId',
+  authMiddleware,
+  (req, res) => {
+    devController.deleteProject(req, res)
+  }
+);
+
 
 export default devRouter; 

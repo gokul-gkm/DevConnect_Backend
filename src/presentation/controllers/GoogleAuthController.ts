@@ -4,6 +4,7 @@ import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { User } from "@/domain/entities/User";
 import jwt from 'jsonwebtoken';
 import { AppError } from "@/domain/errors/AppError";
+import { StatusCodes } from "http-status-codes";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -20,13 +21,13 @@ export class GoogleAuthController {
 
             const payload = ticket.getPayload();
             if (!payload) {
-                return res.status(400).json({ message: 'Invalid token', success: false });
+                return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Invalid token', success: false });
             }
             const { email, name, picture, sub } = payload;
             let user = await this.userRepository.findByEmail(email!);
 
             if (user && user.status === 'blocked') {
-                throw new AppError('User account is blocked',400);
+                throw new AppError('User account is blocked',StatusCodes.BAD_REQUEST);
             }
             
 
@@ -68,14 +69,14 @@ export class GoogleAuthController {
                 maxAge: 7 * 24 * 60 * 60 * 1000
             });
 
-            return res.status(200).json({ message: 'Google login successful', user, success: true });
+            return res.status(StatusCodes.OK).json({ message: 'Google login successful', user, success: true, token: accessToken });
         } catch (error: any) {
             console.error('Google login error: ', error);
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ message: error.message, success: false });
             }
 
-            return res.status(500).json({
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 message: error.message || 'Google Login Error', success: false });
         }
     }

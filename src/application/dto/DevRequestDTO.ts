@@ -24,5 +24,11 @@ export interface DevRequestDTO {
         github?: string;
         twitter?: string;
         portfolio?: string;
+    },
+    education?: {
+        degree?: string,
+        institution?: string,
+        year?: string
     }
+    skills?: string[]
 }

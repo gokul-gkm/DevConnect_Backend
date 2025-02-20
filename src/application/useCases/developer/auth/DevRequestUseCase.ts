@@ -15,12 +15,13 @@ export class DevRequestUseCase {
         profilePicture?: Express.Multer.File[], 
         resume?: Express.Multer.File[] 
     }): Promise<void> {
+        let profilePictureKey: string | undefined;
+        let resumeKey: string | undefined;
         let profilePictureUrl: string | undefined;
         let resumeUrl: string | undefined;
 
         try {
             const existingUser = await this.userRepository.findByEmail(data.email);
-            
             if (!existingUser) {
                 throw new AppError('User not found', 404);
             }
@@ -31,23 +32,19 @@ export class DevRequestUseCase {
             }
 
             if (files.profilePicture && files.profilePicture[0]) {
-                const profilePictureResult = await this.s3Service.uploadFile(
-                    files.profilePicture[0],
-                    'profile-images'
-                );
-                profilePictureUrl = profilePictureResult.Location;
+                const uploadResult = await this.s3Service.uploadFile(files.profilePicture[0], 'profile-images');
+                profilePictureKey = uploadResult.Key;
+                profilePictureUrl = await this.s3Service.generateSignedUrl(profilePictureKey);
             }
 
             if (files.resume && files.resume[0]) {
-                const resumeResult = await this.s3Service.uploadFile(
-                    files.resume[0],
-                    'resumes'
-                );
-                resumeUrl = resumeResult.Location;
+                const uploadResult = await this.s3Service.uploadFile(files.resume[0], 'resumes');
+                resumeKey = uploadResult.Key;
+                resumeUrl = await this.s3Service.generateSignedUrl(resumeKey);
             }
 
             await this.userRepository.update(existingUser.id, {
-                profilePicture: profilePictureUrl,
+                profilePicture: profilePictureKey,
                 role: 'developer',
                 bio: data.bio,
                 socialLinks: {
@@ -55,9 +52,10 @@ export class DevRequestUseCase {
                     github: data.github ?? null,
                     twitter: data.twitter ?? null,
                     portfolio: data.portfolio ?? null,
-                }
+                },
+                skills: data.expertise,
             });
-            
+
             await this.developerRepository.createDeveloper({
                 userId: existingUser.id,
                 expertise: data.expertise,
@@ -73,18 +71,19 @@ export class DevRequestUseCase {
                     experience: parseInt(data.experience),
                     jobTitle: data.jobTitle,
                 },
-                resume: resumeUrl,
+                resume: resumeKey, // Store only the key in DB
             });
-
         } catch (error) {
-          
-            if (profilePictureUrl) {
-                await this.s3Service.deleteFile(profilePictureUrl);
+            if (profilePictureKey) {
+                await this.s3Service.deleteFile(profilePictureKey);
             }
-            if (resumeUrl) {
-                await this.s3Service.deleteFile(resumeUrl);
+            if (resumeKey) {
+                await this.s3Service.deleteFile(resumeKey);
             }
             throw error;
         }
     }
 }
+
+
+
