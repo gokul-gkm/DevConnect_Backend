@@ -12,6 +12,7 @@ import { AcceptSessionRequestUseCase } from '@/application/useCases/developer/se
 import { RejectSessionRequestUseCase } from '@/application/useCases/developer/sessions/RejectSessionRequestUseCase';
 import { StatusCodes } from 'http-status-codes';
 import { GetSessionDetailsUseCase } from '@/application/useCases/user/session/GetSessionDetailsUseCase';
+import { S3Service } from '@/infrastructure/services/S3_Service';
 export class SessionController {
   private createSessionUseCase: CreateSessionUseCase;
   private getUserSessionsUseCase: GetUserSessionsUseCase;
@@ -25,16 +26,17 @@ export class SessionController {
     private sessionRepository: SessionRepository,
     private mailService: MailService,
     private userRepository: UserRepository,
-    private developerRepository: DeveloperRepository
+    private developerRepository: DeveloperRepository,
+    private s3Service: S3Service
 
     ) {
     this.createSessionUseCase = new CreateSessionUseCase(sessionRepository, userRepository, developerRepository, mailService);
     this.getUserSessionsUseCase = new GetUserSessionsUseCase(sessionRepository);
-    this.getUpcomingSessionsUseCase = new GetUpcomingSessionsUseCase(sessionRepository);
+    this.getUpcomingSessionsUseCase = new GetUpcomingSessionsUseCase(sessionRepository,s3Service);
     this.getSessionRequestsUseCase = new GetSessionRequestsUseCase(sessionRepository);
     this.acceptSessionRequestUseCase = new AcceptSessionRequestUseCase(sessionRepository)
     this.rejectSessionRequestUseCase = new RejectSessionRequestUseCase(sessionRepository)
-    this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository)
+    this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository,s3Service)
   }
 
 

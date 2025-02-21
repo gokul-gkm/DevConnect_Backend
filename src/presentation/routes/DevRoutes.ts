@@ -13,6 +13,7 @@ import { upload } from "@/utils/multer";
 import { DevController } from "../controllers/DevController";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { ProjectRepository } from "@/infrastructure/repositories/ProjectRepository";
+import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 
 const devRouter = Router();
 
@@ -20,6 +21,7 @@ const userRepository = new UserRepository();
 const otpRepository = new OTPRepository();
 const devRepository = new DeveloperRepository()
 const projectRepository = new ProjectRepository()
+const walletRepository = new WalletRepository()
 const mailService = new MailService();
 const s3Service = new S3Service()
 
@@ -28,7 +30,7 @@ const devAuthController = new DevAuthController(userRepository, otpRepository, d
 
 const devController = new DevController(userRepository, devRepository,projectRepository,s3Service)
 
-const googleAuthController = new GoogleAuthController(userRepository);
+const googleAuthController = new GoogleAuthController(userRepository, walletRepository);
 const linkedInAuthController = new LinkedInAuthController(userRepository)
 
 devRouter.post('/auth/register', async (req, res) => {

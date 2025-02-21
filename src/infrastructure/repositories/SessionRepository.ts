@@ -43,7 +43,7 @@ export class SessionRepository implements ISessionRepository  {
       const result = 
        await Session.find({
         developerId: new mongoose.Types.ObjectId(developerId),
-        status: { $in: ['approved', 'awaiting_payment'] },
+        status: { $in: ['approved', 'scheduled'] },
         sessionDate: {
           $gte: startOfDay(date),
           $lte: endOfDay(date)
@@ -419,6 +419,26 @@ export class SessionRepository implements ISessionRepository  {
     } catch (error) {
       console.error('Reject session repository error:', error);
       throw new AppError('Failed to reject session', 500);
+    }
+  }
+
+  async updatePaymentStatus(sessionId: Types.ObjectId, status: string): Promise<void> {
+    try {
+      await Session.findByIdAndUpdate(sessionId, {
+        paymentStatus: status
+      });
+    } catch (error) {
+      throw new AppError('Failed to update payment status', 500);
+    }
+  }
+
+  async updatePaymentTransferStatus(sessionId: Types.ObjectId, status: string): Promise<void> {
+    try {
+      await Session.findByIdAndUpdate(sessionId, {
+        paymentTransferStatus: status
+      });
+    } catch (error) {
+      throw new AppError('Failed to update payment transfer status', 500);
     }
   }
 }

@@ -13,6 +13,8 @@ import { ManageDeveloperRequestsUseCase } from '@/application/useCases/developer
 import { GetDeveloperDetailsUseCase } from '@/application/useCases/admin/developers/GetDeveloperDetailsUseCase';
 import { GetDeveloperRequestDetailsUseCase } from '@/application/useCases/developer/GetDeveloperRequestDetails';
 import { StatusCodes } from 'http-status-codes';
+import { S3Service } from '@/infrastructure/services/S3_Service';
+import { WalletRepository } from '@/infrastructure/repositories/WalletRepository';
 
 
 export class AdminController{
@@ -27,15 +29,17 @@ export class AdminController{
     constructor(
         private adminRepository: AdminRepository,
         private userRepository: UserRepository,
-        private developerRepository: DeveloperRepository
+        private developerRepository: DeveloperRepository,
+        private s3Service: S3Service,
+        private walletRepository: WalletRepository
     ) {
         this.adminLoginUseCase = new AdminLoginUseCase(adminRepository);
-        this.getUsersUseCase = new GetUsersUseCase(userRepository);
+        this.getUsersUseCase = new GetUsersUseCase(userRepository,s3Service);
         this.toggleUserStatusUseCase = new ToggleUserStatusUseCase(userRepository);
-        this.getUserDetailsUseCase = new GetUserDetailsUseCase(userRepository);
-        this.getDeveloperUseCase = new GetDevelopersUseCase(developerRepository)
-        this.manageDeveloperRequestsUseCase = new ManageDeveloperRequestsUseCase(developerRepository)
-        this.getDeveloperDetailsUseCase = new GetDeveloperDetailsUseCase(developerRepository)
+        this.getUserDetailsUseCase = new GetUserDetailsUseCase(userRepository,s3Service);
+        this.getDeveloperUseCase = new GetDevelopersUseCase(developerRepository,s3Service)
+        this.manageDeveloperRequestsUseCase = new ManageDeveloperRequestsUseCase(developerRepository, walletRepository)
+        this.getDeveloperDetailsUseCase = new GetDeveloperDetailsUseCase(developerRepository,s3Service)
         this.getDeveloperRequestDetailsUseCase = new GetDeveloperRequestDetailsUseCase(developerRepository)
     }
 

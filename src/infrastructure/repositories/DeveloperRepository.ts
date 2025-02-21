@@ -154,10 +154,10 @@ export class DeveloperRepository implements IDeveloperRepository {
 
             const [developers, total] = await Promise.all([
                 Developer.find(developerFilter)
+                    .populate('userId', 'username email profilePicture isVerified status socialLinks')
                     .sort(sort)
                     .skip(skip)
                     .limit(limit)
-                    .populate('userId', 'username email contact profilePicture isVerified status socialLinks')
                     .exec(),
                 Developer.countDocuments(developerFilter)
             ]);

@@ -14,5 +14,6 @@ export interface ISessionRepository {
     updateSessionStatus(sessionId: Types.ObjectId, status: string): Promise<any>
     rejectSession(sessionId: Types.ObjectId, rejectionReason: string): Promise<any>
     getSessionBySessionId(sessionId: Types.ObjectId): Promise<SessionDetails>;
-    
+    updatePaymentTransferStatus(sessionId: Types.ObjectId, status: string): Promise<void>
+    updatePaymentStatus(sessionId: Types.ObjectId, status: string): Promise<void>
 }

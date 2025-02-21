@@ -12,6 +12,7 @@ import userRouter from '@/presentation/routes/UserRoutes'
 import sessionRouter from '@/presentation/routes/SessionRoutes';
 import { errorHandler } from './utils/errorHandler';
 import { StatusCodes } from 'http-status-codes';
+import { paymentRouter } from './presentation/routes/PaymentRoutes';
 
 dotenv.config();
 
@@ -25,6 +26,8 @@ const corsOptions = {
     credentials: true
 };
 
+app.use('/payments/webhook', express.raw({ type: 'application/json' }));
+
 app.use(cors(corsOptions))
 app.use(express.json());
 app.use(cookieParser());
@@ -36,6 +39,7 @@ app.use('/admin', adminRouter)
 app.use('/developer', devRouter)
 app.use('/users', userRouter)
 app.use('/sessions', sessionRouter)
+app.use('/payments', paymentRouter);
 
 app.use((req: Request, res: Response) => {
     res.status(StatusCodes.NOT_FOUND).json({

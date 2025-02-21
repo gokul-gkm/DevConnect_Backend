@@ -4,6 +4,8 @@ import { AdminRepository } from "@/infrastructure/repositories/AdminRepository";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { adminAuthMiddleware } from "../middleware/adminAuthMiddleware";
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
+import { S3Service } from "@/infrastructure/services/S3_Service";
+import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 
 
 
@@ -11,7 +13,9 @@ const adminRouter = Router();
 const adminRepository = new AdminRepository();
 const userRepository = new UserRepository();
 const developerRepository = new DeveloperRepository()
-const adminController = new AdminController(adminRepository, userRepository, developerRepository);
+const walletRepository = new WalletRepository()
+const s3Service = new S3Service()
+const adminController = new AdminController(adminRepository, userRepository, developerRepository,s3Service, walletRepository);
 
 
 

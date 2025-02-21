@@ -5,14 +5,16 @@ import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepo
 import { SessionController } from "../controllers/SessionController";
 import { SessionRepository } from "@/infrastructure/repositories/SessionRepository";
 import { MailService } from "@/infrastructure/mail/MailService";
+import { S3Service } from "@/infrastructure/services/S3_Service";
 
 const sessionRouter = Router()
 const sessionRepository = new SessionRepository();
 const userRepository = new UserRepository();
 const developerRepository = new DeveloperRepository();
 const mailService = new MailService()
+const s3Service = new S3Service()
 
-const sessionController = new SessionController(sessionRepository, mailService, userRepository, developerRepository);
+const sessionController = new SessionController(sessionRepository, mailService, userRepository, developerRepository,s3Service);
 
 sessionRouter.get('/booked-slots', authMiddleware, (req, res, next) => {
     sessionController.getBookedSlots(req, res).catch(next);

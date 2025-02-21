@@ -7,17 +7,21 @@ import { MailService } from '@/infrastructure/mail/MailService';
 import { OTP } from '@/domain/entities/OTP';
 import { OTPRepository } from '@/infrastructure/repositories/OTPRepository';
 import { AppError } from '@/domain/errors/AppError';
+import { WalletRepository } from '@/infrastructure/repositories/WalletRepository';
+import { Types } from 'mongoose';
 
 
 export class RegisterUserUseCase{
     private userRepository: UserRepository;
     private otpRepository: OTPRepository;
     private mailService: MailService;
+    private walletRepository: WalletRepository
 
-    constructor(userRepository: UserRepository, otpRepository : OTPRepository, mailService: MailService) {
+    constructor(userRepository: UserRepository, otpRepository : OTPRepository, mailService: MailService, walletRepository: WalletRepository) {
         this.userRepository = userRepository;
         this.otpRepository = otpRepository;
         this.mailService = mailService;
+        this.walletRepository = walletRepository;
     }
 
     async execute(userData: RegisterUserDTO): Promise<void> {
@@ -76,7 +80,14 @@ export class RegisterUserUseCase{
             verificationExpires: new Date(Date.now()+ 24 * 60 * 60 * 1000)
         });
 
-        await this.userRepository.save(newUser);
+        const savedUser = await this.userRepository.save(newUser);
+
+        try {
+            await this.walletRepository.create(new Types.ObjectId(savedUser._id));
+        } catch (error) {
+            await this.userRepository.deleteById(savedUser._id);
+            throw new AppError('Failed to create user wallet', 500);
+        }
         
         const otp = generateOTP();
         console.log("Signup OTP: ",otp);

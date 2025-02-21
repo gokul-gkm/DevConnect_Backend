@@ -1,10 +1,12 @@
 import { SessionRepository } from '@/infrastructure/repositories/SessionRepository';
 import { AppError } from '@/domain/errors/AppError';
 import { ISession } from '@/domain/entities/Session';
+import { S3Service } from '@/infrastructure/services/S3_Service';
 
 export class GetUpcomingSessionsUseCase {
   constructor(
     private sessionRepository: SessionRepository,
+    private s3Service: S3Service
   ) {}
 
   async execute(userId: string): Promise<ISession[]> {
@@ -16,7 +18,22 @@ export class GetUpcomingSessionsUseCase {
       const currentDate = new Date();
       const sessions = await this.sessionRepository.getUpcomingSessions(userId, currentDate);
 
-      return sessions.sort((a, b) => {
+      const sessionWithUrls = await Promise.all(
+        sessions.map(async (session) => {
+            const sessionData = { ...session };
+            if (sessionData.developerUser.profilePicture) {
+                try {
+                  sessionData.developerUser.profilePicture = await this.s3Service.generateSignedUrl(sessionData.developerUser.profilePicture);
+                } catch (error) {
+                    console.error('Error getting signed URL:', error);
+                    sessionData.developerUser.profilePicture = null;
+                }
+            }
+            return sessionData;
+        })
+    );
+
+      return sessionWithUrls.sort((a, b) => {
         const dateA = new Date(a.sessionDate);
         const dateB = new Date(b.sessionDate);
         return dateA.getTime() - dateB.getTime();

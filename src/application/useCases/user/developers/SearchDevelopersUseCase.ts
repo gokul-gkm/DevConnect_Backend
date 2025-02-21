@@ -1,6 +1,3 @@
-
-
-
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
 import { DeveloperSearchDTO, DeveloperSearchResponse } from "@/application/dto/users/DeveloperSearchDTO";
 import { AppError } from "@/domain/errors/AppError";
