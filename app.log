@@ -8071,3 +8071,5 @@
 {"level":"\u001b[32minfo\u001b[39m","message":"{\n  \"Method\": \"GET\",\n  \"URL\": \"/payments/wallet\",\n  \"Status\": \"404\",\n  \"Response Time (ms)\": \"6.008\"\n}","timestamp":"2025-02-21T21:27:37.012Z"}
 {"level":"\u001b[32minfo\u001b[39m","message":"{\n  \"Method\": \"GET\",\n  \"URL\": \"/payments/wallet\",\n  \"Status\": \"404\",\n  \"Response Time (ms)\": \"4.022\"\n}","timestamp":"2025-02-21T21:27:38.022Z"}
 {"level":"\u001b[32minfo\u001b[39m","message":"{\n  \"Method\": \"GET\",\n  \"URL\": \"/users/dev-profile/67965341addb8404e004dc7b\",\n  \"Status\": \"200\",\n  \"Response Time (ms)\": \"32.359\"\n}","timestamp":"2025-02-21T21:28:47.769Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"{\n  \"Method\": \"GET\",\n  \"URL\": \"/users/dev-profile/67965341addb8404e004dc7b\",\n  \"Status\": \"200\",\n  \"Response Time (ms)\": \"23.605\"\n}","timestamp":"2025-02-21T21:29:53.613Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"{\n  \"Method\": \"GET\",\n  \"URL\": \"/users/dev-profile/67965341addb8404e004dc7b\",\n  \"Status\": \"200\",\n  \"Response Time (ms)\": \"35.137\"\n}","timestamp":"2025-02-21T21:31:35.105Z"}
