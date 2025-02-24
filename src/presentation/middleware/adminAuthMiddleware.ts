@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 
 interface DecodedJwt {
@@ -40,7 +41,7 @@ export const adminAuthMiddleware = async (req: Request, res: Response, next: Nex
         } catch (refreshTokenError) {
             res.clearCookie('adminAccessToken');
             res.clearCookie('adminRefreshToken');
-            res.status(403).json({ message: 'Unauthorized', success: false });  
+            res.status(StatusCodes.FORBIDDEN).json({ message: 'Unauthorized', success: false });  
             return;
         }
     }

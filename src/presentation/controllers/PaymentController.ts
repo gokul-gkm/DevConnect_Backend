@@ -10,6 +10,7 @@ import { StripeService } from '@/infrastructure/services/StripeService';
 import { Types } from 'mongoose';
 import { AppError } from '@/domain/errors/AppError';
 import { GetAdminWalletDetailsUseCase } from '@/application/useCases/user/payment/GetAdminWalletDetailsUseCase';
+import { StatusCodes } from 'http-status-codes';
 
 export class PaymentController {
   private createPaymentSessionUseCase: CreatePaymentSessionUseCase;
@@ -62,7 +63,7 @@ export class PaymentController {
 
       res.json({ url: checkoutUrl });
     } catch (error: any) {
-      res.status(error.statusCode || 500).json({
+      res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: error.message || 'Internal server error'
       });
     }
@@ -72,7 +73,7 @@ export class PaymentController {
     try {
       const signature = req.headers['stripe-signature'] as string;
       if (!signature) {
-        throw new AppError('No stripe signature found', 400);
+        throw new AppError('No stripe signature found', StatusCodes.BAD_REQUEST);
       }
       console.log('Received webhook with signature:', signature);
       console.log('Webhook body:', req.body);
@@ -84,7 +85,7 @@ export class PaymentController {
       res.json({ received: true });
     } catch (error: any) {
       console.error('Webhook Error:', error.message);
-      res.status(error.statusCode || 500).json({
+      res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: error.message || 'Webhook processing failed'
       });
     }
@@ -98,7 +99,7 @@ export class PaymentController {
 
       res.json({ message: 'Payment transferred successfully' });
     } catch (error: any) {
-      res.status(error.statusCode || 500).json({
+      res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: error.message || 'Transfer failed'
       });
     }
@@ -108,13 +109,13 @@ export class PaymentController {
     try {
       const userId = req.userId;
       if (!userId) {
-        throw new AppError('User ID is required', 400);
+        throw new AppError('User ID is required', StatusCodes.BAD_REQUEST);
       }
       
       const wallet = await this.getWalletDetailsUseCase.execute(userId);
       res.json(wallet);
     } catch (error: any) {
-      res.status(error.statusCode || 500).json({
+      res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: error.message || 'Failed to fetch wallet details'
       });
     }
@@ -124,13 +125,13 @@ export class PaymentController {
     try {
       const adminId = process.env.ADMIN_ID!;
       if (!adminId) {
-        throw new AppError('Admin ID is required', 400);
+        throw new AppError('Admin ID is required', StatusCodes.BAD_REQUEST);
       }
       
       const wallet = await this.getAdminWalletDetailsUseCase.execute(adminId);
       res.json(wallet);
     } catch (error: any) {
-      res.status(error.statusCode || 500).json({
+      res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         message: error.message || 'Failed to fetch admin wallet details'
       });
     }

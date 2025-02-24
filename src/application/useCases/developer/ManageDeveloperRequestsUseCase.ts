@@ -5,6 +5,7 @@ import { AppError } from "@/domain/errors/AppError";
 import { MailService } from "@/infrastructure/mail/MailService";
 import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 import { Schema, Types } from "mongoose";
+import { StatusCodes } from "http-status-codes";
 
 export class ManageDeveloperRequestsUseCase {
     private mailService: MailService;
@@ -36,7 +37,7 @@ export class ManageDeveloperRequestsUseCase {
             );
 
             if (!developer) {
-                throw new AppError('Developer not found', 404);
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
             }
          
             try {        
@@ -50,7 +51,7 @@ export class ManageDeveloperRequestsUseCase {
                 } else if (typeof developer.userId === 'string') {
                     userObjectId = new Types.ObjectId(developer.userId);
                 } else {
-                    throw new AppError('Invalid userId format', 400);
+                    throw new AppError('Invalid userId format', StatusCodes.BAD_REQUEST);
                 }
 
                 const existingWallet = await this.walletRepository.findByUserId(userObjectId);
@@ -67,7 +68,7 @@ export class ManageDeveloperRequestsUseCase {
                     developerId,
                     'pending'
                 );
-                throw new AppError('Failed to create developer wallet', 500);
+                throw new AppError('Failed to create developer wallet', StatusCodes.INTERNAL_SERVER_ERROR);
             }
             
             try {
@@ -93,7 +94,7 @@ export class ManageDeveloperRequestsUseCase {
     async rejectRequest(developerId: string, reason: string): Promise<IDeveloper> {
         try {
             if (!reason) {
-                throw new AppError('Rejection reason is required', 400);
+                throw new AppError('Rejection reason is required', StatusCodes.BAD_REQUEST);
             }
             const developer = await this.developerRepository.updateDeveloperStatus(
                 developerId,
@@ -101,7 +102,7 @@ export class ManageDeveloperRequestsUseCase {
                 reason
             );
             if (!developer) {
-                throw new AppError('Developer not found', 404);
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
             }
 
             try {

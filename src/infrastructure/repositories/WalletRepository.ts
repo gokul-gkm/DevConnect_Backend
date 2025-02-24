@@ -3,13 +3,14 @@ import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 import { IWallet, IWalletTransaction } from '@/domain/entities/Wallet';
 import { WalletModel } from '@/domain/entities/Wallet';
 import { AppError } from '@/domain/errors/AppError';
+import { StatusCodes } from 'http-status-codes';
 
 export class WalletRepository implements IWalletRepository {
   async findByUserId(userId: Types.ObjectId): Promise<IWallet | null> {
     try {
       return await WalletModel.findOne({ userId });
     } catch (error) {
-      throw new AppError('Failed to fetch wallet', 500);
+      throw new AppError('Failed to fetch wallet', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -18,7 +19,7 @@ export class WalletRepository implements IWalletRepository {
       const wallet = new WalletModel({ userId, balance: 0 });
       return await wallet.save();
     } catch (error) {
-      throw new AppError('Failed to create wallet', 500);
+      throw new AppError('Failed to create wallet', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -36,11 +37,11 @@ export class WalletRepository implements IWalletRepository {
         { new: true }
       );
       if (!updatedWallet) {
-        throw new AppError('Wallet not found', 404);
+        throw new AppError('Wallet not found', StatusCodes.NOT_FOUND);
       }
       return updatedWallet;
     } catch (error) {
-      throw new AppError('Failed to add transaction', 500);
+      throw new AppError('Failed to add transaction', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -52,11 +53,11 @@ export class WalletRepository implements IWalletRepository {
         { new: true }
       );
       if (!updatedWallet) {
-        throw new AppError('Wallet not found', 404);
+        throw new AppError('Wallet not found', StatusCodes.NOT_FOUND);
       }
       return updatedWallet;
     } catch (error) {
-      throw new AppError('Failed to update wallet balance', 500);
+      throw new AppError('Failed to update wallet balance', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -73,7 +74,7 @@ export class WalletRepository implements IWalletRepository {
 
       const fromWallet = await WalletModel.findById(fromWalletId);
       if (!fromWallet || fromWallet.balance < amount) {
-        throw new AppError('Insufficient funds', 400);
+        throw new AppError('Insufficient funds', StatusCodes.BAD_REQUEST);
       }
 
       await WalletModel.findByIdAndUpdate(fromWalletId, {
@@ -117,7 +118,7 @@ export class WalletRepository implements IWalletRepository {
     try {
       return await WalletModel.findOne({ adminId });
     } catch (error) {
-      throw new AppError('Failed to fetch admin wallet', 500);
+      throw new AppError('Failed to fetch admin wallet', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -131,7 +132,7 @@ export class WalletRepository implements IWalletRepository {
       });
       return await wallet.save();
     } catch (error) {
-      throw new AppError('Failed to create admin wallet', 500);
+      throw new AppError('Failed to create admin wallet', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }

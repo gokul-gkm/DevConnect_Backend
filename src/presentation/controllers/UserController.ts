@@ -29,11 +29,11 @@ export class UserController {
         try {
             const userId = req.userId;
             if (!userId) {
-                throw new AppError("User ID is required",400);
+                throw new AppError("User ID is required",);
             }
             const user = await this.getUserProfileUseCase.execute(userId);
             if(!user) {
-                throw new AppError("User not found",404);
+                throw new AppError("User not found",StatusCodes.NOT_FOUND);
             }
             return res.status(StatusCodes.OK).json({data: user, success: true});
             

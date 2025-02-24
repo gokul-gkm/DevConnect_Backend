@@ -4,6 +4,7 @@ import { AppError } from '@/domain/errors/AppError';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { SessionDetails, SessionDocument, UserInfo } from '@/domain/types/session';
 import { startOfDay, endOfDay } from 'date-fns';
+import { StatusCodes } from 'http-status-codes';
 import mongoose, { Types } from 'mongoose';
 
 interface PopulatedUser {
@@ -33,7 +34,7 @@ export class SessionRepository implements ISessionRepository  {
       await session.save();
       return session;
     } catch (error) {
-      throw new AppError('Failed to create session', 500);
+      throw new AppError('Failed to create session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -51,7 +52,7 @@ export class SessionRepository implements ISessionRepository  {
        }).select('startTime duration');
       return result
     } catch (error) {
-      throw new AppError('Failed to fetch booked slots', 500);
+      throw new AppError('Failed to fetch booked slots', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -101,7 +102,7 @@ export class SessionRepository implements ISessionRepository  {
       return conflictingSessions.length === 0;
     } catch (error) {
       console.error('Check slot availability error:', error);
-      throw new AppError('Failed to check slot availability', 500);
+      throw new AppError('Failed to check slot availability', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -183,7 +184,7 @@ export class SessionRepository implements ISessionRepository  {
       return sessions;
     } catch (error) {
       console.error('Get user sessions repository error:', error);
-      throw new AppError('Failed to fetch user sessions', 500);
+      throw new AppError('Failed to fetch user sessions', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -195,7 +196,7 @@ export class SessionRepository implements ISessionRepository  {
       .populate('userId', 'username email profilePicture')
       .sort({ sessionDate: 1 });
     } catch (error) {
-      throw new AppError('Failed to fetch developer sessions', 500);
+      throw new AppError('Failed to fetch developer sessions', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -204,17 +205,17 @@ export class SessionRepository implements ISessionRepository  {
       const session = await Session.findById(sessionId);
       
       if (!session) {
-        throw new AppError('Session not found', 404);
+        throw new AppError('Session not found', StatusCodes.NOT_FOUND);
       }
 
       if (session.status !== 'pending') {
-        throw new AppError('Only pending sessions can be cancelled', 400);
+        throw new AppError('Only pending sessions can be cancelled', StatusCodes.BAD_REQUEST);
       }
 
       await session.deleteOne();
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError('Failed to delete session', 500);
+      throw new AppError('Failed to delete session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -287,7 +288,7 @@ export class SessionRepository implements ISessionRepository  {
       return sessions;
     } catch (error) {
       console.error('Get upcoming sessions repository error:', error);
-      throw new AppError('Failed to fetch upcoming sessions', 500);
+      throw new AppError('Failed to fetch upcoming sessions', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -303,7 +304,7 @@ export class SessionRepository implements ISessionRepository  {
       return sessions;
     } catch (error) {
       console.error('Get session requests repository error:', error);
-      throw new AppError('Failed to fetch session requests', 500);
+      throw new AppError('Failed to fetch session requests', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -313,7 +314,7 @@ export class SessionRepository implements ISessionRepository  {
       return session;
     } catch (error) {
       console.error('Get session by ID repository error:', error);
-      throw new AppError('Failed to fetch session', 500);
+      throw new AppError('Failed to fetch session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -325,7 +326,7 @@ export class SessionRepository implements ISessionRepository  {
         .lean<SessionDocument>();
   
       if (!session) {
-        throw new AppError('Session not found', 404);
+        throw new AppError('Session not found', StatusCodes.NOT_FOUND);
       }
   
       const rawDeveloperProfile = await Developer.findOne({ 
@@ -335,13 +336,13 @@ export class SessionRepository implements ISessionRepository  {
       .lean();
   
       if (!rawDeveloperProfile) {
-        throw new AppError('Developer profile not found', 404);
+        throw new AppError('Developer profile not found', StatusCodes.NOT_FOUND);
       }
        
       const developerProfile = rawDeveloperProfile as unknown as PopulatedDeveloper;
   
       if (!developerProfile.userId) {
-        throw new AppError('Developer user information not found', 404);
+        throw new AppError('Developer user information not found', StatusCodes.NOT_FOUND);
       }
   
       const skills: string[] = developerProfile.expertise 
@@ -382,7 +383,7 @@ export class SessionRepository implements ISessionRepository  {
     } catch (error) {
       if (error instanceof AppError) throw error;
       console.error('Error in getSessionBySessionId:', error);
-      throw new AppError('Failed to fetch session details', 500);
+      throw new AppError('Failed to fetch session details', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -399,7 +400,7 @@ export class SessionRepository implements ISessionRepository  {
       return session;
     } catch (error) {
       console.error('Update session status repository error:', error);
-      throw new AppError('Failed to update session status', 500);
+      throw new AppError('Failed to update session status', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -418,7 +419,7 @@ export class SessionRepository implements ISessionRepository  {
       return session;
     } catch (error) {
       console.error('Reject session repository error:', error);
-      throw new AppError('Failed to reject session', 500);
+      throw new AppError('Failed to reject session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -428,7 +429,7 @@ export class SessionRepository implements ISessionRepository  {
         paymentStatus: status
       });
     } catch (error) {
-      throw new AppError('Failed to update payment status', 500);
+      throw new AppError('Failed to update payment status', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -438,7 +439,7 @@ export class SessionRepository implements ISessionRepository  {
         paymentTransferStatus: status
       });
     } catch (error) {
-      throw new AppError('Failed to update payment transfer status', 500);
+      throw new AppError('Failed to update payment transfer status', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }

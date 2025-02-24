@@ -5,6 +5,7 @@ import { IPaymentRepository } from '@/domain/interfaces/IPaymentRepository';
 import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 import { ObjectId, Types } from 'mongoose';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
+import { StatusCodes } from 'http-status-codes';
 
 export class StripeService implements IPaymentService {
   private stripe: Stripe;
@@ -55,7 +56,7 @@ export class StripeService implements IPaymentService {
       return session.url!;
     } catch (error) {
       console.error('Stripe checkout session creation error:', error);
-      throw new AppError('Failed to create payment session', 500);
+      throw new AppError('Failed to create payment session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -75,7 +76,7 @@ export class StripeService implements IPaymentService {
 
           const payment = await this.paymentRepository.findByStripeSessionId(session.id);
           if (!payment) {
-            throw new AppError('Payment record not found', 404);
+            throw new AppError('Payment record not found', StatusCodes.NOT_FOUND);
           }
 
           await this.paymentRepository.updateStatus(payment._id, 'completed');
@@ -83,7 +84,7 @@ export class StripeService implements IPaymentService {
           const adminWallet = await this.walletRepository.findByAdminId(process.env.ADMIN_ID!);
 
           if (!adminWallet) {
-            throw new AppError('Admin wallet not found', 404);
+            throw new AppError('Admin wallet not found', StatusCodes.NOT_FOUND);
           }
 
           await this.walletRepository.addTransaction(adminWallet._id, {
@@ -123,7 +124,7 @@ export class StripeService implements IPaymentService {
       }
     } catch (error) {
       console.error('Webhook handling error:', error);
-      throw new AppError('Failed to process webhook event', 500);
+      throw new AppError('Failed to process webhook event', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -144,7 +145,7 @@ export class StripeService implements IPaymentService {
     try {
       const payment = await this.paymentRepository.findById(new Types.ObjectId(paymentId));
       if (!payment || !payment.stripePaymentId) {
-        throw new AppError('Payment not found', 404);
+        throw new AppError('Payment not found', StatusCodes.NOT_FOUND);
       }
 
       await this.stripe.refunds.create({
@@ -155,7 +156,7 @@ export class StripeService implements IPaymentService {
       await this.paymentRepository.updateStatus(payment._id, 'refunded');
     } catch (error) {
       console.error('Refund error:', error);
-      throw new AppError('Failed to process refund', 500);
+      throw new AppError('Failed to process refund', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }

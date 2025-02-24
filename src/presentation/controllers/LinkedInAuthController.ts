@@ -4,6 +4,7 @@ import axios from "axios";
 import { AppError } from "@/domain/errors/AppError";
 import { User } from "@/domain/entities/User";
 import jwt from 'jsonwebtoken';
+import { StatusCodes } from "http-status-codes";
 
 export class LinkedInAuthController {
     constructor(private userRepository: UserRepository) {}
@@ -62,7 +63,7 @@ export class LinkedInAuthController {
             }
 
             if (user?.status === 'blocked') {
-                throw new AppError('User account is blocked', 400);
+                throw new AppError('User account is blocked', StatusCodes.BAD_REQUEST);
             }
 
             if (user) {
@@ -114,7 +115,7 @@ export class LinkedInAuthController {
                 maxAge: 7 * 24 * 60 * 60 * 1000,
             });
 
-            return res.status(200).json({
+            return res.status(StatusCodes.OK).json({
                 message: 'LinkedIn login successful',
                 user,
                 success: true,
@@ -127,7 +128,7 @@ export class LinkedInAuthController {
                     success: false,
                 });
             }
-            return res.status(500).json({
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 message: error.response?.data?.message || 'LinkedIn Login Error',
                 success: false,
             });

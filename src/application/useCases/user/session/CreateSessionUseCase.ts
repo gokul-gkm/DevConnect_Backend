@@ -5,6 +5,7 @@ import { DeveloperRepository } from '@/infrastructure/repositories/DeveloperRepo
 import { MailService } from '@/infrastructure/mail/MailService';
 import { AppError } from '@/domain/errors/AppError';
 import { ISession } from '@/domain/entities/Session';
+import { StatusCodes } from 'http-status-codes';
 
 interface CreateSessionDTO {
   title: string;
@@ -32,12 +33,12 @@ export class CreateSessionUseCase {
       const developer = await this.developerRepository.findByUserId(data.developerId);
       
       if (!developer) {
-        throw new AppError('Developer not found', 404);
+        throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
       }
 
       const user = await this.userRepository.findById(data.userId);
       if (!user) {
-        throw new AppError('User not found', 404);
+        throw new AppError('User not found', StatusCodes.NOT_FOUND);
       }
 
       const isAvailable = await this.sessionRepository.checkSlotAvailability(
@@ -49,7 +50,7 @@ export class CreateSessionUseCase {
 
       if (!isAvailable) {
         console.log("selected time slot is not available");
-        throw new AppError('Selected time slot is not available', 400);
+        throw new AppError('Selected time slot is not available', StatusCodes.BAD_REQUEST);
       }
 
       const sessionData: Partial<ISession> = {
@@ -86,7 +87,7 @@ export class CreateSessionUseCase {
     } catch (error) {
       console.error("Create session error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError('Failed to create session', 500);
+      throw new AppError('Failed to create session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }

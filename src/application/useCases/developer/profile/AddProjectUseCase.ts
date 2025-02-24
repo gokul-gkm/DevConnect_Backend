@@ -3,6 +3,7 @@ import { AppError } from "@/domain/errors/AppError";
 import { AddProjectDTO } from "@/application/dto/developer/AddProjectDTO";
 import { ProjectRepository } from "@/infrastructure/repositories/ProjectRepository";
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
+import { StatusCodes } from "http-status-codes";
 
 export class AddProjectUseCase {
     constructor(
@@ -38,7 +39,7 @@ export class AddProjectUseCase {
             if (coverImageKey) {
                 await this.s3Service.deleteFile(coverImageKey);
             }
-            throw new AppError('Failed to add project', 500);
+            throw new AppError('Failed to add project', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -9,6 +9,7 @@ import { OTPRepository } from '@/infrastructure/repositories/OTPRepository';
 import { AppError } from '@/domain/errors/AppError';
 import { WalletRepository } from '@/infrastructure/repositories/WalletRepository';
 import { Types } from 'mongoose';
+import { StatusCodes } from 'http-status-codes';
 
 
 export class RegisterUserUseCase{
@@ -28,13 +29,13 @@ export class RegisterUserUseCase{
         const { username, email, contact, password, confirmPassword } = userData;
         
         if (password !== confirmPassword) {
-            throw new AppError("Passwords don't match", 400)
+            throw new AppError("Passwords don't match", StatusCodes.BAD_REQUEST)
         }
 
         const existingUser = await this.userRepository.findByEmail(email);
         if (existingUser) {
             if (existingUser.isVerified) {
-                throw new AppError('Email already registered',400)
+                throw new AppError('Email already registered',StatusCodes.BAD_REQUEST)
             }
             if (existingUser.verificationExpires < new Date()) {
                 await this.userRepository.deleteById(existingUser._id)
@@ -49,7 +50,7 @@ export class RegisterUserUseCase{
                 await this.otpRepository.save(otpRecord);
                 try {
                     await this.mailService.sendOTP(email, otp);
-                    throw new AppError('Please verify your existing registration. A new OTP has been sent to your email.', 400);
+                    throw new AppError('Please verify your existing registration. A new OTP has been sent to your email.', StatusCodes.BAD_REQUEST);
                 } catch (error) {
                     console.error(error);
                     
@@ -57,7 +58,7 @@ export class RegisterUserUseCase{
                         throw error;
                     }
                 
-                    throw new AppError('Failed to resend OTP email', 500);
+                    throw new AppError('Failed to resend OTP email', StatusCodes.INTERNAL_SERVER_ERROR);
                 }
 
             }
@@ -65,7 +66,7 @@ export class RegisterUserUseCase{
         const existingUsername = await this.userRepository.findByUsername(username);
         
         if (existingUsername) {
-            throw new AppError('Username already exists',400)
+            throw new AppError('Username already exists',StatusCodes.BAD_REQUEST)
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -86,7 +87,7 @@ export class RegisterUserUseCase{
             await this.walletRepository.create(new Types.ObjectId(savedUser._id));
         } catch (error) {
             await this.userRepository.deleteById(savedUser._id);
-            throw new AppError('Failed to create user wallet', 500);
+            throw new AppError('Failed to create user wallet', StatusCodes.INTERNAL_SERVER_ERROR);
         }
         
         const otp = generateOTP();
@@ -102,7 +103,7 @@ export class RegisterUserUseCase{
             await this.mailService.sendOTP(email,otp)
         } catch (error) {
             await this.otpRepository.deleteByEmail(email);
-            throw new AppError('Failed to send OTP email', 500);
+            throw new AppError('Failed to send OTP email', StatusCodes.INTERNAL_SERVER_ERROR);
         }
         
     }

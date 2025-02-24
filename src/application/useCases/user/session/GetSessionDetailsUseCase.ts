@@ -4,6 +4,7 @@ import { AppError } from '@/domain/errors/AppError';
 import { Types } from 'mongoose';
 import { SessionRepository } from '@/infrastructure/repositories/SessionRepository';
 import { S3Service } from '@/infrastructure/services/S3_Service';
+import { StatusCodes } from 'http-status-codes';
 
 export class GetSessionDetailsUseCase {
   constructor(
@@ -13,7 +14,7 @@ export class GetSessionDetailsUseCase {
 
   async execute(sessionId: string): Promise<SessionDetails> {
     if (!sessionId || !Types.ObjectId.isValid(sessionId)) {
-      throw new AppError('Invalid session ID', 400);
+      throw new AppError('Invalid session ID', StatusCodes.BAD_REQUEST);
     }
 
     const session = await this.sessionRepository.getSessionBySessionId(new Types.ObjectId(sessionId));
@@ -23,7 +24,7 @@ export class GetSessionDetailsUseCase {
     };
     
     if (!session) {
-      throw new AppError('Session not found', 404);
+      throw new AppError('Session not found', StatusCodes.NOT_FOUND);
     }
 
     return session;

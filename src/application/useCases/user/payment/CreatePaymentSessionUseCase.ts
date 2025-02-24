@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { IPaymentService } from '@/domain/interfaces/IPaymentService';
 import { SessionRepository } from '@/infrastructure/repositories/SessionRepository';
 import { AppError } from '@/domain/errors/AppError';
+import { StatusCodes } from 'http-status-codes';
 
 interface CreatePaymentSessionDTO {
   sessionId: string;
@@ -17,7 +18,7 @@ export class CreatePaymentSessionUseCase {
 
   async execute(data: CreatePaymentSessionDTO): Promise<string> {
     if (!Types.ObjectId.isValid(data.sessionId)) {
-      throw new AppError('Invalid session ID', 400);
+      throw new AppError('Invalid session ID', StatusCodes.BAD_REQUEST);
     }
 
     const session = await this.sessionRepository.getSessionById(
@@ -25,15 +26,15 @@ export class CreatePaymentSessionUseCase {
     );
 
     if (!session) {
-      throw new AppError('Session not found', 404);
+      throw new AppError('Session not found', StatusCodes.NOT_FOUND);
     }
 
     if (session.paymentStatus === 'completed') {
-      throw new AppError('Session is already paid for', 400);
+      throw new AppError('Session is already paid for', StatusCodes.BAD_REQUEST);
     }
 
     if (!session.userId || !session.developerId) {
-      throw new AppError('Invalid session data', 400);
+      throw new AppError('Invalid session data', StatusCodes.BAD_REQUEST);
     }
 
     const checkoutUrl = await this.paymentService.createCheckoutSession({

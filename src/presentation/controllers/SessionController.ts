@@ -65,7 +65,7 @@ export class SessionController {
       const { developerId, date } = req.query;
       
       if (!developerId || !date) {
-        throw new AppError('Developer ID and date are required', 400);
+        throw new AppError('Developer ID and date are required', StatusCodes.BAD_REQUEST);
       }
   
       const bookedSlots = await this.sessionRepository.getBookedSlots(

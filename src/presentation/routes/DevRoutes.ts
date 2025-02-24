@@ -14,6 +14,7 @@ import { DevController } from "../controllers/DevController";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { ProjectRepository } from "@/infrastructure/repositories/ProjectRepository";
 import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
+import { StatusCodes } from "http-status-codes";
 
 const devRouter = Router();
 
@@ -63,7 +64,7 @@ devRouter.post('/auth/dev-request', upload.fields([
     await devAuthController.devRequest(req, res);
 } catch (error: any) {
     console.error('Error in route handler:', error);
-    res.status(500).json({ 
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
         success: false, 
         message: 'Error processing request',
         error: error.message 

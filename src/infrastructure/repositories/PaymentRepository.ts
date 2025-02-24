@@ -3,6 +3,7 @@ import { IPaymentRepository } from '@/domain/interfaces/IPaymentRepository';
 import { IPayment } from '@/domain/entities/Payment';
 import { PaymentModel } from '@/domain/entities/Payment';
 import { AppError } from '@/domain/errors/AppError';
+import { StatusCodes } from 'http-status-codes';
 
 export class PaymentRepository implements IPaymentRepository {
   async create(payment: Partial<IPayment>): Promise<IPayment> {
@@ -10,7 +11,7 @@ export class PaymentRepository implements IPaymentRepository {
       const newPayment = new PaymentModel(payment);
       return await newPayment.save();
     } catch (error) {
-      throw new AppError('Failed to create payment record', 500);
+      throw new AppError('Failed to create payment record', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -18,7 +19,7 @@ export class PaymentRepository implements IPaymentRepository {
     try {
       return await PaymentModel.findById(id);
     } catch (error) {
-      throw new AppError('Failed to fetch payment', 500);
+      throw new AppError('Failed to fetch payment', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -26,7 +27,7 @@ export class PaymentRepository implements IPaymentRepository {
     try {
       return await PaymentModel.findOne({ sessionId });
     } catch (error) {
-      throw new AppError('Failed to fetch payment by session ID', 500);
+      throw new AppError('Failed to fetch payment by session ID', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -38,7 +39,7 @@ export class PaymentRepository implements IPaymentRepository {
         { new: true }
       );
     } catch (error) {
-      throw new AppError('Failed to update payment status', 500);
+      throw new AppError('Failed to update payment status', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -46,7 +47,7 @@ export class PaymentRepository implements IPaymentRepository {
     try {
       return await PaymentModel.findOne({ stripeSessionId });
     } catch (error) {
-      throw new AppError('Failed to fetch payment by Stripe session ID', 500);
+      throw new AppError('Failed to fetch payment by Stripe session ID', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }

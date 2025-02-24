@@ -3,6 +3,7 @@
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { AppError } from "@/domain/errors/AppError";
+import { StatusCodes } from "http-status-codes";
 
 export class GetPublicProfileUseCase {
     constructor(
@@ -15,7 +16,7 @@ export class GetPublicProfileUseCase {
             const profile = await this.developerRepository.getPublicProfile(developerId);
             
             if (!profile) {
-                throw new AppError("Developer profile not found", 404);
+                throw new AppError("Developer profile not found", StatusCodes.NOT_FOUND);
             }
 
             let signedProfilePictureUrl = null;
@@ -29,7 +30,7 @@ export class GetPublicProfileUseCase {
             };
         } catch (error) {
             if (error instanceof AppError) throw error;
-            throw new AppError("Failed to fetch developer profile", 500);
+            throw new AppError("Failed to fetch developer profile", StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 }

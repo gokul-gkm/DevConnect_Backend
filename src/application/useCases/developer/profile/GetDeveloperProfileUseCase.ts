@@ -2,6 +2,7 @@ import { UserRepository } from '@/infrastructure/repositories/UserRepository';
 import { AppError } from '@/domain/errors/AppError';
 import { DeveloperRepository } from '@/infrastructure/repositories/DeveloperRepository';
 import { S3Service } from '@/infrastructure/services/S3_Service';
+import { StatusCodes } from 'http-status-codes';
 
 
 export class GetDeveloperProfileUseCase {
@@ -13,7 +14,7 @@ export class GetDeveloperProfileUseCase {
             const developer = await this.developerRepository.findByUserId(userId);
             
             if (!user) {
-                throw new AppError('User not found', 404);
+                throw new AppError('User not found', StatusCodes.NOT_FOUND);
             }
 
             let signedProfilePictureUrl = null;
@@ -54,7 +55,7 @@ export class GetDeveloperProfileUseCase {
         } catch (error: any) {
             throw new AppError(
                 error.message || 'Error fetching profile',
-                error.statusCode || 501
+                error.statusCode || StatusCodes.NOT_IMPLEMENTED
             );
         }
     }

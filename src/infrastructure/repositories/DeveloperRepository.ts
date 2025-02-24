@@ -33,7 +33,7 @@ export class DeveloperRepository implements IDeveloperRepository {
             return developer;
         } catch (error) {
             console.error('Error creating developer:', error);
-            throw new AppError('Failed to create developer profile', 500);
+            throw new AppError('Failed to create developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -42,7 +42,7 @@ export class DeveloperRepository implements IDeveloperRepository {
             return await Developer.findOne({ userId: new mongoose.Types.ObjectId(userId) });
         } catch (error) {
             console.error('Error finding developer:', error);
-            throw new AppError('Failed to fetch developer profile', 500);
+            throw new AppError('Failed to fetch developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -51,7 +51,7 @@ export class DeveloperRepository implements IDeveloperRepository {
             return await Developer.findById(id);
         } catch (error) {
             console.error('Error finding developer:', error);
-            throw new AppError('Failed to fetch developer profile', 500);
+            throw new AppError('Failed to fetch developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -64,13 +64,13 @@ export class DeveloperRepository implements IDeveloperRepository {
             );
 
             if (!developer) {
-                throw new AppError('Developer not found', 404);
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
             }
             return developer;
         } catch (error) {
             if (error instanceof AppError) throw error;
             console.error('Error updating developer:', error);
-            throw new AppError('Failed to update developer profile', 500);
+            throw new AppError('Failed to update developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -97,14 +97,14 @@ export class DeveloperRepository implements IDeveloperRepository {
             });
                 
             if (!developer) {
-                throw new AppError('Developer not found', 404);
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
             }
 
             return developer;
         } catch (error) {
             if (error instanceof AppError) throw error;
             console.error('Error updating developer status:', error);
-            throw new AppError('Failed to update developer status', 500);
+            throw new AppError('Failed to update developer status', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -282,7 +282,7 @@ export class DeveloperRepository implements IDeveloperRepository {
             );
         } catch (error) {
             console.error('Error adding project to portfolio:', error);
-            throw new AppError('Failed to update developer portfolio', 500);
+            throw new AppError('Failed to update developer portfolio', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -295,13 +295,13 @@ export class DeveloperRepository implements IDeveloperRepository {
             );
 
             if (!result) {
-                throw new AppError('Developer not found', 404);
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
             }
 
             console.log('Project removed from portfolio successfully');
         } catch (error) {
             console.error('Error removing project from portfolio:', error);
-            throw new AppError('Failed to remove project from portfolio', 500);
+            throw new AppError('Failed to remove project from portfolio', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -2,6 +2,7 @@ import { IDeveloper } from "@/domain/entities/Developer";
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { S3Service } from "@/infrastructure/services/S3_Service";
+import { StatusCodes } from "http-status-codes";
 
 export class GetDeveloperDetailsUseCase {
     constructor(
@@ -13,7 +14,7 @@ export class GetDeveloperDetailsUseCase {
         const developer = await this.developerRepository.findDeveloperDetails(developerId);
         
         if (!developer) {
-            throw new AppError('Developer not found', 404);
+            throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
         }
 
         return developer;
