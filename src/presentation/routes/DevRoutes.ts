@@ -87,7 +87,6 @@ devRouter.put('/profile/update',
       { name: 'resume', maxCount: 1 }
   ]),
     (req, res, next) => {
-        console.log("hi");
         devController.updateProfile(req, res).catch(next);
     }
 );

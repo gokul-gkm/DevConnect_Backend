@@ -27,7 +27,7 @@ adminRouter.post('/logout', async (req, res) => {
     await adminController.logout(req, res)
 });
 
-adminRouter.get('/users',adminAuthMiddleware, async (req, res) => {
+adminRouter.get('/users', async (req, res) => {
     await adminController.getUsers(req, res)
 });
 

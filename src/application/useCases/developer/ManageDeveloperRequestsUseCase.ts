@@ -6,23 +6,53 @@ import { MailService } from "@/infrastructure/mail/MailService";
 import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 import { Schema, Types } from "mongoose";
 import { StatusCodes } from "http-status-codes";
+import { S3Service } from "@/infrastructure/services/S3_Service";
 
 export class ManageDeveloperRequestsUseCase {
     private mailService: MailService;
     constructor(
         private developerRepository: DeveloperRepository,
-        private walletRepository: WalletRepository
+        private walletRepository: WalletRepository,
+        private s3Service: S3Service
     ) {
         this.mailService = new MailService();
         this.walletRepository = walletRepository;
     }
-
     async listRequests(queryParams: DevQueryParams): Promise<DevPaginatedResponse<IDeveloper>> {
         try {
-            return await this.developerRepository.findDevelopers({
+            const developers = await this.developerRepository.findDevelopers({
                 ...queryParams,
                 status: 'pending'
             });
+
+            const transformedData = await Promise.all(developers.data.map(async (developer) => {
+                let signedProfilePictureUrl = null;
+                let signedResumeUrl = null;
+
+                if (developer.userId && (developer.userId as any).profilePicture) {
+                    signedProfilePictureUrl = await this.s3Service.generateSignedUrl(
+                        (developer.userId as any).profilePicture
+                    );
+                }
+
+                if (developer.resume) {
+                    signedResumeUrl = await this.s3Service.generateSignedUrl(developer.resume);
+                }
+
+                return {
+                    ...developer.toObject(),
+                    userId: {
+                        ...(developer.userId as any).toObject(),
+                        profilePicture: signedProfilePictureUrl
+                    },
+                    resume: signedResumeUrl
+                };
+            }));
+
+            return {
+                data: transformedData,
+                pagination: developers.pagination
+            };
         } catch (error) {
             console.error('Error in ListDeveloperRequestsUseCase:', error);
             throw error;

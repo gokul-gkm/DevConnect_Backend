@@ -48,8 +48,9 @@ export class S3Service {
         await this.S3Client.send(command);
     }
 
-    async generateSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+    async generateSignedUrl(key: string): Promise<string> {
         try {
+            const expiresIn = Number(process.env.S3_SIGNED_URL_EXPIRY) || 3600;
             const command = new GetObjectCommand({
                 Bucket: this.bucket,
                 Key: key,

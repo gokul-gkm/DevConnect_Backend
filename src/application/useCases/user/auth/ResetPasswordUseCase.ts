@@ -3,11 +3,8 @@ import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import bcrypt from 'bcryptjs'
 import { StatusCodes } from "http-status-codes";
 import jwt from 'jsonwebtoken'
+import { ResetPasswordDTO } from "@/application/dto/users/ResetPasswordDTO";
 
-interface ResetPasswordDTO{
-    token: string,
-    newPassword: string
-}
 
 export class ResetPasswordUseCase{
     constructor(private userRepository: UserRepository) { }

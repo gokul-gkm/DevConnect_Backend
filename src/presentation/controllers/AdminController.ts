@@ -38,9 +38,9 @@ export class AdminController{
         this.toggleUserStatusUseCase = new ToggleUserStatusUseCase(userRepository);
         this.getUserDetailsUseCase = new GetUserDetailsUseCase(userRepository,s3Service);
         this.getDeveloperUseCase = new GetDevelopersUseCase(developerRepository,s3Service)
-        this.manageDeveloperRequestsUseCase = new ManageDeveloperRequestsUseCase(developerRepository, walletRepository)
+        this.manageDeveloperRequestsUseCase = new ManageDeveloperRequestsUseCase(developerRepository, walletRepository,s3Service)
         this.getDeveloperDetailsUseCase = new GetDeveloperDetailsUseCase(developerRepository,s3Service)
-        this.getDeveloperRequestDetailsUseCase = new GetDeveloperRequestDetailsUseCase(developerRepository)
+        this.getDeveloperRequestDetailsUseCase = new GetDeveloperRequestDetailsUseCase(developerRepository,s3Service)
     }
 
     async login(req: Request, res: Response) {
@@ -82,6 +82,7 @@ export class AdminController{
 
     async getUsers(req: Request, res: Response) {
         try {
+
             const queryParams: QueryParams = {
                 page: Math.max(1, parseInt(req.query.page as string) || 1),
                 limit: Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10)),
@@ -94,7 +95,9 @@ export class AdminController{
             if (queryParams.sortBy && !allowedSortFields.includes(queryParams.sortBy)) {
                 queryParams.sortBy = 'createdAt'
             }
+            console.log("before usecase")
             const users = await this.getUsersUseCase.execute(queryParams);
+            console.log("users in controller : ", users);
 
             return res.status(StatusCodes.OK).json({ success: true, ...users });
         } catch (error) {

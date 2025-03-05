@@ -7,7 +7,6 @@ export const upload = multer({
       fileSize: 5 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
-      console.log("Processing file:", file.fieldname);
       
       if (file.fieldname === 'profilePicture') {
           if (!file.mimetype.startsWith('image/')) {

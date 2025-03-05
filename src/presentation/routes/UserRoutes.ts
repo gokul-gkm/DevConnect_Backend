@@ -26,6 +26,10 @@ userRouter.put('/profile/update',
     }
 );
 
+userRouter.put('/change-password', authMiddleware, (req, res, next) => {
+    userController.changePassword(req, res).catch(next)
+})
+
 userRouter.get('/developers/search', (req, res) => {
     userController.searchDevelopers(req, res)
 })

@@ -68,7 +68,6 @@ export class CreateSessionUseCase {
       };
       
       const session = await this.sessionRepository.createSession(sessionData);
-      console.log("session :", session);
 
       // Send email notifications
       // await this.mailService.sendSessionRequestEmail(
@@ -84,7 +83,7 @@ export class CreateSessionUseCase {
       // );
 
       return session;
-    } catch (error) {
+    } catch (error : any) {
       console.error("Create session error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError('Failed to create session', StatusCodes.INTERNAL_SERVER_ERROR);

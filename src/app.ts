@@ -13,10 +13,13 @@ import sessionRouter from '@/presentation/routes/SessionRoutes';
 import { errorHandler } from './utils/errorHandler';
 import { StatusCodes } from 'http-status-codes';
 import { paymentRouter } from './presentation/routes/PaymentRoutes';
+import { createChatRouter } from './presentation/routes/ChatRoutes';
+import { createServer } from 'http';
 
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app)
 
 const morganFormat = ":method :url :status :response-time ms";
 
@@ -40,6 +43,7 @@ app.use('/developer', devRouter)
 app.use('/users', userRouter)
 app.use('/sessions', sessionRouter)
 app.use('/payments', paymentRouter);
+app.use('/chats', createChatRouter(httpServer))
 
 app.use((req: Request, res: Response) => {
     res.status(StatusCodes.NOT_FOUND).json({

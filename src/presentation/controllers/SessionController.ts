@@ -52,7 +52,13 @@ export class SessionController {
         data: session
       });
     } catch (error: any) {
-      console.log("error message : ",error.message)
+      console.log("error message : ", error.message)
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: error.message
@@ -83,7 +89,17 @@ export class SessionController {
         data: formattedSlots
       });
     } catch (error: any) {
-      throw new AppError(error.message || 'Failed to get booked slots', error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR);
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
     }
   }
 

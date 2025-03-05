@@ -115,6 +115,8 @@ export class UserRepository implements IUserRepository{
                     User.countDocuments(filter)
             ])
 
+            console.log("users in repo : ", users);
+
             return {
                 data: users as IUser[],
                 pagination: {
@@ -141,7 +143,7 @@ export class UserRepository implements IUserRepository{
         }
     }
 
-    async getUserById(userId: string) {
+    async getUserById(userId: string):Promise<any> {
         try {
           const user = await User.findById(userId).select('email username profilePicture');
           
