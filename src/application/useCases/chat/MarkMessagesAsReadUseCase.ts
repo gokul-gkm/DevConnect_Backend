@@ -12,12 +12,13 @@ export class MarkMessagesAsReadUseCase{
     ){}
     async execute(chatId: string, recipientType: 'user' | 'developer') {
         try {
-            await this.messageRepository.markMessagesAsRead(chatId, recipientType);
-            await this.chatRepository.resetUnreadCount(chatId, recipientType)
-
+            const updatedMessages = await this.messageRepository.markMessagesAsRead(chatId, recipientType);
+            await this.chatRepository.resetUnreadCount(chatId, recipientType);
+            
             this.socketService.emitToChat(chatId, 'messages-read', {
                 chatId,
-                recipientType
+                recipientType,
+                messageIds: updatedMessages
             });
 
         } catch (error) {

@@ -15,11 +15,27 @@ import { StatusCodes } from 'http-status-codes';
 import { paymentRouter } from './presentation/routes/PaymentRoutes';
 import { createChatRouter } from './presentation/routes/ChatRoutes';
 import { createServer } from 'http';
+import { SocketService } from './infrastructure/services/SocketService';
+import { Server as SocketServer } from 'socket.io';
 
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app)
+
+const io = new SocketServer(httpServer, {
+    cors: {
+        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        methods: ['GET', 'POST'],
+        credentials: true,
+    },
+    transports: ['websocket', 'polling'],
+    allowEIO3: true, 
+    pingTimeout: 60000,
+    pingInterval: 25000
+});
+
+SocketService.getInstance(httpServer, io);
 
 const morganFormat = ":method :url :status :response-time ms";
 
@@ -57,7 +73,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 8000;
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     connectDB();
     console.log(`Server running on port ${PORT}`);
 });

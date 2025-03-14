@@ -7,12 +7,11 @@ import { StatusCodes } from "http-status-codes";
 import jwt from 'jsonwebtoken'
 
 export class LoginUserUseCase{
-    constructor(private userRepository: UserRepository) {
-        
-    }
+    constructor(private userRepository: UserRepository) {}
 
     async execute(loginData: LoginUserDTO): Promise<{ accessToken: string; refreshToken: string; user: Omit<IUser, "password">}> {
-        const { email, password } = loginData;
+        try {
+            const { email, password } = loginData;
 
         const user = await this.userRepository.findByEmail(email);
         
@@ -44,5 +43,9 @@ export class LoginUserUseCase{
         
         console.log(jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string));
         return { accessToken, refreshToken, user }
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to Login', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
     }
 }

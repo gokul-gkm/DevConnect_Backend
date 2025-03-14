@@ -37,13 +37,16 @@ export class SendMessageUseCase {
                     chatId,
                     message,
                     sender: chat.userId
-                })
+                });
+
+                console.log("emit to dev new message noti");
             } else {
                 this.socketService.emitToUser(chat.userId.toString(), 'new-message-notification', {
                     chatId,
                     message,
                     sender: chat.developerId
                 });
+                console.log("emit to user new message noti");
             }
             return message
         } catch (error) {

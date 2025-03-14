@@ -20,4 +20,5 @@ export interface IChats {
     developerUnreadCount: number;
     createdAt: Date;
     updatedAt: Date;
+    lastMessageTime: Date;
 }

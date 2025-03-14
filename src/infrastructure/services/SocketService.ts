@@ -1,7 +1,6 @@
 import { Server as SocketServer } from 'socket.io';
 import { Server } from 'http';
 import jwt from 'jsonwebtoken';
-import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import logger from '@/utils/logger';
 
 interface SocketData {
@@ -11,28 +10,33 @@ interface SocketData {
 }
 
 export class SocketService {
+  private static instance: SocketService | null = null; 
   private io: SocketServer;
   private userSockets: Map<string, Set<string>> = new Map();
   private developerSockets: Map<string, Set<string>> = new Map();
 
-  constructor(server: Server) {
-    this.io = new SocketServer<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, SocketData>(server, {
-      cors: {
-        origin: process.env.FRONTEND_URL,
-        credentials: true
-      },
-      pingTimeout: 60000,
-      pingInterval: 25000
-    });
-
+  private constructor(server: Server, io: SocketServer) {
+    this.io = io;
     this.setupMiddleware();
     this.setupEventHandlers();
-  }
+    console.log('SocketService initialized')
+}
+
+  public static getInstance(server?: Server, io?: SocketServer): SocketService {
+    if (!SocketService.instance && server && io) {
+        SocketService.instance = new SocketService(server, io);
+    }
+    if (!SocketService.instance) {
+        throw new Error('SocketService not initialized');
+    }
+    return SocketService.instance;
+}
 
   private setupMiddleware() {
     this.io.use(async (socket, next) => {
       try {
         const token = socket.handshake.auth.token;
+        console.log('Socket auth token:', token ? 'Present' : 'Missing');
         if (!token) {
           throw new Error('Authentication error');
         }
@@ -42,6 +46,7 @@ export class SocketService {
           role?: string;
           developerId?: string;
         };
+        console.log('Socket auth decoded:', decoded);
 
         socket.data = {
           userId: decoded.userId,
@@ -52,6 +57,7 @@ export class SocketService {
         next();
       } catch (error) {
         logger.error('Socket authentication error:', error);
+        console.error('Socket authentication error:', error);
         next(new Error('Authentication error'));
       }
     });
@@ -152,6 +158,7 @@ export class SocketService {
 
   public emitToUser(userId: string, event: string, data: any) {
     const sockets = this.userSockets.get(userId);
+    console.log("socket in emit to user : ", sockets);
     if (sockets) {
       sockets.forEach(socketId => {
         this.io.to(socketId).emit(event, data);
@@ -161,6 +168,7 @@ export class SocketService {
 
   public emitToDeveloper(developerId: string, event: string, data: any) {
     const sockets = this.developerSockets.get(developerId);
+    console.log("sockets in emit to dev : ", sockets);
     if (sockets) {
       sockets.forEach(socketId => {
         this.io.to(socketId).emit(event, data);
@@ -178,5 +186,40 @@ export class SocketService {
 
   public isDeveloperOnline(developerId: string): boolean {
     return this.developerSockets.has(developerId);
+  }
+
+  public emitUserBlocked(userId: string) {
+    try {
+        console.log(`[SocketService] Attempting to emit block event to user: ${userId}`);
+        const sockets = this.userSockets.get(userId);
+        
+        if (sockets && sockets.size > 0) {
+            console.log(`[SocketService] Found ${sockets.size} active connections for user ${userId}`);
+            
+            sockets.forEach(socketId => {
+                console.log(`[SocketService] Emitting block event to socket: ${socketId}`);
+                
+                this.io.to(socketId).emit('user:blocked', null, (error: any) => {
+                    if (error) {
+                        console.error(`[SocketService] Failed to emit to socket ${socketId}:`, error);
+                    } else {
+                        console.log(`[SocketService] Successfully emitted to socket ${socketId}`);
+                    }
+                });
+                
+                setTimeout(() => {
+                    const socket = this.io.sockets.sockets.get(socketId);
+                    if (socket) {
+                        console.log(`[SocketService] Forcing disconnect for socket: ${socketId}`);
+                        socket.disconnect(true);
+                    }
+                }, 1000);
+            });
+        } else {
+            console.log(`[SocketService] No active sockets found for user: ${userId}`);
+        }
+    } catch (error) {
+        console.error('[SocketService] Error in emitUserBlocked:', error);
+    }
   }
 }

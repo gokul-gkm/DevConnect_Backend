@@ -23,12 +23,10 @@ export class ChatController {
     private sendMessageUseCase: SendMessageUseCase;
     private markMessagesAsReadUseCase: MarkMessagesAsReadUseCase;
     constructor(
-
         private chatRepository: IChatRepository,
         private messageRepository: IMessageRepository,
         private socketService: SocketService,
         private s3Service: S3Service
-
     ) {
         this.createChatUseCase = new CreateChatUseCase(chatRepository);
         this.getUserChatsUseCase = new GetUserChatsUseCase(chatRepository);
@@ -36,7 +34,7 @@ export class ChatController {
         this.getChatMessagesUseCase = new GetChatMessagesUseCase(messageRepository, chatRepository, s3Service);
         this.sendMessageUseCase = new SendMessageUseCase(messageRepository, chatRepository, socketService)
         this.markMessagesAsReadUseCase = new MarkMessagesAsReadUseCase(messageRepository, chatRepository, socketService)
-     }
+    }
     
     async createChat(req: Request, res: Response, next: NextFunction) {
         try {
@@ -96,6 +94,7 @@ export class ChatController {
                     lastMessage: chat.lastMessage,
                     userUnreadCount: chat.userUnreadCount,
                     developerUnreadCount: chat.developerUnreadCount,
+                    lastMessageTime: chat.lastMessageTime,
                     createdAt: chat.createdAt,
                     updatedAt: chat.updatedAt
                 };
@@ -117,10 +116,43 @@ export class ChatController {
                 throw new AppError('Developer ID not found', StatusCodes.BAD_REQUEST)
             }
 
-            const chats = await this.getDeveloperChatsUseCase.execute(developerId);
+            const chats = await this.getDeveloperChatsUseCase.execute(developerId) as unknown as IChats[];
+            
+            const transformedChats = await Promise.all(chats.map(async (chat: IChats) => {
+                let userProfilePictureUrl = null;
+                if (chat.userId?.profilePicture) {
+                    userProfilePictureUrl = await this.s3Service.generateSignedUrl(chat.userId.profilePicture);
+                }
+
+                let developerProfilePictureUrl = null;
+                if (chat.developerId?.profilePicture) {
+                    developerProfilePictureUrl = await this.s3Service.generateSignedUrl(chat.developerId.profilePicture);
+                }
+    
+                return {
+                    _id: chat._id?.toString(),
+                    userId: {
+                        _id: chat.userId._id?.toString(),
+                        username: chat.userId.username,
+                        profilePicture: userProfilePictureUrl
+                    },
+                    developerId: {
+                        _id: chat.developerId._id?.toString(),
+                        username: chat.developerId.username,
+                        profilePicture: developerProfilePictureUrl
+                    },
+                    lastMessage: chat.lastMessage,
+                    userUnreadCount: chat.userUnreadCount,
+                    developerUnreadCount: chat.developerUnreadCount,
+                    lastMessageTime: chat.lastMessageTime,
+                    createdAt: chat.createdAt,
+                    updatedAt: chat.updatedAt
+                };
+            }));
+
             return res.status(StatusCodes.OK).json({
                 success: true,
-                chats
+                chats: transformedChats
             })
         } catch (error) {
             next(error)
@@ -168,12 +200,12 @@ export class ChatController {
             if (!chat) {
                 throw new AppError('Chat not found', StatusCodes.NOT_FOUND)
             }
-
-            const senderType = chat.userId.toString() === userId ? 'user' : 'developer'
+            const senderType = chat.userId.id.toString() === userId ? 'user' : 'developer';
+            const senderId = senderType == 'user'? chat.userId.id.toString() : chat.developerId.id.toString()
 
             const message = await this.sendMessageUseCase.execute({
                 chatId,
-                senderId : userId,
+                senderId : senderId,
                 content,
                 senderType
             })
@@ -195,7 +227,24 @@ export class ChatController {
             if (!chat) {
                 throw new AppError('Chat not found', StatusCodes.NOT_FOUND)
             }
-            const recipientType = chat.userId.toString() === req.userId ? 'user' : 'developer';
+            
+            const isUser = chat.userId.id.toString() === req.userId;
+            const isDeveloper = chat.developerId.id.toString() === req.userId;
+            
+            if (!isUser && !isDeveloper) {
+                throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
+            }
+            
+            const recipientType = isUser ? 'user' : 'developer';
+            
+            console.log('Marking messages as read:', {
+                userId: req.userId,
+                chatUserId: chat.userId.id.toString(),
+                chatDeveloperId: chat.developerId.id.toString(),
+                isUser,
+                isDeveloper,
+                recipientType
+            });
 
             await this.markMessagesAsReadUseCase.execute(chatId, recipientType);
             return res.status(StatusCodes.OK).json({

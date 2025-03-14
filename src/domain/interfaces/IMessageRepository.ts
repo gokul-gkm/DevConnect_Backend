@@ -7,5 +7,5 @@ export interface IMessageRepository {
     hasMore: boolean;
     total: number;
   }>;
-  markMessagesAsRead(chatId: string, recipientType: 'user' | 'developer'): Promise<void>;
+  markMessagesAsRead(chatId: string, recipientType: "user" | "developer"): Promise<string[]>
 }

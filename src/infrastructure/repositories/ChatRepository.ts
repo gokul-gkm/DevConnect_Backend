@@ -54,6 +54,7 @@ export class ChatRepository implements IChatRepository {
         try {
             return await Chat.find({ developerId })
                 .populate('userId', 'username profilePicture')
+                .populate('developerId', 'username profilePicture')
                 .sort({ lastMessageTime: -1 })
         } catch (error) {
             throw new AppError('Failed to get developer chats', StatusCodes.INTERNAL_SERVER_ERROR)
@@ -62,28 +63,64 @@ export class ChatRepository implements IChatRepository {
 
     async updateLastMessage(chatId: string, message: string, senderType: "user" | "developer"): Promise<void> {
         try {
+            
             const update: any = {
                 lastMessage: message,
                 lastMessageTime: new Date()
             };
+
             if (senderType === 'user') {
                 update.$inc = { developerUnreadCount: 1 };
-            } else {
-                update.$inc = { developerCount: 1 };
+            } else if (senderType === 'developer') {
+                update.$inc = { userUnreadCount: 1 };
             }
-            await Chat.findByIdAndUpdate(chatId, update)
+            
+            const updatedChat = await Chat.findByIdAndUpdate(
+                chatId,
+                update,
+                { new: true }
+            );
+
+            if (!updatedChat) {
+                throw new AppError('Chat not found', StatusCodes.NOT_FOUND);
+            }
+
+            console.log('Updated chat unread counts:', {
+                userUnreadCount: updatedChat.userUnreadCount,
+                developerUnreadCount: updatedChat.developerUnreadCount
+            });
         } catch (error) {
+            console.error('Error updating last message:', error);
             throw new AppError('Failed to update last message', StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }
 
     async resetUnreadCount(chatId: string, type: "user" | "developer"): Promise<void> {
         try {
-            const update = type === 'user'
+            console.log('Resetting unread count:', { chatId, type });
+            
+            const update = type === 'developer' 
                 ? { userUnreadCount: 0 }
-                : { developerUnreadCount: 0 }
-            await Chat.findByIdAndUpdate(chatId, update)
+                : { developerUnreadCount: 0 };
+
+            const updatedChat = await Chat.findByIdAndUpdate(
+                chatId,
+                update,
+                { new: true }
+            );
+
+            if (!updatedChat) {
+                throw new AppError('Chat not found', StatusCodes.NOT_FOUND);
+            }
+
+            console.log('Reset unread count result:', {
+                userUnreadCount: updatedChat.userUnreadCount,
+                developerUnreadCount: updatedChat.developerUnreadCount,
+                resetType: type,
+                resetField: Object.keys(update)[0]
+            });
         } catch (error) {
+            console.error('Error resetting unread count:', error);
             throw new AppError('Failed to reset unread count', StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }

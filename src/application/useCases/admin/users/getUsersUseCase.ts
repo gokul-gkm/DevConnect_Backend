@@ -11,7 +11,6 @@ export class GetUsersUseCase {
     async execute(queryParams: QueryParams): Promise<PaginatedResponse <any>> {
         try {
             const result = await this.userRepository.findUsers(queryParams);
-            console.log("results in usecase : ", result);
 
             result.data = await Promise.all(
                 result.data.map(async (user) => {

@@ -8,11 +8,15 @@ interface DecodedJwt {
     exp?: number;
 }
 
-export const adminAuthMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => { 
+export const adminAuthMiddleware = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => { 
     const adminAccessToken = req.cookies.adminAccessToken;
     const adminRefreshToken = req.cookies.adminRefreshToken;
 
-    if(!adminAccessToken && !adminRefreshToken) {
+    if (!adminAccessToken && !adminRefreshToken) {
         res.status(401).json({ message: 'Unauthorized', success: false });
         return
     }
@@ -35,7 +39,7 @@ export const adminAuthMiddleware = async (req: Request, res: Response, next: Nex
                 maxAge: 15 * 60 * 1000
             });
 
-            req.userId = decodedRefreshToken.adminId;
+            req.adminId = decodedRefreshToken.adminId;
             next();
             return;
         } catch (refreshTokenError) {

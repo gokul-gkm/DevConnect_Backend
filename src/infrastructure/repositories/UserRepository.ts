@@ -115,7 +115,6 @@ export class UserRepository implements IUserRepository{
                     User.countDocuments(filter)
             ])
 
-            console.log("users in repo : ", users);
 
             return {
                 data: users as IUser[],

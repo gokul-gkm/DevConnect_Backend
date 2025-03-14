@@ -1,21 +1,26 @@
 export interface DeveloperSearchDTO {
     search?: string;
     skills?: string[];
-    experience?: string;
-    availability?: string;
+    languages?: string[];
+    priceRange?: {
+        min?: number;
+        max?: number;
+    };
     location?: string;
-    sort?: 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'experience_high' | 'experience_low';
+    sort?: 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'price_low' | 'price_high';
     page?: string | number;
     limit?: string | number;
 }
 
-
 export interface ValidatedSearchParams {
     search: string;
     skills: string[];
-    experience?: string;
-    availability?: string;
-    location?: string;
+    languages: string[];
+    priceRange?: {
+        min?: number;
+        max?: number;
+    };
+    location: string;
     sort: string;
     page: number;
     limit: number;
@@ -37,10 +42,9 @@ export interface DeveloperSearchResponse {
         developerProfile: {
             title?: string;
             skills: string[];
-            experience: string;
-            availability: string;
+            languages: string[];
+            hourlyRate?: number;
             bio?: string;
-            yearsOfExperience?: number;
         };
     }[];
     total: number;

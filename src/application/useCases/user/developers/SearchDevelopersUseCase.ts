@@ -15,60 +15,78 @@ export class SearchDevelopersUseCase {
             const {
                 search = '',
                 skills = [],
-                experience,
-                availability,
-                location,
+                languages = [],
+                priceRange,
+                location = '',
                 sort = 'newest',
                 page: pageParam = 1,
                 limit: limitParam = 8
             } = searchParams;
-
+    
             const page = typeof pageParam === 'string' ? parseInt(pageParam, 10) : pageParam;
             const limit = typeof limitParam === 'string' ? parseInt(limitParam, 10) : limitParam;
 
             if (isNaN(page) || page < 1) {
                 throw new AppError('Page must be greater than 0', StatusCodes.BAD_REQUEST);
             }
-
+    
             if (isNaN(limit) || limit < 1) {
                 throw new AppError('Limit must be greater than 0', StatusCodes.BAD_REQUEST);
             }
-
+    
             if (limit > 50) {
                 throw new AppError('Limit cannot exceed 50', StatusCodes.BAD_REQUEST);
             }
 
-            const validSortOptions = ['newest', 'oldest', 'name_asc', 'name_desc', 'experience_high', 'experience_low'];
+            const validSortOptions = ['newest', 'oldest', 'name_asc', 'name_desc', 'price_low', 'price_high'];
             if (sort && !validSortOptions.includes(sort)) {
                 throw new AppError('Invalid sort option', StatusCodes.BAD_REQUEST);
             }
 
+            let validatedPriceRange;
+            if (priceRange) {
+                const min = typeof priceRange.min === 'string' ? parseFloat(priceRange.min) : priceRange.min;
+                const max = typeof priceRange.max === 'string' ? parseFloat(priceRange.max) : priceRange.max;
+    
+                if ((min !== undefined && isNaN(min)) || (max !== undefined && isNaN(max))) {
+                    throw new AppError('Invalid price range values', StatusCodes.BAD_REQUEST);
+                }
+    
+                if (min !== undefined && max !== undefined && min > max) {
+                    throw new AppError('Minimum price cannot be greater than maximum price', StatusCodes.BAD_REQUEST);
+                }
+    
+                validatedPriceRange = { min, max };
+            }
+    
+            const validatedSkills = Array.isArray(skills) ? skills : [];
+            const validatedLanguages = Array.isArray(languages) ? languages : [];
+    
             const result = await this.developerRepository.searchDevelopers({
                 search,
-                skills,
-                experience,
-                availability,
+                skills: validatedSkills,
+                languages: validatedLanguages,
+                priceRange: validatedPriceRange,
                 location,
                 sort,
                 page,
                 limit
             });
-
+    
             const developersWithUrls = await Promise.all(
                 result.developers.map(async (developer) => {
-                    const developerData = { ...developer };
-                    if (developerData.profilePicture) {
+                    if (developer.profilePicture) {
                         try {
-                            developerData.profilePicture = await this.s3Service.generateSignedUrl(developerData.profilePicture);
+                            developer.profilePicture = await this.s3Service.generateSignedUrl(developer.profilePicture);
                         } catch (error) {
                             console.error('Error getting signed URL:', error);
-                            developerData.profilePicture = null;
+                            developer.profilePicture = null;
                         }
                     }
-                    return developerData;
+                    return developer;
                 })
             );
-
+    
             return {
                 ...result,
                 developers: developersWithUrls,

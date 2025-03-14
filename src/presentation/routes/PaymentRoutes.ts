@@ -6,6 +6,7 @@ import { WalletRepository } from '@/infrastructure/repositories/WalletRepository
 import { PaymentRepository } from '@/infrastructure/repositories/PaymentRepository';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { autherization } from '../middleware/autherization';
 
 
 const router = Router();
@@ -20,33 +21,23 @@ const paymentController = new PaymentController(
   paymentRepository
 );
 
-router.post(
-  '/sessions/:sessionId/payment',
-  authMiddleware,
+router.post( '/sessions/:sessionId/payment', authMiddleware, autherization, 
   paymentController.createPaymentSession.bind(paymentController)
 );
 
-router.post(
-  '/webhook',
-  express.raw({ type: 'application/json' }),
+router.post( '/webhook', express.raw({ type: 'application/json' }),
   paymentController.handleWebhook.bind(paymentController)
 );
 
-router.post(
-  '/sessions/:sessionId/transfer',
-  adminAuthMiddleware,
+router.post( '/sessions/:sessionId/transfer', adminAuthMiddleware,
   paymentController.transferToDevWallet.bind(paymentController)
 );
 
-router.get(
-  '/admin/wallet',
-  adminAuthMiddleware,
+router.get( '/admin/wallet', adminAuthMiddleware, autherization, 
   paymentController.getAdminWalletDetails.bind(paymentController)
 );
 
-router.get(
-  '/wallet',
-  authMiddleware,
+router.get( '/wallet', authMiddleware, autherization, 
   paymentController.getWalletDetails.bind(paymentController)
 );
 

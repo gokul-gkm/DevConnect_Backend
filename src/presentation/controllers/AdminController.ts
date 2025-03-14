@@ -95,9 +95,7 @@ export class AdminController{
             if (queryParams.sortBy && !allowedSortFields.includes(queryParams.sortBy)) {
                 queryParams.sortBy = 'createdAt'
             }
-            console.log("before usecase")
             const users = await this.getUsersUseCase.execute(queryParams);
-            console.log("users in controller : ", users);
 
             return res.status(StatusCodes.OK).json({ success: true, ...users });
         } catch (error) {
@@ -143,7 +141,6 @@ export class AdminController{
 
             
         } catch (error: any) {
-            console.error('Error in listDevelopers controller:', error);
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({
                     success: false,

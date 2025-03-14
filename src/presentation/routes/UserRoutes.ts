@@ -5,6 +5,7 @@ import { authMiddleware } from "../middleware/authMiddleware";
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { upload } from "@/utils/multer";
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
+import { autherization } from "../middleware/autherization";
 
 const userRouter = Router()
 
@@ -14,19 +15,18 @@ const s3Service = new S3Service()
 
 const userController = new UserController(userRepository,developerRepository, s3Service);
 
-userRouter.get('/profile', authMiddleware, (req, res, next) => {
+userRouter.get('/profile', authMiddleware,autherization,(req, res, next) => {
     userController.getProfile(req, res).catch(next);
 });
 
-userRouter.put('/profile/update', 
-    authMiddleware, 
+userRouter.put('/profile/update', authMiddleware, autherization,
     upload.single('profilePicture'),
     (req, res, next) => {
         userController.updateProfile(req, res).catch(next);
     }
 );
 
-userRouter.put('/change-password', authMiddleware, (req, res, next) => {
+userRouter.put('/change-password', authMiddleware, autherization, (req, res, next) => {
     userController.changePassword(req, res).catch(next)
 })
 

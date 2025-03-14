@@ -15,6 +15,7 @@ import { authMiddleware } from "../middleware/authMiddleware";
 import { ProjectRepository } from "@/infrastructure/repositories/ProjectRepository";
 import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 import { StatusCodes } from "http-status-codes";
+import { autherization } from "../middleware/autherization";
 
 const devRouter = Router();
 
@@ -76,12 +77,11 @@ devRouter.post('/auth/login', async (req, res) => {
   await devAuthController.login(req, res);
 })
 
-devRouter.get('/profile', authMiddleware, (req, res, next) => {
+devRouter.get('/profile', authMiddleware, autherization, (req, res, next) => {
   devController.getProfile(req, res).catch(next);
 });
 
-devRouter.put('/profile/update', 
-    authMiddleware, 
+devRouter.put('/profile/update', authMiddleware, autherization, 
     upload.fields([
       { name: 'profilePicture', maxCount: 1 },
       { name: 'resume', maxCount: 1 }
@@ -91,37 +91,30 @@ devRouter.put('/profile/update',
     }
 );
 
-devRouter.post( '/add-project',
-  authMiddleware,
+devRouter.post( '/add-project', authMiddleware, autherization, 
   upload.single('coverImage'),
   (req, res, next) => {
     devController.addProject(req,res).catch(next);
 })
 
-devRouter.get('/projects', authMiddleware, (req, res) => {
+devRouter.get('/projects', authMiddleware,autherization,  (req, res) => {
   devController.getDeveloperProjects(req, res)
 })
 
-devRouter.get(
-  '/projects/:projectId',
-  authMiddleware,
+devRouter.get( '/projects/:projectId', authMiddleware, autherization, 
   (req, res) => {
     devController.getProject(req, res)
   }
 );
 
-devRouter.put(
-  '/project/edit/:projectId',
-  authMiddleware,
+devRouter.put( '/project/edit/:projectId', authMiddleware, autherization, 
   upload.single('coverImage'),
   (req, res, next) => {
     devController.updateProject(req,res).catch(next);
 }
 );
 
-devRouter.delete(
-  '/project/remove/:projectId',
-  authMiddleware,
+devRouter.delete( '/project/remove/:projectId', authMiddleware, autherization, 
   (req, res) => {
     devController.deleteProject(req, res)
   }

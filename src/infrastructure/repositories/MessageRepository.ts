@@ -40,17 +40,45 @@ export class MessageRepository implements IMessageRepository{
         }
     }
 
-    async markMessagesAsRead(chatId: string, recipientType: "user" | "developer"): Promise<void> {
+    async markMessagesAsRead(chatId: string, recipientType: "user" | "developer"): Promise<string[]> {
         try {
-            await Message.updateMany(
-                {
-                    chatId,
-                    senderType: recipientType === 'user' ? 'developer' : 'user',
-                    read: false
-                },
-                {read: true}
-            )
+            console.log('Starting markMessagesAsRead:', { chatId, recipientType });
+            
+            const senderType = recipientType === 'user' ? 'developer' : 'user';
+            
+            console.log('Looking for unread messages with:', {
+                chatId,
+                senderType,
+                recipientType
+            });
+
+            const messages = await Message.find({
+                chatId,
+                senderType: senderType,
+                read: false
+            }).select('_id senderType');
+
+            console.log('Found unread messages to mark as read:', messages.map(m => ({
+                id: m._id.toString(),
+                senderType: m.senderType
+            })));
+
+            if (messages.length > 0) {
+                const updateResult = await Message.updateMany(
+                    {
+                        chatId,
+                        senderType: senderType,
+                        read: false
+                    },
+                    { read: true }
+                );
+            }
+
+            const messageIds = messages.map(msg => msg._id.toString());
+            
+            return messageIds;
         } catch (error) {
+            console.error('Error in markMessagesAsRead:', error);
             throw new AppError('Failed to mark messages as read', StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }

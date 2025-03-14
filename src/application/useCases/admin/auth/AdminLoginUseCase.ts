@@ -31,6 +31,13 @@ export class AdminLoginUseCase{
             process.env.JWT_ADMIN_REFRESH_SECRET as string,
             { expiresIn: '7d' }
         )
-        return { accessToken, refreshToken, admin };
+        return {
+            accessToken,
+            refreshToken,
+            admin: {
+                _id: admin._id,
+                email: admin.email
+            }
+        };
     }
 }
