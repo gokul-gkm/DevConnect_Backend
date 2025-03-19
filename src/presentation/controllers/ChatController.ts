@@ -31,7 +31,7 @@ export class ChatController {
         this.createChatUseCase = new CreateChatUseCase(chatRepository);
         this.getUserChatsUseCase = new GetUserChatsUseCase(chatRepository);
         this.getDeveloperChatsUseCase = new GetDeveloperChatsUseCase(chatRepository);
-        this.getChatMessagesUseCase = new GetChatMessagesUseCase(messageRepository, chatRepository, s3Service);
+        this.getChatMessagesUseCase = new GetChatMessagesUseCase(messageRepository, chatRepository);
         this.sendMessageUseCase = new SendMessageUseCase(messageRepository, chatRepository, socketService)
         this.markMessagesAsReadUseCase = new MarkMessagesAsReadUseCase(messageRepository, chatRepository, socketService)
     }
@@ -236,15 +236,6 @@ export class ChatController {
             }
             
             const recipientType = isUser ? 'user' : 'developer';
-            
-            console.log('Marking messages as read:', {
-                userId: req.userId,
-                chatUserId: chat.userId.id.toString(),
-                chatDeveloperId: chat.developerId.id.toString(),
-                isUser,
-                isDeveloper,
-                recipientType
-            });
 
             await this.markMessagesAsReadUseCase.execute(chatId, recipientType);
             return res.status(StatusCodes.OK).json({

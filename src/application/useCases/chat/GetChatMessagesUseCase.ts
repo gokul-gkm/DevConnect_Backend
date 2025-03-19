@@ -2,14 +2,12 @@ import { GetMessagesDTO } from "@/application/dto/chat/ChatDTO";
 import { AppError } from "@/domain/errors/AppError";
 import { IChatRepository } from "@/domain/interfaces/IChatRepository";
 import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
-import { S3Service } from "@/infrastructure/services/S3_Service";
 import { StatusCodes } from "http-status-codes";
 
 export class GetChatMessagesUseCase {
     constructor( 
         private messageRepository: IMessageRepository,
         private chatRepository: IChatRepository,
-        private s3Service: S3Service
     ) { }
     
     async execute({ chatId, page, limit }: GetMessagesDTO) {

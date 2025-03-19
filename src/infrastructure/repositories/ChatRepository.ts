@@ -85,10 +85,6 @@ export class ChatRepository implements IChatRepository {
                 throw new AppError('Chat not found', StatusCodes.NOT_FOUND);
             }
 
-            console.log('Updated chat unread counts:', {
-                userUnreadCount: updatedChat.userUnreadCount,
-                developerUnreadCount: updatedChat.developerUnreadCount
-            });
         } catch (error) {
             console.error('Error updating last message:', error);
             throw new AppError('Failed to update last message', StatusCodes.INTERNAL_SERVER_ERROR)
@@ -97,12 +93,12 @@ export class ChatRepository implements IChatRepository {
 
     async resetUnreadCount(chatId: string, type: "user" | "developer"): Promise<void> {
         try {
-            console.log('Resetting unread count:', { chatId, type });
             
             const update = type === 'developer' 
                 ? { userUnreadCount: 0 }
                 : { developerUnreadCount: 0 };
 
+            
             const updatedChat = await Chat.findByIdAndUpdate(
                 chatId,
                 update,
@@ -113,12 +109,6 @@ export class ChatRepository implements IChatRepository {
                 throw new AppError('Chat not found', StatusCodes.NOT_FOUND);
             }
 
-            console.log('Reset unread count result:', {
-                userUnreadCount: updatedChat.userUnreadCount,
-                developerUnreadCount: updatedChat.developerUnreadCount,
-                resetType: type,
-                resetField: Object.keys(update)[0]
-            });
         } catch (error) {
             console.error('Error resetting unread count:', error);
             throw new AppError('Failed to reset unread count', StatusCodes.INTERNAL_SERVER_ERROR)

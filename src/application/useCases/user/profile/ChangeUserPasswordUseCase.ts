@@ -24,14 +24,21 @@ export class ChangeUserPasswordUseCase {
                 throw new AppError('Current password is incorrect', StatusCodes.UNAUTHORIZED);
             }
 
+            if (currentPassword == newPassword) {
+                throw new AppError('New password should not be the same as the current password.', StatusCodes.BAD_REQUEST)
+            }
+
             const hashedPassword = await bcrypt.hash(newPassword, 10);
 
             await this.userRepository.update(userId, { password: hashedPassword });
             
             
-        } catch (error) {
-            if (error instanceof AppError) throw error;
-            throw new AppError('Failed to Update the Password', StatusCodes.INTERNAL_SERVER_ERROR)
+        } catch (error: any) {
+
+            throw new AppError(
+                error.message || 'Failed to Update the Password',
+                error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+            );
         }
 
     }

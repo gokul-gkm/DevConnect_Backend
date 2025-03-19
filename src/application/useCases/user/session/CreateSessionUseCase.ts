@@ -49,7 +49,6 @@ export class CreateSessionUseCase {
       );
 
       if (!isAvailable) {
-        console.log("selected time slot is not available");
         throw new AppError('Selected time slot is not available', StatusCodes.BAD_REQUEST);
       }
 

@@ -12,7 +12,9 @@ export class MarkMessagesAsReadUseCase{
     ){}
     async execute(chatId: string, recipientType: 'user' | 'developer') {
         try {
+            
             const updatedMessages = await this.messageRepository.markMessagesAsRead(chatId, recipientType);
+            
             await this.chatRepository.resetUnreadCount(chatId, recipientType);
             
             this.socketService.emitToChat(chatId, 'messages-read', {
@@ -20,8 +22,10 @@ export class MarkMessagesAsReadUseCase{
                 recipientType,
                 messageIds: updatedMessages
             });
-
+            
+            return updatedMessages;
         } catch (error) {
+            console.error('MarkMessagesAsReadUseCase: Error:', error);
             throw new AppError('Failed to mark messages as read', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }

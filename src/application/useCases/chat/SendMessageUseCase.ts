@@ -14,6 +14,7 @@ export class SendMessageUseCase {
     ) { }
     
     async execute({ chatId, content, senderId, senderType }: SendMessageDTO) {
+        
         try {
             const message = await this.messageRepository.createMessage({
                 chatId: new mongoose.Types.ObjectId(chatId),
@@ -22,34 +23,36 @@ export class SendMessageUseCase {
                 senderType,
                 read: false
             });
+            
             await this.chatRepository.updateLastMessage(chatId, content, senderType);
+            
             const chat = await this.chatRepository.getChatById(chatId);
             if (!chat) {
                 throw new AppError('Chat not found', StatusCodes.NOT_FOUND)
             }
-
+            
             this.socketService.emitToChat(chatId, 'new-message', {
+                chatId,
                 message,
                 chat
-            })
+            });
+            
             if (senderType === 'user') {
                 this.socketService.emitToDeveloper(chat.developerId.toString(), 'new-message-notification', {
                     chatId,
                     message,
                     sender: chat.userId
                 });
-
-                console.log("emit to dev new message noti");
             } else {
                 this.socketService.emitToUser(chat.userId.toString(), 'new-message-notification', {
                     chatId,
                     message,
                     sender: chat.developerId
                 });
-                console.log("emit to user new message noti");
             }
             return message
         } catch (error) {
+            console.error('💬 ERROR SENDING MESSAGE', error);
             throw new AppError('Failed to send message', StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }

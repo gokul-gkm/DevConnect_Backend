@@ -42,15 +42,9 @@ export class MessageRepository implements IMessageRepository{
 
     async markMessagesAsRead(chatId: string, recipientType: "user" | "developer"): Promise<string[]> {
         try {
-            console.log('Starting markMessagesAsRead:', { chatId, recipientType });
             
             const senderType = recipientType === 'user' ? 'developer' : 'user';
-            
-            console.log('Looking for unread messages with:', {
-                chatId,
-                senderType,
-                recipientType
-            });
+
 
             const messages = await Message.find({
                 chatId,
@@ -58,10 +52,6 @@ export class MessageRepository implements IMessageRepository{
                 read: false
             }).select('_id senderType');
 
-            console.log('Found unread messages to mark as read:', messages.map(m => ({
-                id: m._id.toString(),
-                senderType: m.senderType
-            })));
 
             if (messages.length > 0) {
                 const updateResult = await Message.updateMany(

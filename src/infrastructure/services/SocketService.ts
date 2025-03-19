@@ -19,7 +19,6 @@ export class SocketService {
     this.io = io;
     this.setupMiddleware();
     this.setupEventHandlers();
-    console.log('SocketService initialized')
 }
 
   public static getInstance(server?: Server, io?: SocketServer): SocketService {
@@ -36,7 +35,6 @@ export class SocketService {
     this.io.use(async (socket, next) => {
       try {
         const token = socket.handshake.auth.token;
-        console.log('Socket auth token:', token ? 'Present' : 'Missing');
         if (!token) {
           throw new Error('Authentication error');
         }
@@ -46,7 +44,6 @@ export class SocketService {
           role?: string;
           developerId?: string;
         };
-        console.log('Socket auth decoded:', decoded);
 
         socket.data = {
           userId: decoded.userId,
@@ -67,6 +64,7 @@ export class SocketService {
     this.io.on('connection', (socket) => {
       const { userId, role, developerId } = socket.data;
       logger.info(`Socket connected: ${socket.id} - Role: ${role}`);
+      logger.info(`Current connections - Users: ${this.countUserSockets()}, Developers: ${this.countDeveloperSockets()}`);
 
       if (role === 'developer' && developerId) {
         this.addSocket(this.developerSockets, developerId, socket.id);
@@ -92,9 +90,12 @@ export class SocketService {
   }
 
   private handleUserEvents(socket: any) {
-    socket.on('user:join-chat', (chatId: string) => {
+    socket.on('user:join-chat', (chatId: string) => { 
       socket.join(`chat:${chatId}`);
-      logger.info(`User ${socket.data.userId} joined chat ${chatId}`);
+      
+      const roomName = `chat:${chatId}`;
+      const room = this.io.sockets.adapter.rooms.get(roomName);
+
     });
 
     socket.on('user:leave-chat', (chatId: string) => {
@@ -131,6 +132,19 @@ export class SocketService {
         developerId: socket.data.developerId
       });
     });
+
+    socket.on('ping', (data: any) => {
+      console.log('🏓 RECEIVED PING', { 
+        socketId: socket.id,
+        userId: socket.data.userId,
+        data
+      });
+      
+      socket.emit('pong', { 
+        time: new Date().toISOString(),
+        received: data
+      });
+    });
   }
 
   private handleDisconnect(socket: any) {
@@ -158,7 +172,6 @@ export class SocketService {
 
   public emitToUser(userId: string, event: string, data: any) {
     const sockets = this.userSockets.get(userId);
-    console.log("socket in emit to user : ", sockets);
     if (sockets) {
       sockets.forEach(socketId => {
         this.io.to(socketId).emit(event, data);
@@ -168,7 +181,6 @@ export class SocketService {
 
   public emitToDeveloper(developerId: string, event: string, data: any) {
     const sockets = this.developerSockets.get(developerId);
-    console.log("sockets in emit to dev : ", sockets);
     if (sockets) {
       sockets.forEach(socketId => {
         this.io.to(socketId).emit(event, data);
@@ -176,8 +188,15 @@ export class SocketService {
     }
   }
 
-  public emitToChat(chatId: string, event: string, data: any) {
-    this.io.to(`chat:${chatId}`).emit(event, data);
+  public emitToChat(chatId: string, event: string, data: any) { 
+    const roomName = `chat:${chatId}`;
+    const room = this.io.sockets.adapter.rooms.get(roomName);
+    
+    if (room && room.size > 0) {
+      this.io.to(roomName).emit(event, data);
+    } else {
+      console.warn(`⚠️ NO SOCKETS IN ROOM: ${roomName}`);
+    }
   }
 
   public isUserOnline(userId: string): boolean {
@@ -190,14 +209,11 @@ export class SocketService {
 
   public emitUserBlocked(userId: string) {
     try {
-        console.log(`[SocketService] Attempting to emit block event to user: ${userId}`);
         const sockets = this.userSockets.get(userId);
         
         if (sockets && sockets.size > 0) {
-            console.log(`[SocketService] Found ${sockets.size} active connections for user ${userId}`);
             
             sockets.forEach(socketId => {
-                console.log(`[SocketService] Emitting block event to socket: ${socketId}`);
                 
                 this.io.to(socketId).emit('user:blocked', null, (error: any) => {
                     if (error) {
@@ -210,16 +226,29 @@ export class SocketService {
                 setTimeout(() => {
                     const socket = this.io.sockets.sockets.get(socketId);
                     if (socket) {
-                        console.log(`[SocketService] Forcing disconnect for socket: ${socketId}`);
                         socket.disconnect(true);
                     }
                 }, 1000);
             });
-        } else {
-            console.log(`[SocketService] No active sockets found for user: ${userId}`);
-        }
+        } 
     } catch (error) {
         console.error('[SocketService] Error in emitUserBlocked:', error);
     }
+  }
+  
+  private countUserSockets(): number {
+    let count = 0;
+    this.userSockets.forEach(sockets => {
+        count += sockets.size;
+    });
+    return count;
+  }
+
+  private countDeveloperSockets(): number {
+    let count = 0;
+    this.developerSockets.forEach(sockets => {
+        count += sockets.size;
+    });
+    return count;
   }
 }
