@@ -32,7 +32,7 @@ export const adminAuthMiddleware = async (
         try {
             const decodedRefreshToken = jwt.verify(adminRefreshToken, process.env.JWT_ADMIN_REFRESH_SECRET as string) as DecodedJwt;
 
-            const newAdminAccessToken = jwt.sign({ adminId: decodedRefreshToken.adminId }, process.env.JWT_ADMIN_ACCESS_SECRET as string, { expiresIn: '15m' });
+            const newAdminAccessToken = jwt.sign({ adminId: decodedRefreshToken.adminId }, process.env.JWT_ADMIN_ACCESS_SECRET as string, { expiresIn: '24h' });
 
             res.cookie('adminAccessToken', newAdminAccessToken, {
                 httpOnly: true,

@@ -33,7 +33,7 @@ export class LoginUserUseCase{
         const accessToken = jwt.sign(
             { userId: user._id },
             process.env.JWT_ACCESS_SECRET as string,
-            {expiresIn : "15m"}
+            {expiresIn : "24h"}
         );
         const refreshToken = jwt.sign(
             { userId: user._id },

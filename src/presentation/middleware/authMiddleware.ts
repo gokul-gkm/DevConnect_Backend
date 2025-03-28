@@ -38,7 +38,7 @@ export const authMiddleware = (
             const newAccessToken = jwt.sign(
                 { userId: decodedRefreshToken.userId }, 
                 process.env.JWT_ACCESS_SECRET as string, 
-                { expiresIn: '15m' }
+                { expiresIn: '24h' }
             );
 
             res.cookie('accessToken', newAccessToken, {

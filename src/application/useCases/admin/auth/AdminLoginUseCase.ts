@@ -24,7 +24,7 @@ export class AdminLoginUseCase{
         const accessToken = jwt.sign(
             { adminId: admin._id },
             process.env.JWT_ADMIN_ACCESS_SECRET as string,
-            { expiresIn: "15m" }
+            { expiresIn: "24h" }
         );
         const refreshToken = jwt.sign(
             { adminId: admin._id },
