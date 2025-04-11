@@ -13,6 +13,10 @@ import { RejectSessionRequestUseCase } from '@/application/useCases/developer/se
 import { StatusCodes } from 'http-status-codes';
 import { GetSessionDetailsUseCase } from '@/application/useCases/user/session/GetSessionDetailsUseCase';
 import { S3Service } from '@/infrastructure/services/S3_Service';
+import { NotificationRepository } from '@/infrastructure/repositories/NotificationRepositoty';
+import { SocketService } from '@/infrastructure/services/SocketService';
+import { NotificationService } from '@/infrastructure/services/NotificationService';
+
 export class SessionController {
   private createSessionUseCase: CreateSessionUseCase;
   private getUserSessionsUseCase: GetUserSessionsUseCase;
@@ -27,16 +31,21 @@ export class SessionController {
     private mailService: MailService,
     private userRepository: UserRepository,
     private developerRepository: DeveloperRepository,
-    private s3Service: S3Service
-
+    private s3Service: S3Service,
+    private notificationRepository: NotificationRepository,
+    private socketService: SocketService,
+    private notificationService: NotificationService
     ) {
-    this.createSessionUseCase = new CreateSessionUseCase(sessionRepository, userRepository, developerRepository, mailService);
+    this.createSessionUseCase = new CreateSessionUseCase(sessionRepository, userRepository, developerRepository, notificationService);
     this.getUserSessionsUseCase = new GetUserSessionsUseCase(sessionRepository);
     this.getUpcomingSessionsUseCase = new GetUpcomingSessionsUseCase(sessionRepository,s3Service);
     this.getSessionRequestsUseCase = new GetSessionRequestsUseCase(sessionRepository);
-    this.acceptSessionRequestUseCase = new AcceptSessionRequestUseCase(sessionRepository)
-    this.rejectSessionRequestUseCase = new RejectSessionRequestUseCase(sessionRepository)
-    this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository,s3Service)
+    this.acceptSessionRequestUseCase = new AcceptSessionRequestUseCase(
+      sessionRepository,
+      notificationService
+    );
+    this.rejectSessionRequestUseCase = new RejectSessionRequestUseCase(sessionRepository, notificationService)
+    this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository, s3Service);
   }
 
 
@@ -168,11 +177,17 @@ export class SessionController {
       if (!developerId) {
         throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
       }
-      const sessions = await this.getSessionRequestsUseCase.execute(developerId);
+      
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5; 
+
+      const result = await this.getSessionRequestsUseCase.execute(developerId, page, limit);
 
       res.status(StatusCodes.OK).json({
         status: 'success',
-        data: sessions
+        data: result.sessions,
+        pagination: result.pagination,
+        stats: result.stats
       });
     } catch (error) {
       if (error instanceof AppError) {

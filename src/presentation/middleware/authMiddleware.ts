@@ -17,7 +17,7 @@ export const authMiddleware = (
     const refreshToken = req.cookies.refreshToken;
 
     if (!accessToken && !refreshToken) {
-        res.status(401).json({ message: 'Unauthorized', success: false });
+        res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized', success: false });
         return;
     }
 
@@ -28,7 +28,7 @@ export const authMiddleware = (
         return;
     } catch (accessTokenError) {
         if (!refreshToken) {
-            res.status(401).json({ message: 'Unauthorized', success: false });
+            res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized', success: false });
             return;
         }
 

@@ -293,15 +293,51 @@ export class SessionRepository implements ISessionRepository  {
   }
 
 
-  async getSessionRequests(developerId: Types.ObjectId) {
+  async getSessionRequests(developerId: Types.ObjectId, page: number = 1, limit: number = 5) {
     try {
+      const skip = (page - 1) * limit;
+
+      const statusCounts = await Session.aggregate([
+        { $match: { developerId } },
+        { $group: { 
+            _id: "$status", 
+            count: { $sum: 1 } 
+          } 
+        }
+      ]);
+
+      const statusCountMap = statusCounts.reduce((acc: Record<string, number>, curr: any) => {
+        acc[curr._id] = curr.count;
+        return acc;
+      }, {});
+
+      const totalCount = await Session.countDocuments({ developerId });
+      const totalPages = Math.ceil(totalCount / limit);
+      
       const sessions = await Session.find({
         developerId,
       })
       .populate('userId', 'username email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-      return sessions;
+      return {
+        sessions,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: totalCount,
+          itemsPerPage: limit
+        },
+        stats: {
+          total: totalCount,
+          pending: statusCountMap['pending'] || 0,
+          approved: statusCountMap['approved'] || 0,
+          rejected: statusCountMap['rejected'] || 0,
+          scheduled: statusCountMap['scheduled'] || 0
+        }
+      };
     } catch (error) {
       console.error('Get session requests repository error:', error);
       throw new AppError('Failed to fetch session requests', StatusCodes.INTERNAL_SERVER_ERROR);

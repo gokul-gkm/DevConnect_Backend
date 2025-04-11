@@ -66,13 +66,38 @@ export class SocketService {
       logger.info(`Socket connected: ${socket.id} - Role: ${role}`);
       logger.info(`Current connections - Users: ${this.countUserSockets()}, Developers: ${this.countDeveloperSockets()}`);
 
-      if (role === 'developer' && developerId) {
-        this.addSocket(this.developerSockets, developerId, socket.id);
+      if (role === 'developer' && userId) {
+        this.addSocket(this.developerSockets, userId, socket.id);
         this.handleDeveloperEvents(socket);
       } else if (userId) {
         this.addSocket(this.userSockets, userId, socket.id);
         this.handleUserEvents(socket);
       }
+
+      socket.on('notification:mark-read', async (notificationId: string) => {
+        try {
+          if (socket.data.userId) {
+            this.io.to(socket.id).emit('notification:marked-read', {
+              id: notificationId,
+              success: true
+            });
+          }
+        } catch (error) {
+          logger.error('Error marking notification as read:', error);
+        }
+      });
+
+      socket.on('notification:mark-all-read', async () => {
+        try {
+          if (socket.data.userId) {
+            this.io.to(socket.id).emit('notification:all-marked-read', {
+              success: true
+            });
+          }
+        } catch (error) {
+          logger.error('Error marking all notifications as read:', error);
+        }
+      });
 
       this.handleCommonEvents(socket);
 
@@ -250,5 +275,79 @@ export class SocketService {
         count += sockets.size;
     });
     return count;
+  }
+
+  public emitNewNotification(userId: string, notification: any) {
+    const userSockets = this.userSockets.get(userId);
+    if (userSockets && userSockets.size > 0) {
+      userSockets.forEach(socketId => {
+        this.io.to(socketId).emit('notification:new', { notification });
+      });
+    }
+
+    const developerSockets = this.developerSockets.get(userId);
+    if (developerSockets && developerSockets.size > 0) {
+      developerSockets.forEach(socketId => {
+        this.io.to(socketId).emit('notification:new', { notification });
+      });
+    }
+  }
+
+  public emitNotificationRead(userId: string, notificationId: string) {
+    const userSockets = this.userSockets.get(userId);
+    if (userSockets && userSockets.size > 0) {
+      userSockets.forEach(socketId => {
+        this.io.to(socketId).emit('notification:marked-read', {
+          id: notificationId,
+          success: true
+        });
+      });
+    }
+
+    const developerSockets = this.developerSockets.get(userId);
+    if (developerSockets && developerSockets.size > 0) {
+      developerSockets.forEach(socketId => {
+        this.io.to(socketId).emit('notification:marked-read', {
+          id: notificationId,
+          success: true
+        });
+      });
+    }
+  }
+
+  public emitAllNotificationsRead(userId: string) {
+    const userSockets = this.userSockets.get(userId);
+    if (userSockets && userSockets.size > 0) {
+      userSockets.forEach(socketId => {
+        this.io.to(socketId).emit('notification:all-marked-read', {
+          success: true
+        });
+      });
+    }
+
+    const developerSockets = this.developerSockets.get(userId);
+    if (developerSockets && developerSockets.size > 0) {
+      developerSockets.forEach(socketId => {
+        this.io.to(socketId).emit('notification:all-marked-read', {
+          success: true
+        });
+      });
+    }
+  }
+
+  public emitUnreadNotificationCount(userId: string, count: number) {
+    const userSockets = this.userSockets.get(userId);
+    if (userSockets && userSockets.size > 0) {
+      userSockets.forEach(socketId => {
+        this.io.to(socketId).emit('notification:unread-count', { count });
+      });
+    }
+
+    const developerSockets = this.developerSockets.get(userId);
+    if (developerSockets && developerSockets.size > 0) {
+      developerSockets.forEach(socketId => {
+        this.io.to(socketId).emit('notification:unread-count', { count });
+      });
+    }
   }
 }

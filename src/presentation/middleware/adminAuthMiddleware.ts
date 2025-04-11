@@ -17,7 +17,7 @@ export const adminAuthMiddleware = async (
     const adminRefreshToken = req.cookies.adminRefreshToken;
 
     if (!adminAccessToken && !adminRefreshToken) {
-        res.status(401).json({ message: 'Unauthorized', success: false });
+        res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized', success: false });
         return
     }
     try {
@@ -26,7 +26,7 @@ export const adminAuthMiddleware = async (
         return next();
     } catch (accessTokenError) {
         if (!adminRefreshToken) {
-            res.status(401).json({ message: 'Unauthorized', success: false });
+            res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized', success: false });
             return
         }
         try {

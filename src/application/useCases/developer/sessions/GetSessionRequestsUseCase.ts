@@ -6,16 +6,17 @@ import { StatusCodes } from 'http-status-codes';
 export class GetSessionRequestsUseCase {
   constructor(private sessionRepository: SessionRepository) {}
 
-  async execute(developerId: string) {
+  async execute(developerId: string, page: number = 1, limit: number = 5) {
     try {
       if (!developerId) {
         throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
       }
 
-      const sessions = await this.sessionRepository.getSessionRequests(
-        new Types.ObjectId(developerId)
+      return await this.sessionRepository.getSessionRequests(
+        new Types.ObjectId(developerId),
+        page,
+        limit
       );
-      return sessions;
     } catch (error) {
       console.error('Get session requests error:', error);
       if (error instanceof AppError) throw error;

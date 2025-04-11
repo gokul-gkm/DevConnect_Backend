@@ -2,9 +2,13 @@ import { SessionRepository } from '@/infrastructure/repositories/SessionReposito
 import { AppError } from '@/domain/errors/AppError';
 import { Types } from 'mongoose';
 import { StatusCodes } from 'http-status-codes';
+import { NotificationService } from '@/infrastructure/services/NotificationService';
 
 export class AcceptSessionRequestUseCase {
-  constructor(private sessionRepository: SessionRepository) {}
+  constructor(
+    private sessionRepository: SessionRepository,
+    private notificationService: NotificationService
+  ) {}
 
   async execute(sessionId: string, developerId: string) {
     try {
@@ -32,6 +36,23 @@ export class AcceptSessionRequestUseCase {
         new Types.ObjectId(sessionId),
         'approved'
       );
+
+      if (updatedSession && updatedSession.userId) {
+        try {
+          const recipientId = updatedSession.userId._id.toString();
+
+          await this.notificationService.notify(
+            recipientId,
+            'Session Request Accepted',
+            `Your session "${updatedSession.title}" has been accepted.`,
+            'session',
+            developerId,
+            sessionId
+          );
+        } catch (notificationError) {
+          console.error('Failed to create notification:', notificationError);
+        }
+      }
 
       return updatedSession;
     } catch (error) {

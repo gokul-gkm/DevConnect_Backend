@@ -6,6 +6,7 @@ import { MailService } from '@/infrastructure/mail/MailService';
 import { AppError } from '@/domain/errors/AppError';
 import { ISession } from '@/domain/entities/Session';
 import { StatusCodes } from 'http-status-codes';
+import { NotificationService } from '@/infrastructure/services/NotificationService';
 
 interface CreateSessionDTO {
   title: string;
@@ -24,7 +25,7 @@ export class CreateSessionUseCase {
     private sessionRepository: SessionRepository,
     private userRepository: UserRepository,
     private developerRepository: DeveloperRepository,
-    private mailService: MailService
+    private notificationService: NotificationService
   ) {}
 
   async execute(data: CreateSessionDTO): Promise<ISession> {
@@ -68,18 +69,18 @@ export class CreateSessionUseCase {
       
       const session = await this.sessionRepository.createSession(sessionData);
 
-      // Send email notifications
-      // await this.mailService.sendSessionRequestEmail(
-      //   developer.userId.email,
-      //   {
-      //     title: session.title,
-      //     sessionDate: session.sessionDate,
-      //     startTime: session.startTime,
-      //     duration: session.duration,
-      //     price: session.price,
-      //     username: user.username
-      //   }
-      // );
+      try {
+        await this.notificationService.notify(
+          data.developerId,
+          'New Session Request',
+          `${user.username} has requested a new session: "${data.title}"`,
+          'session',
+          data.userId,
+          session._id.toString()
+        )
+      } catch (notificationError) {
+        console.log('Failed to create notification :', notificationError)
+      }
 
       return session;
     } catch (error : any) {
