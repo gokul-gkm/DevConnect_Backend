@@ -5,6 +5,7 @@ import { GetUnreadCountUseCase } from '@/application/useCases/notification/GetUn
 import { MarkAllNotificationsAsReadUseCase } from '@/application/useCases/notification/MarkAllNotificationsAsReadUseCase';
 import { MarkNotificationAsReadUseCase } from '@/application/useCases/notification/MarkNotificationAsReadUseCase';
 import { AppError } from '@/domain/errors/AppError';
+import { INotificationRepository } from '@/domain/interfaces/INotificationRepository';
 import { NotificationRepository } from '@/infrastructure/repositories/NotificationRepositoty';
 import { SocketService } from '@/infrastructure/services/SocketService';
 import { Request, Response } from 'express';
@@ -19,7 +20,7 @@ export class NotificationController {
   private createNotificationUseCase: CreateNotificationUseCase;
 
   constructor(
-    private notificationRepository: NotificationRepository,
+    private notificationRepository: INotificationRepository,
     private socketService: SocketService
   ) {
     this.getNotificationsUseCase = new GetNotificationsUseCase(notificationRepository);

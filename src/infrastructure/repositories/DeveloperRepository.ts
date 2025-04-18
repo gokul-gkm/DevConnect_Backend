@@ -7,9 +7,14 @@ import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
 import { DevPaginatedResponse, DevQueryParams} from '@/domain/types/types';
 import { StatusCodes } from 'http-status-codes';
 import mongoose, { FilterQuery, SortOrder } from 'mongoose';
+import { BaseRepository } from './BaseRepository';
 
 
-export class DeveloperRepository implements IDeveloperRepository {
+export class DeveloperRepository extends BaseRepository<IDeveloper> implements IDeveloperRepository {
+
+    constructor() {
+        super(Developer);
+    }
 
     async createDeveloper(data: CreateDeveloperDTO): Promise<IDeveloper> {
         try {
@@ -46,14 +51,14 @@ export class DeveloperRepository implements IDeveloperRepository {
         }
     }
 
-    async findById(id: string): Promise<IDeveloper | null>{
-        try {
-            return await Developer.findById(id);
-        } catch (error) {
-            console.error('Error finding developer:', error);
-            throw new AppError('Failed to fetch developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
-        }
-    }
+    // async findById(id: string): Promise<IDeveloper | null>{
+    //     try {
+    //         return await Developer.findById(id);
+    //     } catch (error) {
+    //         console.error('Error finding developer:', error);
+    //         throw new AppError('Failed to fetch developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
+    //     }
+    // }
 
     async updateDeveloper(developerId: string, updateData: Partial<IDeveloper>): Promise<IDeveloper | null> {
         try {

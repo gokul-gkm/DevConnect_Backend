@@ -18,7 +18,7 @@ export const createChatRouter = (httpServer: Server) => {
 
     const chatController = new ChatController(chatRepository, messageRepository, socketService, s3Service);
 
-    chatRouter.post('/create', authMiddleware, autherization,  (req, res, next) => {
+    chatRouter.post('/', authMiddleware, autherization,  (req, res, next) => {
         chatController.createChat(req, res, next).catch(next);
     });
 

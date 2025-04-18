@@ -4,8 +4,13 @@ import { IUserRepository } from "@/domain/interfaces/IUserRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { PaginatedResponse, QueryParams } from "@/domain/types/types";
 import { StatusCodes } from "http-status-codes";
+import { BaseRepository } from "./BaseRepository";
 
-export class UserRepository implements IUserRepository{
+export class UserRepository extends BaseRepository<IUser> implements IUserRepository{
+    constructor() {
+        super(User);
+    }
+
     async save(user: IUser): Promise<IUser> {
         return await user.save()
     }
@@ -19,14 +24,14 @@ export class UserRepository implements IUserRepository{
         }  
         
     }
-    async findById(id: string): Promise<IUser | null> {
-        try {
-            return await User.findById(id)
-        } catch (error) {
-            console.error('Error fetching User by Id:', error);
-            throw new AppError('Failed to fetch user', StatusCodes.INTERNAL_SERVER_ERROR);
-        }    
-    }
+    // async findById(id: string): Promise<IUser | null> {
+    //     try {
+    //         return await User.findById(id)
+    //     } catch (error) {
+    //         console.error('Error fetching User by Id:', error);
+    //         throw new AppError('Failed to fetch user', StatusCodes.INTERNAL_SERVER_ERROR);
+    //     }    
+    // }
     async findByUsername(username: string): Promise<IUser | null>{
         try {
             return await User.findOne({username})
@@ -99,7 +104,6 @@ export class UserRepository implements IUserRepository{
                     { email: { $regex: search, $options: 'i' } }
                 ];
             }
-
             const skip = (page - 1) * limit;
 
             const sort: { [key: string]: SortOrder } = {

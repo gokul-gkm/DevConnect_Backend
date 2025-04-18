@@ -37,7 +37,7 @@ export const createSessionRouter = () => {
     sessionController.getBookedSlots(req, res).catch(next);
   });
 
-  sessionRouter.post('/create-session', authMiddleware, autherization, (req, res, next) => {
+  sessionRouter.post('/', authMiddleware, autherization, (req, res, next) => {
     sessionController.createSession(req, res).catch(next);
   });
   
@@ -45,7 +45,7 @@ export const createSessionRouter = () => {
     sessionController.getUserSessions(req, res).catch(next);
   });
 
-  sessionRouter.get('/upcoming-sessions', authMiddleware, autherization, (req, res, next) => {
+  sessionRouter.get('/upcoming', authMiddleware, autherization, (req, res, next) => {
     sessionController.getUpcomingSessions(req, res).catch(next);
   });
 

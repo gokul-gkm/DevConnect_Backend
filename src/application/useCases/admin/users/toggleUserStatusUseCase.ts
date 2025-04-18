@@ -1,9 +1,10 @@
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
+import { IUserRepository } from "@/domain/interfaces/IUserRepository";
 
 export class ToggleUserStatusUseCase {
-    constructor(private userRepository: UserRepository) { }
+    constructor(private userRepository: IUserRepository) { }
 
     async execute(userId: string): Promise<void> {
         const user = await this.userRepository.findById(userId);

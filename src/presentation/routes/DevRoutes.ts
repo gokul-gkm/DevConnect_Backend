@@ -57,11 +57,6 @@ devRouter.post('/auth/dev-request', upload.fields([
     { name: 'resume', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    
-    if (!req.files) {
-        console.log('No files were uploaded');
-    }
-    
     await devAuthController.devRequest(req, res);
 } catch (error: any) {
     console.error('Error in route handler:', error);
@@ -81,7 +76,7 @@ devRouter.get('/profile', authMiddleware, autherization, (req, res, next) => {
   devController.getProfile(req, res).catch(next);
 });
 
-devRouter.put('/profile/update', authMiddleware, autherization, 
+devRouter.put('/profile', authMiddleware, autherization, 
     upload.fields([
       { name: 'profilePicture', maxCount: 1 },
       { name: 'resume', maxCount: 1 }
@@ -91,7 +86,7 @@ devRouter.put('/profile/update', authMiddleware, autherization,
     }
 );
 
-devRouter.post( '/add-project', authMiddleware, autherization, 
+devRouter.post( '/projects', authMiddleware, autherization, 
   upload.single('coverImage'),
   (req, res, next) => {
     devController.addProject(req,res).catch(next);
@@ -107,14 +102,14 @@ devRouter.get( '/projects/:projectId', authMiddleware, autherization,
   }
 );
 
-devRouter.put( '/project/edit/:projectId', authMiddleware, autherization, 
+devRouter.put( '/projects/:projectId', authMiddleware, autherization, 
   upload.single('coverImage'),
   (req, res, next) => {
     devController.updateProject(req,res).catch(next);
 }
 );
 
-devRouter.delete( '/project/remove/:projectId', authMiddleware, autherization, 
+devRouter.delete( '/projects/:projectId', authMiddleware, autherization, 
   (req, res) => {
     devController.deleteProject(req, res)
   }

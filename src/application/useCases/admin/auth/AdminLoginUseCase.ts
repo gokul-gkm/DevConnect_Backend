@@ -1,12 +1,12 @@
 import { LoginAdminDTO } from "@/application/dto/LoginAdminDTO";
-import { AdminRepository } from "@/infrastructure/repositories/AdminRepository";
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { IAdmin } from "@/domain/entities/Admin";
+import { IAdminRepository } from "@/domain/interfaces/IAdminRepository";
 
 export class AdminLoginUseCase{
-    private adminRepository: AdminRepository;
-    constructor(adminRepository: AdminRepository) {
+    private adminRepository: IAdminRepository;
+    constructor(adminRepository: IAdminRepository) {
         this.adminRepository = adminRepository;
     }
 

@@ -1,10 +1,11 @@
+import { IUserRepository } from "@/domain/interfaces/IUserRepository";
 import { PaginatedResponse, QueryParams } from "@/domain/types/types";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { S3Service } from "@/infrastructure/services/S3_Service";
 
 export class GetUsersUseCase {
     constructor(
-        private userRepository: UserRepository,
+        private userRepository: IUserRepository,
         private s3Service: S3Service
     ) { }
 

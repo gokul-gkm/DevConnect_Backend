@@ -19,7 +19,7 @@ userRouter.get('/profile', authMiddleware,autherization,(req, res, next) => {
     userController.getProfile(req, res).catch(next);
 });
 
-userRouter.put('/profile/update', authMiddleware, autherization,
+userRouter.put('/profile', authMiddleware, autherization,
     upload.single('profilePicture'),
     (req, res, next) => {
         userController.updateProfile(req, res).catch(next);

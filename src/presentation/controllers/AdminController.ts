@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import {AdminLoginUseCase} from '@/application/useCases/admin/auth/AdminLoginUseCase';
-import { AdminRepository } from '@/infrastructure/repositories/AdminRepository';
 import { GetUsersUseCase } from '@/application/useCases/admin/users/GetUsersUseCase';
-import { UserRepository } from '@/infrastructure/repositories/UserRepository';
 import { ToggleUserStatusUseCase } from '@/application/useCases/admin/users/ToggleUserStatusUseCase';
 import { GetUserDetailsUseCase } from '@/application/useCases/admin/users/GetUserDetailsUseCase';
 import { DevQueryParams, QueryParams } from '@/domain/types/types';
@@ -14,7 +12,9 @@ import { GetDeveloperDetailsUseCase } from '@/application/useCases/admin/develop
 import { GetDeveloperRequestDetailsUseCase } from '@/application/useCases/developer/GetDeveloperRequestDetails';
 import { StatusCodes } from 'http-status-codes';
 import { S3Service } from '@/infrastructure/services/S3_Service';
-import { WalletRepository } from '@/infrastructure/repositories/WalletRepository';
+import { IAdminRepository } from '@/domain/interfaces/IAdminRepository';
+import { IUserRepository } from '@/domain/interfaces/IUserRepository';
+import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 
 
 export class AdminController{
@@ -27,11 +27,11 @@ export class AdminController{
     private getDeveloperDetailsUseCase: GetDeveloperDetailsUseCase;
     private getDeveloperRequestDetailsUseCase: GetDeveloperRequestDetailsUseCase;
     constructor(
-        private adminRepository: AdminRepository,
-        private userRepository: UserRepository,
+        private adminRepository: IAdminRepository,
+        private userRepository: IUserRepository,
         private developerRepository: DeveloperRepository,
         private s3Service: S3Service,
-        private walletRepository: WalletRepository
+        private walletRepository: IWalletRepository
     ) {
         this.adminLoginUseCase = new AdminLoginUseCase(adminRepository);
         this.getUsersUseCase = new GetUsersUseCase(userRepository,s3Service);

@@ -1,12 +1,12 @@
 import { IUser } from "@/domain/entities/User";
 import { AppError } from "@/domain/errors/AppError";
-import { UserRepository } from "@/infrastructure/repositories/UserRepository";
+import { IUserRepository } from "@/domain/interfaces/IUserRepository";
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { StatusCodes } from "http-status-codes";
 
 export class GetUserDetailsUseCase {
     constructor(
-        private userRepository: UserRepository,
+        private userRepository: IUserRepository,
         private s3Service: S3Service
     ) { }
 
