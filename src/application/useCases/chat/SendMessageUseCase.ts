@@ -5,26 +5,43 @@ import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
 import { SocketService } from "@/infrastructure/services/SocketService";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
+import { S3Service } from "@/infrastructure/services/S3_Service";
 
 export class SendMessageUseCase {
     constructor(
         private messageRepository: IMessageRepository,
         private chatRepository: IChatRepository,
-        private socketService: SocketService
+        private socketService: SocketService,
+        private s3Service: S3Service
     ) { }
     
-    async execute({ chatId, content, senderId, senderType }: SendMessageDTO) {
+    async execute({ chatId, content, senderId, senderType, mediaType, mediaFile }: SendMessageDTO) {
         
         try {
+            let mediaUrl = undefined;
+            if (mediaFile && mediaType) {
+                const uploadResult = await this.s3Service.uploadFile(
+                    mediaFile, 
+                    'chat-media'
+                );
+                mediaUrl = uploadResult.Key;
+            }
+            
             const message = await this.messageRepository.createMessage({
                 chatId: new mongoose.Types.ObjectId(chatId),
                 content,
                 senderId: new mongoose.Types.ObjectId(senderId),
                 senderType,
+                mediaType,
+                mediaUrl,
                 read: false
             });
             
             await this.chatRepository.updateLastMessage(chatId, content, senderType);
+            
+            if (message.mediaUrl) {
+                message.mediaUrl = await this.s3Service.generateSignedUrl(message.mediaUrl);
+            }
             
             const chat = await this.chatRepository.getChatById(chatId);
             if (!chat) {

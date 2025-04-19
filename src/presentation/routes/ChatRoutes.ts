@@ -7,6 +7,7 @@ import { Server } from "http";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { autherization } from "../middleware/autherization";
+import { upload } from "@/utils/multer";
 
 export const createChatRouter = (httpServer: Server) => {
     
@@ -34,9 +35,14 @@ export const createChatRouter = (httpServer: Server) => {
         chatController.getChatMessages(req, res, next).catch(next)
     })
 
-    chatRouter.post('/message', authMiddleware, autherization, (req, res, next) => {
-        chatController.sendMessage(req, res, next).catch(next)
-    })
+    chatRouter.post('/message', 
+        authMiddleware, 
+        autherization, 
+        upload.single('mediaFile'),
+        (req, res, next) => {
+            chatController.sendMessage(req, res, next).catch(next);
+        }
+    );
 
     chatRouter.patch('/:chatId/read', authMiddleware, autherization, (req, res, next) => {
         chatController.markMessagesAsRead(req, res, next).catch(next)

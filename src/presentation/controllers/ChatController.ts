@@ -31,8 +31,8 @@ export class ChatController {
         this.createChatUseCase = new CreateChatUseCase(chatRepository);
         this.getUserChatsUseCase = new GetUserChatsUseCase(chatRepository);
         this.getDeveloperChatsUseCase = new GetDeveloperChatsUseCase(chatRepository);
-        this.getChatMessagesUseCase = new GetChatMessagesUseCase(messageRepository, chatRepository);
-        this.sendMessageUseCase = new SendMessageUseCase(messageRepository, chatRepository, socketService)
+        this.getChatMessagesUseCase = new GetChatMessagesUseCase(messageRepository, chatRepository, s3Service);
+        this.sendMessageUseCase = new SendMessageUseCase(messageRepository, chatRepository, socketService, s3Service)
         this.markMessagesAsReadUseCase = new MarkMessagesAsReadUseCase(messageRepository, chatRepository, socketService)
     }
     
@@ -188,35 +188,41 @@ export class ChatController {
         try {
             const schema = z.object({
                 content: z.string().min(1),
-                chatId: z.string()
+                chatId: z.string(),
+                mediaType: z.enum(['image', 'video', 'audio', 'pdf', 'document']).optional(),
             });
 
-            const { content, chatId } = schema.parse(req.body);
+            const { content, chatId, mediaType } = schema.parse(req.body);
+            const mediaFile = req.file;
+            
             const userId = req.userId;
             if (!userId) {
-                throw new AppError('ID is required', StatusCodes.BAD_REQUEST)
+                throw new AppError('ID is required', StatusCodes.BAD_REQUEST);
             }
+            
             const chat = await this.chatRepository.getChatById(chatId);
             if (!chat) {
-                throw new AppError('Chat not found', StatusCodes.NOT_FOUND)
+                throw new AppError('Chat not found', StatusCodes.NOT_FOUND);
             }
+            
             const senderType = chat.userId.id.toString() === userId ? 'user' : 'developer';
-            const senderId = senderType == 'user'? chat.userId.id.toString() : chat.developerId.id.toString()
+            const senderId = senderType === 'user' ? chat.userId.id.toString() : chat.developerId.id.toString();
 
             const message = await this.sendMessageUseCase.execute({
                 chatId,
-                senderId : senderId,
+                senderId,
                 content,
-                senderType
-            })
+                senderType,
+                mediaType,
+                mediaFile: mediaFile
+            });
 
             return res.status(StatusCodes.CREATED).json({
                 success: true,
                 message
-            })
-
+            });
         } catch (error) {
-            next(error)
+            next(error);
         }
     }
 

@@ -6,6 +6,8 @@ export interface IMessage {
   senderId: Types.ObjectId;
   senderType: 'user' | 'developer';
   content: string;
+  mediaType?: 'image' | 'video' | 'audio' | 'pdf' | 'document';
+  mediaUrl?: string; 
   read: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -30,6 +32,15 @@ const messageSchema = new Schema<IMessage>({
     type: String,
     required: true,
     trim: true
+  },
+  mediaType: {
+    type: String,
+    enum: ['image', 'video', 'audio', 'pdf', 'document'],
+    required: false
+  },
+  mediaUrl: {
+    type: String,
+    required: false
   },
   read: {
     type: Boolean,

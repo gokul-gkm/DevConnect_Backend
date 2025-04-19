@@ -8,6 +8,8 @@ export interface SendMessageDTO {
     content: string;
     senderId: string;
     senderType: 'user' | 'developer';
+    mediaType?: 'image' | 'video' | 'audio' | 'pdf' | 'document';
+    mediaFile?: Express.Multer.File;
 }
 
 export interface GetMessagesDTO {
