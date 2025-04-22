@@ -101,8 +101,84 @@ export class SocketService {
 
       this.handleCommonEvents(socket);
 
+      if (role === 'developer' && developerId) {
+        this.io.emit('developer:online', { developerId });
+      } else if (userId) {
+        this.io.emit('user:online', { userId });
+      }
+
+      socket.on('check:online', (data) => {
+        try {
+          if (data.developerId) {
+            const isOnline = this.isDeveloperOnline(data.developerId);
+            console.log(`Developer ${data.developerId} online status: ${isOnline}`);
+            socket.emit('developer:online', { 
+              developerId: data.developerId, 
+              isOnline: isOnline 
+            });
+          }
+          
+          if (data.userId) {
+            const isOnline = this.isUserOnline(data.userId);
+            console.log(`User ${data.userId} online status: ${isOnline}`);
+            socket.emit('user:online', { 
+              userId: data.userId, 
+              isOnline: isOnline 
+            });
+          }
+        } catch (error) {
+          console.error('Error checking online status:', error);
+
+          if (data.developerId) {
+            socket.emit('developer:online', { 
+              developerId: data.developerId, 
+              isOnline: false 
+            });
+          } else if (data.userId) {
+            socket.emit('user:online', { 
+              userId: data.userId, 
+              isOnline: false 
+            });
+          }
+        }
+      });
+
       socket.on('disconnect', () => {
         this.handleDisconnect(socket);
+        
+        if (role === 'developer' && developerId) {
+          this.io.emit('developer:offline', { developerId });
+        } else if (userId) {
+          this.io.emit('user:offline', { userId });
+        }
+      });
+
+      socket.on('user:set-offline', (data) => {
+        if (data.userId) {
+          this.io.emit('user:offline', { userId: data.userId });
+          logger.info(`User ${data.userId} set offline manually`);
+        }
+      });
+
+      socket.on('developer:set-offline', (data) => {
+        if (data.developerId) {
+          this.io.emit('developer:offline', { developerId: data.developerId });
+          logger.info(`Developer ${data.developerId} set offline manually`);
+        }
+      });
+
+      socket.on('user:set-online', (data) => {
+        if (data.userId) {
+          this.io.emit('user:online', { userId: data.userId, isOnline: true });
+          logger.info(`User ${data.userId} set online manually`);
+        }
+      });
+
+      socket.on('developer:set-online', (data) => {
+        if (data.developerId) {
+          this.io.emit('developer:online', { developerId: data.developerId, isOnline: true });
+          logger.info(`Developer ${data.developerId} set online manually`);
+        }
       });
     });
   }
