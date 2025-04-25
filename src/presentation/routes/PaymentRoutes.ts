@@ -33,11 +33,11 @@ router.post( '/sessions/:sessionId/transfer', adminAuthMiddleware,
   paymentController.transferToDevWallet.bind(paymentController)
 );
 
-router.get( '/admin/wallet', adminAuthMiddleware, autherization, 
+router.get( '/admin/wallet', adminAuthMiddleware, 
   paymentController.getAdminWalletDetails.bind(paymentController)
 );
 
-router.get( '/wallet', authMiddleware, autherization, 
+router.get('/wallet', authMiddleware, autherization,
   paymentController.getWalletDetails.bind(paymentController)
 );
 
