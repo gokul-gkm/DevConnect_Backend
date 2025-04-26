@@ -551,5 +551,91 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
         };
     }
     
+    async countApproved(): Promise<number> {
+        try {
+            return await Developer.countDocuments({ status: 'approved' });
+        } catch (error) {
+            console.error('Error counting approved developers:', error);
+            throw new AppError('Failed to count developers', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async getTopPerformingDevelopers(limit: number = 5): Promise<any[]> {
+        try {
+            return await Developer.aggregate([
+                {
+                    $match: { status: 'approved' }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'user'
+                    }
+                },
+                {
+                    $unwind: '$user'
+                },
+                {
+                    $lookup: {
+                        from: 'sessions',
+                        localField: 'userId',
+                        foreignField: 'developerId',
+                        as: 'sessions'
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        user: { 
+                            username: 1, 
+                            profilePicture: 1 
+                        },
+                        expertise: 1,
+                        rating: 1,
+                        completedSessions: {
+                            $size: {
+                                $filter: {
+                                    input: '$sessions',
+                                    as: 'session',
+                                    cond: { $eq: ['$$session.status', 'completed'] }
+                                }
+                            }
+                        },
+                        revenue: {
+                            $sum: {
+                                $map: {
+                                    input: {
+                                        $filter: {
+                                            input: '$sessions',
+                                            as: 'session',
+                                            cond: { 
+                                                $and: [
+                                                    { $eq: ['$$session.status', 'completed'] },
+                                                    { $eq: ['$$session.paymentStatus', 'completed'] }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    as: 'completedSession',
+                                    in: '$$completedSession.price'
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    $sort: { revenue: -1 }
+                },
+                {
+                    $limit: limit
+                }
+            ]);
+        } catch (error) {
+            console.error('Error fetching top developers:', error);
+            throw new AppError('Failed to fetch top developers', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
 

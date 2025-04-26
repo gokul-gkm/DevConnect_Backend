@@ -135,4 +135,75 @@ export class WalletRepository implements IWalletRepository {
       throw new AppError('Failed to create admin wallet', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async getTotalRevenue(): Promise<number> {
+    try {
+      const result = await WalletModel.aggregate([
+        {
+          $match: { adminId: process.env.ADMIN_ID }
+        },
+        {
+          $unwind: "$transactions"
+        },
+        {
+          $match: { "transactions.type": "credit" }
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$transactions.amount" }
+          }
+        }
+      ]);
+      
+      return result.length > 0 ? result[0].totalRevenue : 0;
+    } catch (error) {
+      console.error('Error calculating total revenue:', error);
+      throw new AppError('Failed to calculate revenue', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getMonthlyRevenue(startDate: Date): Promise<Array<{ year: number; month: number; revenue: number }>> {
+    try {
+      return await WalletModel.aggregate([
+        {
+          $match: {
+            adminId: process.env.ADMIN_ID,
+            'transactions.createdAt': { $gte: startDate }
+          }
+        },
+        {
+          $unwind: '$transactions'
+        },
+        {
+          $match: {
+            'transactions.type': 'credit'
+          }
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$transactions.createdAt' },
+              month: { $month: '$transactions.createdAt' }
+            },
+            revenue: { $sum: '$transactions.amount' }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            year: '$_id.year',
+            month: '$_id.month',
+            revenue: 1
+          }
+        },
+        {
+          $sort: { year: 1, month: 1 }
+        }
+      ]);
+    } catch (error) {
+      console.error('Error fetching monthly revenue:', error);
+      throw new AppError('Failed to fetch revenue data', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

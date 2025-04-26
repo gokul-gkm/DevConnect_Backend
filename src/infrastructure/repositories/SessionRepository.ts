@@ -478,4 +478,16 @@ export class SessionRepository implements ISessionRepository  {
       throw new AppError('Failed to update payment transfer status', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async countCompletedSessions(): Promise<number> {
+    try {
+      return await Session.countDocuments({ 
+        status: 'completed',
+        paymentStatus: 'completed'
+      });
+    } catch (error) {
+      console.error('Error counting completed sessions:', error);
+      throw new AppError('Failed to count sessions', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

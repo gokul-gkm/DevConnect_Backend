@@ -13,5 +13,7 @@ export interface IUserRepository {
     findByLinkedIn(linkedinId: string): Promise<IUser | null>
     findUsers(queryParams: QueryParams): Promise<PaginatedResponse<IUser>>
     getUserProfile(userId: string): Promise<IUser | null>
-    getUserById(userId: string):Promise<any>
+    getUserById(userId: string): Promise<any>
+    countByRole(role: string): Promise<number>
+    getMonthlyUserGrowth(startDate: Date): Promise<Array<{ year: number; month: number; role: string; count: number }>>
 }

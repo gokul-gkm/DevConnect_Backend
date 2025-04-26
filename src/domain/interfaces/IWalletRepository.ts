@@ -14,4 +14,6 @@ export interface IWalletRepository {
   ): Promise<void>;
   findByAdminId(adminId: string): Promise<IWallet | null>
   createAdminWallet(): Promise<IWallet>
+  getTotalRevenue(): Promise<number>
+  getMonthlyRevenue(startDate: Date): Promise<Array<{ year: number; month: number; revenue: number }>>
 }

@@ -160,5 +160,49 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
         }
       }
 
-    
+    async countByRole(role: string): Promise<number> {
+        try {
+            return await User.countDocuments({ role, status: 'active' });
+        } catch (error) {
+            console.error('Error counting users by role:', error);
+            throw new AppError('Failed to count users', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async getMonthlyUserGrowth(startDate: Date): Promise<Array<{ year: number; month: number; role: string; count: number }>> {
+        try {
+            return await User.aggregate([
+                {
+                    $match: {
+                        createdAt: { $gte: startDate }
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            year: { $year: '$createdAt' },
+                            month: { $month: '$createdAt' },
+                            role: '$role'
+                        },
+                        count: { $sum: 1 }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        year: '$_id.year',
+                        month: '$_id.month',
+                        role: '$_id.role',
+                        count: 1
+                    }
+                },
+                {
+                    $sort: { year: 1, month: 1 }
+                }
+            ]);
+        } catch (error) {
+            console.error('Error fetching user growth data:', error);
+            throw new AppError('Failed to fetch user growth data', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
