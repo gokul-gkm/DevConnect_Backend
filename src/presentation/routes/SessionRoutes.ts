@@ -53,6 +53,10 @@ export const createSessionRouter = () => {
     sessionController.getSessionRequests(req, res).catch(next);
   });
 
+  sessionRouter.get('/developer/requests/:sessionId', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getSessionRequestDetails(req, res).catch(next);
+  });
+
   sessionRouter.patch('/:sessionId/accept', authMiddleware, autherization, (req, res, next) => {
     sessionController.acceptSessionRequest(req, res).catch(next);
   });

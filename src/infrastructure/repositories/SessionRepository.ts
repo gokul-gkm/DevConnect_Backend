@@ -317,7 +317,7 @@ export class SessionRepository implements ISessionRepository  {
       const sessions = await Session.find({
         developerId,
       })
-      .populate('userId', 'username email')
+      .populate('userId', 'username email profilePicture')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);

@@ -16,6 +16,7 @@ import { S3Service } from '@/infrastructure/services/S3_Service';
 import { NotificationRepository } from '@/infrastructure/repositories/NotificationRepositoty';
 import { SocketService } from '@/infrastructure/services/SocketService';
 import { NotificationService } from '@/infrastructure/services/NotificationService';
+import { GetSessionRequestDetailsUseCase } from '@/application/useCases/developer/sessions/GetSessionRequestDetailsUseCase';
 
 export class SessionController {
   private createSessionUseCase: CreateSessionUseCase;
@@ -25,6 +26,7 @@ export class SessionController {
   private acceptSessionRequestUseCase: AcceptSessionRequestUseCase;
   private rejectSessionRequestUseCase: RejectSessionRequestUseCase;
   private getSessionDetailsUseCase: GetSessionDetailsUseCase;
+  private getSessionRequestDetailsUseCase: GetSessionRequestDetailsUseCase;
 
   constructor(
     private sessionRepository: SessionRepository,
@@ -39,13 +41,14 @@ export class SessionController {
     this.createSessionUseCase = new CreateSessionUseCase(sessionRepository, userRepository, developerRepository, notificationService);
     this.getUserSessionsUseCase = new GetUserSessionsUseCase(sessionRepository);
     this.getUpcomingSessionsUseCase = new GetUpcomingSessionsUseCase(sessionRepository,s3Service);
-    this.getSessionRequestsUseCase = new GetSessionRequestsUseCase(sessionRepository);
+    this.getSessionRequestsUseCase = new GetSessionRequestsUseCase(sessionRepository,s3Service);
     this.acceptSessionRequestUseCase = new AcceptSessionRequestUseCase(
       sessionRepository,
       notificationService
     );
     this.rejectSessionRequestUseCase = new RejectSessionRequestUseCase(sessionRepository, notificationService)
     this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository, s3Service);
+    this.getSessionRequestDetailsUseCase = new GetSessionRequestDetailsUseCase(sessionRepository, s3Service)
   }
 
 
@@ -270,6 +273,25 @@ export class SessionController {
     try {
       const { sessionId } = req.params;
       const session = await this.getSessionDetailsUseCase.execute(sessionId);
+      res.json(session);
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      }); 
+    }  
+  }
+
+  async getSessionRequestDetails (req: Request, res: Response) {
+    try {
+      const { sessionId } = req.params;
+      const session = await this.getSessionRequestDetailsUseCase.execute(sessionId);
       res.json(session);
     } catch (error) {
       if (error instanceof AppError) {
