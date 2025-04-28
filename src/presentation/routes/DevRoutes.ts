@@ -72,48 +72,45 @@ devRouter.post('/auth/login', async (req, res) => {
   await devAuthController.login(req, res);
 })
 
-devRouter.get('/profile', authMiddleware, autherization, (req, res, next) => {
-  devController.getProfile(req, res).catch(next);
-});
-
-devRouter.put('/profile', authMiddleware, autherization, 
+devRouter
+  .use(authMiddleware, autherization)
+  .get('/profile', (req, res, next) => {
+    devController.getProfile(req, res).catch(next);
+  }).put('/profile',
     upload.fields([
       { name: 'profilePicture', maxCount: 1 },
       { name: 'resume', maxCount: 1 }
-  ]),
+    ]),
     (req, res, next) => {
-        devController.updateProfile(req, res).catch(next);
+      devController.updateProfile(req, res).catch(next);
     }
-);
+  );
 
-devRouter.post( '/projects', authMiddleware, autherization, 
-  upload.single('coverImage'),
-  (req, res, next) => {
-    devController.addProject(req,res).catch(next);
-})
+devRouter
+  .use(authMiddleware, autherization)
+  .post('/projects', upload.single('coverImage'), (req, res, next) => {
+      devController.addProject(req, res).catch(next);
+    })
+  .get('/projects', (req, res) => {
+    devController.getDeveloperProjects(req, res)
+  });
 
-devRouter.get('/projects', authMiddleware,autherization,  (req, res) => {
-  devController.getDeveloperProjects(req, res)
-})
-
-devRouter.get( '/projects/:projectId', authMiddleware, autherization, 
-  (req, res) => {
-    devController.getProject(req, res)
-  }
-);
-
-devRouter.put( '/projects/:projectId', authMiddleware, autherization, 
-  upload.single('coverImage'),
-  (req, res, next) => {
-    devController.updateProject(req,res).catch(next);
-}
-);
-
-devRouter.delete( '/projects/:projectId', authMiddleware, autherization, 
-  (req, res) => {
-    devController.deleteProject(req, res)
-  }
-);
+devRouter
+  .use(authMiddleware, autherization)
+  .get('/projects/:projectId',
+    (req, res) => {
+      devController.getProject(req, res)
+    }
+  ).put('/projects/:projectId',
+    upload.single('coverImage'),
+    (req, res, next) => {
+      devController.updateProject(req, res).catch(next);
+    }
+  ).delete('/projects/:projectId',
+    (req, res) => {
+      devController.deleteProject(req, res)
+    }
+  );
 
 
 export default devRouter; 

@@ -15,16 +15,14 @@ const s3Service = new S3Service()
 
 const userController = new UserController(userRepository,developerRepository, s3Service);
 
-userRouter.get('/profile', authMiddleware,autherization,(req, res, next) => {
-    userController.getProfile(req, res).catch(next);
-});
-
-userRouter.put('/profile', authMiddleware, autherization,
-    upload.single('profilePicture'),
-    (req, res, next) => {
+userRouter
+    .use(authMiddleware, autherization)
+    .get('/profile', (req, res, next) => {
+        userController.getProfile(req, res).catch(next);
+    })
+    .put('/profile', upload.single('profilePicture'), (req, res, next) => {
         userController.updateProfile(req, res).catch(next);
-    }
-);
+    });
 
 userRouter.put('/change-password', authMiddleware, autherization, (req, res, next) => {
     userController.changePassword(req, res).catch(next)
