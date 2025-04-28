@@ -69,5 +69,14 @@ export const createSessionRouter = () => {
     sessionController.getSessionDetails(req, res).catch(next);
   });
 
+  sessionRouter.get('/developer/scheduled', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getScheduledSessions(req, res).catch(next);
+  });
+
+  sessionRouter.get('/developer/scheduled/:sessionId', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getScheduledSessionDetails(req, res).catch(next);
+  });
+  
+
   return sessionRouter;
 };

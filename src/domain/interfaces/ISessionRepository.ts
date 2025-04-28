@@ -18,4 +18,6 @@ export interface ISessionRepository {
     updatePaymentTransferStatus(sessionId: Types.ObjectId, status: string): Promise<void>
     updatePaymentStatus(sessionId: Types.ObjectId, status: string): Promise<void>
     countCompletedSessions(): Promise<number>
+    getDeveloperScheduledSessions(developerId: Types.ObjectId, page: number, limit: number): Promise<any>
+    getScheduledSessionById(sessionId: Types.ObjectId): Promise<any>
 }

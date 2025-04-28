@@ -490,4 +490,68 @@ export class SessionRepository implements ISessionRepository  {
       throw new AppError('Failed to count sessions', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async getDeveloperScheduledSessions(developerId: Types.ObjectId, page: number = 1, limit: number = 5){
+    try {
+      const skip = (page - 1) * limit;
+
+      const totalCount = await Session.countDocuments({ 
+        developerId,
+        status: 'scheduled'
+      });
+      
+      const totalPages = Math.ceil(totalCount / limit);
+      
+      const sessions = await Session.find({
+        developerId,
+        status: 'scheduled'
+      })
+      .populate({
+        path: 'userId',
+        select: 'username email profilePicture'
+      })
+      .sort({ sessionDate: 1, startTime: 1 })
+      .skip(skip)
+      .limit(limit);
+
+      return {
+        sessions,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: totalCount,
+          itemsPerPage: limit
+        },
+        stats: {
+          total: totalCount,
+          scheduled: totalCount
+        }
+      };
+    } catch (error) {
+      console.error('Get scheduled sessions repository error:', error);
+      throw new AppError('Failed to fetch scheduled sessions', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getScheduledSessionById(sessionId: Types.ObjectId): Promise<any> {
+    try {
+      const session = await Session.findOne({
+        _id: sessionId,
+        status: 'scheduled'
+      }).populate({
+        path: 'userId',
+        select: 'username email profilePicture'
+      });
+
+      if (!session) {
+        throw new AppError('Scheduled session not found', StatusCodes.NOT_FOUND);
+      }
+
+      return session;
+    } catch (error) {
+      console.error('Get scheduled session by ID repository error:', error);
+      if (error instanceof AppError) throw error;
+      throw new AppError('Failed to fetch scheduled session', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

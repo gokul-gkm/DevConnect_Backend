@@ -17,6 +17,8 @@ import { NotificationRepository } from '@/infrastructure/repositories/Notificati
 import { SocketService } from '@/infrastructure/services/SocketService';
 import { NotificationService } from '@/infrastructure/services/NotificationService';
 import { GetSessionRequestDetailsUseCase } from '@/application/useCases/developer/sessions/GetSessionRequestDetailsUseCase';
+import { GetScheduledSessionsUseCase } from '@/application/useCases/developer/sessions/GetScheduledSessionsUseCase';
+import { GetScheduledSessionDetailsUseCase } from '@/application/useCases/developer/sessions/GetScheduledSessionDetailsUseCase';
 
 export class SessionController {
   private createSessionUseCase: CreateSessionUseCase;
@@ -27,6 +29,8 @@ export class SessionController {
   private rejectSessionRequestUseCase: RejectSessionRequestUseCase;
   private getSessionDetailsUseCase: GetSessionDetailsUseCase;
   private getSessionRequestDetailsUseCase: GetSessionRequestDetailsUseCase;
+  private getScheduledSessionsUseCase: GetScheduledSessionsUseCase;
+  private getScheduledSessionDetailsUseCase: GetScheduledSessionDetailsUseCase;
 
   constructor(
     private sessionRepository: SessionRepository,
@@ -49,6 +53,8 @@ export class SessionController {
     this.rejectSessionRequestUseCase = new RejectSessionRequestUseCase(sessionRepository, notificationService)
     this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository, s3Service);
     this.getSessionRequestDetailsUseCase = new GetSessionRequestDetailsUseCase(sessionRepository, s3Service)
+    this.getScheduledSessionsUseCase = new GetScheduledSessionsUseCase(sessionRepository, s3Service);
+    this.getScheduledSessionDetailsUseCase = new GetScheduledSessionDetailsUseCase(sessionRepository, s3Service);
   }
 
 
@@ -305,6 +311,72 @@ export class SessionController {
         message: 'Internal server error'
       }); 
     }  
+  }
+
+  getScheduledSessions = async (req: Request, res: Response) => {
+    try {
+      const developerId = req.userId;
+      
+      if (!developerId) {
+        throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
+      }
+      
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5; 
+
+      const result = await this.getScheduledSessionsUseCase.execute(developerId, page, limit);
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: result.sessions,
+        pagination: result.pagination,
+        stats: result.stats
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  getScheduledSessionDetails = async (req: Request, res: Response) => {
+    try {
+      const developerId = req.userId;
+      const { sessionId } = req.params;
+      
+      if (!developerId) {
+        throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
+      }
+      
+      if (!sessionId) {
+        throw new AppError('Session ID is required', StatusCodes.BAD_REQUEST);
+      }
+
+      const session = await this.getScheduledSessionDetailsUseCase.execute(sessionId, developerId);
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: session
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
   }
 
 }
