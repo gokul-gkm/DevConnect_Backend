@@ -19,6 +19,8 @@ import { NotificationService } from '@/infrastructure/services/NotificationServi
 import { GetSessionRequestDetailsUseCase } from '@/application/useCases/developer/sessions/GetSessionRequestDetailsUseCase';
 import { GetScheduledSessionsUseCase } from '@/application/useCases/developer/sessions/GetScheduledSessionsUseCase';
 import { GetScheduledSessionDetailsUseCase } from '@/application/useCases/developer/sessions/GetScheduledSessionDetailsUseCase';
+import { IDeveloperSlotRepository } from '@/domain/interfaces/IDeveloperSlotRepository';
+import { GetDeveloperUnavailableSlotsUseCase } from '@/application/useCases/user/availability/GetDeveloperUnavailableSlotsUseCase';
 
 export class SessionController {
   private createSessionUseCase: CreateSessionUseCase;
@@ -31,6 +33,7 @@ export class SessionController {
   private getSessionRequestDetailsUseCase: GetSessionRequestDetailsUseCase;
   private getScheduledSessionsUseCase: GetScheduledSessionsUseCase;
   private getScheduledSessionDetailsUseCase: GetScheduledSessionDetailsUseCase;
+  private getDeveloperUnavailableSlotsUseCase: GetDeveloperUnavailableSlotsUseCase;
 
   constructor(
     private sessionRepository: SessionRepository,
@@ -40,7 +43,8 @@ export class SessionController {
     private s3Service: S3Service,
     private notificationRepository: NotificationRepository,
     private socketService: SocketService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private developerSlotRepository: IDeveloperSlotRepository
     ) {
     this.createSessionUseCase = new CreateSessionUseCase(sessionRepository, userRepository, developerRepository, notificationService);
     this.getUserSessionsUseCase = new GetUserSessionsUseCase(sessionRepository);
@@ -55,6 +59,7 @@ export class SessionController {
     this.getSessionRequestDetailsUseCase = new GetSessionRequestDetailsUseCase(sessionRepository, s3Service)
     this.getScheduledSessionsUseCase = new GetScheduledSessionsUseCase(sessionRepository, s3Service);
     this.getScheduledSessionDetailsUseCase = new GetScheduledSessionDetailsUseCase(sessionRepository, s3Service);
+    this.getDeveloperUnavailableSlotsUseCase = new GetDeveloperUnavailableSlotsUseCase(developerSlotRepository);
   }
 
 
@@ -372,6 +377,43 @@ export class SessionController {
           message: error.message
         });
       }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  async getUnavailableSlots(req: Request, res: Response) {
+    try {
+      const { developerId, date } = req.query;
+
+      if (!developerId || !date) {
+        throw new AppError('Developer ID and date are required', StatusCodes.BAD_REQUEST);
+      }
+
+      const parsedDate = new Date(date as string);
+      if (isNaN(parsedDate.getTime())) {
+        throw new AppError('Invalid date format', StatusCodes.BAD_REQUEST);
+      }
+
+      const unavailableSlots = await this.getDeveloperUnavailableSlotsUseCase.execute(
+        developerId as string,
+        parsedDate
+      );
+
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        data: unavailableSlots
+      });
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: 'Internal server error'

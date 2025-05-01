@@ -41,15 +41,15 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
         }
         
     }
-    async deleteById(id: string): Promise<void> {  
-        try {
-            await User.deleteOne({_id: id})
-        } catch (error) {
-            console.error('Error deleting user:', error);
-            throw new AppError('Failed to remove user', StatusCodes.INTERNAL_SERVER_ERROR);
-        }
+    // async deleteById(id: string): Promise<void> {  
+    //     try {
+    //         await User.deleteOne({_id: id})
+    //     } catch (error) {
+    //         console.error('Error deleting user:', error);
+    //         throw new AppError('Failed to remove user', StatusCodes.INTERNAL_SERVER_ERROR);
+    //     }
         
-    }
+    // }
 
     async update(id: string, updateData: Partial<IUser>): Promise<IUser>{
         try {
@@ -71,16 +71,6 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
             return await User.find({role})
         } catch (error) {
             console.error('Error fetching user by role:', error);
-            throw new AppError('Failed to fetch user', StatusCodes.INTERNAL_SERVER_ERROR);
-        }
-        
-    }
-
-    async findByLinkedIn(linkedinId: string): Promise<IUser | null>{
-        try {
-            return await User.findOne({ linkedinId });
-        } catch (error) {
-            console.error('Error fetching user by LinkedIn id :', error);
             throw new AppError('Failed to fetch user', StatusCodes.INTERNAL_SERVER_ERROR);
         }
         

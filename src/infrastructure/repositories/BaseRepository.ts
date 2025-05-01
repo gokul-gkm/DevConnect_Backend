@@ -14,5 +14,22 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
       throw new AppError('Database operation failed', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
+  async deleteById(id: string): Promise<T | null> {
+    try {
+      return await this.model.findByIdAndDelete(id);
+    } catch (error) {
+      console.error(`Error deleting document by ID: ${error}`);
+      throw new AppError('Database operation failed', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async findAll(): Promise<T[]> {
+    try {
+      return await this.model.find({},'-password')
+    } catch (error) {
+      console.error(`Error finding all documents : ${error}`);
+      throw new AppError('Database operation failed', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+}
 
 }

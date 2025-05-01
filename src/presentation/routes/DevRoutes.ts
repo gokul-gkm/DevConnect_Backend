@@ -3,9 +3,7 @@ import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { MailService } from "@/infrastructure/mail/MailService";
 import { OTPRepository } from "@/infrastructure/repositories/OTPRepository";
 import { GoogleAuthController } from "../controllers/GoogleAuthController";
-import { LinkedInAuthController } from "../controllers/LinkedInAuthController";
 import { DevAuthController } from "../controllers/DevAuthController";
-
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
 
@@ -16,6 +14,8 @@ import { ProjectRepository } from "@/infrastructure/repositories/ProjectReposito
 import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 import { StatusCodes } from "http-status-codes";
 import { autherization } from "../middleware/autherization";
+import { SessionRepository } from "@/infrastructure/repositories/SessionRepository";
+import { DeveloperSlotRepository } from "@/infrastructure/repositories/DeveloperSlotRepository";
 
 const devRouter = Router();
 
@@ -26,14 +26,14 @@ const projectRepository = new ProjectRepository()
 const walletRepository = new WalletRepository()
 const mailService = new MailService();
 const s3Service = new S3Service()
-
+const sessionRepository = new SessionRepository()
+const developerSlotRepository = new DeveloperSlotRepository()
 
 const devAuthController = new DevAuthController(userRepository, otpRepository, devRepository, mailService, s3Service);
 
-const devController = new DevController(userRepository, devRepository,projectRepository,s3Service)
+const devController = new DevController(userRepository, devRepository,projectRepository,s3Service,developerSlotRepository, sessionRepository)
 
 const googleAuthController = new GoogleAuthController(userRepository, walletRepository);
-const linkedInAuthController = new LinkedInAuthController(userRepository)
 
 devRouter.post('/auth/register', async (req, res) => {
     await devAuthController.register(req, res);
@@ -112,5 +112,12 @@ devRouter
     }
   );
 
+devRouter.get('/availability', authMiddleware, autherization, (req, res, next) => {
+  devController.getUnavailableSlots(req, res).catch(next);
+});
+
+devRouter.post('/availability', authMiddleware, autherization, (req, res, next) => {
+  devController.updateUnavailableSlots(req, res).catch(next);
+});
 
 export default devRouter; 

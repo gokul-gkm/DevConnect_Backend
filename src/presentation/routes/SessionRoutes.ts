@@ -10,6 +10,7 @@ import { autherization } from "@/presentation/middleware/autherization";
 import { NotificationRepository } from "@/infrastructure/repositories/NotificationRepositoty";
 import { SocketService } from "@/infrastructure/services/SocketService";
 import { NotificationService } from "@/infrastructure/services/NotificationService";
+import { DeveloperSlotRepository } from "@/infrastructure/repositories/DeveloperSlotRepository";
 
 export const createSessionRouter = () => {
   const sessionRouter = Router();
@@ -20,7 +21,8 @@ export const createSessionRouter = () => {
   const s3Service = new S3Service();
   const notificationRepository = new NotificationRepository();
   const socketService = SocketService.getInstance();
-  const notificationService = new NotificationService(notificationRepository, socketService)
+  const notificationService = new NotificationService(notificationRepository, socketService);
+  const developerSlotRepository = new DeveloperSlotRepository()
 
   const sessionController = new SessionController(
     sessionRepository, 
@@ -30,7 +32,8 @@ export const createSessionRouter = () => {
     s3Service,
     notificationRepository,
     socketService,
-    notificationService
+    notificationService,
+    developerSlotRepository
   );
 
   sessionRouter.get('/booked-slots', authMiddleware, autherization, (req, res, next) => {
@@ -65,6 +68,10 @@ export const createSessionRouter = () => {
     sessionController.rejectSessionRequest(req, res).catch(next);
   });
 
+  sessionRouter.get('/unavailable-slots', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getUnavailableSlots(req, res).catch(next);
+  });
+
   sessionRouter.get('/:sessionId', authMiddleware, autherization, (req, res, next) => {
     sessionController.getSessionDetails(req, res).catch(next);
   });
@@ -77,6 +84,5 @@ export const createSessionRouter = () => {
     sessionController.getScheduledSessionDetails(req, res).catch(next);
   });
   
-
   return sessionRouter;
 };

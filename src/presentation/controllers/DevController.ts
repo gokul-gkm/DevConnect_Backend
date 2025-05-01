@@ -9,9 +9,12 @@ import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepo
 import { ProjectRepository } from "@/infrastructure/repositories/ProjectRepository";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { S3Service } from "@/infrastructure/services/S3_Service";
+import { ManageDeveloperUnavailabilityUseCase } from "@/application/useCases/developer/availability/ManageDeveloperUnavailabilityUseCase";
 
 import { Request, Response } from "express";
 import { StatusCodes } from 'http-status-codes';
+import { IDeveloperSlotRepository } from "@/domain/interfaces/IDeveloperSlotRepository";
+import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
 
 interface MulterFiles {
     profilePicture?: Express.Multer.File[];
@@ -26,13 +29,16 @@ export class DevController {
     private getDeveloperProjectsUseCase: GetDeveloperProjectsUseCase;
     private updateProjectUseCase: UpdateProjectUseCase;
     private deleteProjectUseCase: DeleteProjectUseCase;
+    private manageDeveloperUnavailabilityUseCase: ManageDeveloperUnavailabilityUseCase;
     
 
     constructor(
         private userRepository: UserRepository,
         private developerRepository: DeveloperRepository,
         private projectRepository: ProjectRepository,
-        private s3Service: S3Service
+        private s3Service: S3Service,
+        private developerSlotRepository: IDeveloperSlotRepository,
+        private sessionRepository: ISessionRepository
     ) {
         this.getDeveloperProfileUseCase = new GetDeveloperProfileUseCase(userRepository, developerRepository,s3Service),
         this.updateDeveloperProfileUseCase = new UpdateDeveloperProfileUseCase(userRepository, developerRepository, s3Service),
@@ -40,6 +46,7 @@ export class DevController {
         this.getDeveloperProjectsUseCase = new GetDeveloperProjectsUseCase(projectRepository,s3Service)
         this.updateProjectUseCase = new UpdateProjectUseCase(projectRepository, s3Service);
         this.deleteProjectUseCase = new DeleteProjectUseCase( projectRepository, developerRepository, s3Service);
+        this.manageDeveloperUnavailabilityUseCase = new  ManageDeveloperUnavailabilityUseCase(developerSlotRepository, sessionRepository)
      }
     
     async getProfile(req: Request, res: Response) {
@@ -259,5 +266,64 @@ export class DevController {
         }
     }
 
-    
+    async getUnavailableSlots(req: Request, res: Response): Promise<void> {
+        try {
+            const developerId = req.params.developerId || req.userId;
+            const date = new Date(req.query.date as string);
+            
+            if (!date || isNaN(date.getTime())) {
+                res.status(StatusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Invalid date provided'
+                });
+                return;
+            }
+            
+            const slots = await this.manageDeveloperUnavailabilityUseCase.getUnavailableSlots(
+                developerId as string,
+                date
+            );
+            
+            res.status(StatusCodes.OK).json({
+                success: true,
+                data: slots
+            });
+        } catch (error: any) {
+            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message || 'Failed to get unavailable slots'
+            });
+        }
+    }
+
+    async updateUnavailableSlots(req: Request, res: Response): Promise<void> {
+        try {
+            const developerId = req.userId;
+            const { date, unavailableSlots } = req.body;
+            
+            if (!date || !Array.isArray(unavailableSlots)) {
+                res.status(StatusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Invalid data provided'
+                });
+                return;
+            }
+            
+            await this.manageDeveloperUnavailabilityUseCase.updateUnavailableSlots(
+                developerId as string,
+                new Date(date),
+                unavailableSlots
+            );
+            
+            res.status(StatusCodes.OK).json({
+                success: true,
+                message: 'Unavailable slots updated successfully'
+            });
+        } catch (error: any) {
+            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message || 'Failed to update unavailable slots'
+            });
+        }
+    }
 }

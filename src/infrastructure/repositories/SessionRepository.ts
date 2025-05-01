@@ -6,6 +6,7 @@ import { SessionDetails, SessionDocument, UserInfo } from '@/domain/types/sessio
 import { startOfDay, endOfDay } from 'date-fns';
 import { StatusCodes } from 'http-status-codes';
 import mongoose, { Types } from 'mongoose';
+import DeveloperSlot from '@/domain/entities/Slot';
 
 interface PopulatedUser {
   _id: Types.ObjectId;
@@ -66,9 +67,9 @@ export class SessionRepository implements ISessionRepository  {
     try {
       const sessionDateObj = new Date(sessionDate);
       const startTimeObj = new Date(startTime);
-  
       const endTimeObj = new Date(startTimeObj.getTime() + (duration * 60000));
       
+      // Check for conflicting sessions first
       const conflictingSessions = await Session.find({
         developerId: new mongoose.Types.ObjectId(developerId),
         status: { $in: ['approved', 'awaiting_payment', 'pending'] },
@@ -98,8 +99,26 @@ export class SessionRepository implements ISessionRepository  {
           }
         ]
       });
-  
-      return conflictingSessions.length === 0;
+      
+      if (conflictingSessions.length > 0) {
+        return false;
+      }
+      
+      // Now check developer unavailability records
+      const formattedTime = startTimeObj.getHours().toString().padStart(2, '0') + 
+                           ':' + 
+                           startTimeObj.getMinutes().toString().padStart(2, '0');
+      
+      const unavailabilityRecord = await DeveloperSlot.findOne({
+        developerId: new mongoose.Types.ObjectId(developerId),
+        date: {
+          $gte: startOfDay(sessionDateObj),
+          $lte: endOfDay(sessionDateObj)
+        },
+        unavailableSlots: formattedTime
+      });
+      
+      return !unavailabilityRecord;
     } catch (error) {
       console.error('Check slot availability error:', error);
       throw new AppError('Failed to check slot availability', StatusCodes.INTERNAL_SERVER_ERROR);
