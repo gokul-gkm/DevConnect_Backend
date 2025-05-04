@@ -21,6 +21,7 @@ import { GetScheduledSessionsUseCase } from '@/application/useCases/developer/se
 import { GetScheduledSessionDetailsUseCase } from '@/application/useCases/developer/sessions/GetScheduledSessionDetailsUseCase';
 import { IDeveloperSlotRepository } from '@/domain/interfaces/IDeveloperSlotRepository';
 import { GetDeveloperUnavailableSlotsUseCase } from '@/application/useCases/user/availability/GetDeveloperUnavailableSlotsUseCase';
+import { GetSessionHistoryUseCase } from '@/application/useCases/user/session/GetSessionHistoryUseCase';
 
 export class SessionController {
   private createSessionUseCase: CreateSessionUseCase;
@@ -34,6 +35,7 @@ export class SessionController {
   private getScheduledSessionsUseCase: GetScheduledSessionsUseCase;
   private getScheduledSessionDetailsUseCase: GetScheduledSessionDetailsUseCase;
   private getDeveloperUnavailableSlotsUseCase: GetDeveloperUnavailableSlotsUseCase;
+  private getSessionHistoryUseCase: GetSessionHistoryUseCase;
 
   constructor(
     private sessionRepository: SessionRepository,
@@ -60,6 +62,7 @@ export class SessionController {
     this.getScheduledSessionsUseCase = new GetScheduledSessionsUseCase(sessionRepository, s3Service);
     this.getScheduledSessionDetailsUseCase = new GetScheduledSessionDetailsUseCase(sessionRepository, s3Service);
     this.getDeveloperUnavailableSlotsUseCase = new GetDeveloperUnavailableSlotsUseCase(developerSlotRepository);
+    this.getSessionHistoryUseCase = new GetSessionHistoryUseCase(sessionRepository, s3Service);
   }
 
 
@@ -414,6 +417,34 @@ export class SessionController {
         });
       }
       
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  async getSessionHistory(req: Request, res: Response) {
+    try {
+      const userId = req.userId;
+      
+      if (!userId) {
+        throw new AppError('User not authenticated', StatusCodes.UNAUTHORIZED);
+      }
+
+      const sessions = await this.getSessionHistoryUseCase.execute(userId);
+
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        data: sessions
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: 'Internal server error'

@@ -68,8 +68,7 @@ export class SessionRepository implements ISessionRepository  {
       const sessionDateObj = new Date(sessionDate);
       const startTimeObj = new Date(startTime);
       const endTimeObj = new Date(startTimeObj.getTime() + (duration * 60000));
-      
-      // Check for conflicting sessions first
+
       const conflictingSessions = await Session.find({
         developerId: new mongoose.Types.ObjectId(developerId),
         status: { $in: ['approved', 'awaiting_payment', 'pending'] },
@@ -104,7 +103,6 @@ export class SessionRepository implements ISessionRepository  {
         return false;
       }
       
-      // Now check developer unavailability records
       const formattedTime = startTimeObj.getHours().toString().padStart(2, '0') + 
                            ':' + 
                            startTimeObj.getMinutes().toString().padStart(2, '0');
@@ -431,7 +429,8 @@ export class SessionRepository implements ISessionRepository  {
         userId: session.userId as UserInfo,
         developerId: developerInfo,
         createdAt: session.createdAt,
-        updatedAt: session.updatedAt
+        updatedAt: session.updatedAt,
+        rejectionReason: session.rejectionReason
       };
   
       return sessionDetails;
@@ -573,4 +572,78 @@ export class SessionRepository implements ISessionRepository  {
       throw new AppError('Failed to fetch scheduled session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async getSessionHistory(userId: string, currentDate: Date) {
+    try {
+      const sessions = await Session.aggregate([
+        {
+          $match: {
+            userId: new Types.ObjectId(userId),
+            sessionDate: { $lte: currentDate },
+            status: { 
+              $in: ['cancelled', 'rejected', 'completed'] 
+            }
+          }
+        },
+        {
+          $lookup: {
+            from: 'developers',
+            localField: 'developerId',
+            foreignField: 'userId',
+            as: 'developer'
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'developer.userId',
+            foreignField: '_id',
+            as: 'developerUser'
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            title: 1,
+            description: 1,
+            topics: 1,
+            sessionDate: 1,
+            startTime: 1,
+            duration: 1,
+            price: 1,
+            status: 1,
+            paymentStatus: 1,
+            rejectionReason: 1,
+            'developer': { $first: '$developer' },
+            'developerUser': {
+              $first: {
+                $map: {
+                  input: '$developerUser',
+                  as: 'user',
+                  in: {
+                    _id: '$$user._id',
+                    username: '$$user.username',
+                    email: '$$user.email',
+                    profilePicture: '$$user.profilePicture',                   
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          $sort: { 
+            sessionDate: 1,
+            startTime: 1 
+          }
+        }
+      ]);
+  
+      return sessions;
+    } catch (error) {
+      console.error('Get sessions history repository error:', error);
+      throw new AppError('Failed to fetch session history', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
 }

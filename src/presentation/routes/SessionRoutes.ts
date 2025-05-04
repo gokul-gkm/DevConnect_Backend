@@ -52,6 +52,10 @@ export const createSessionRouter = () => {
     sessionController.getUpcomingSessions(req, res).catch(next);
   });
 
+  sessionRouter.get('/history', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getSessionHistory(req, res).catch(next);
+  });
+
   sessionRouter.get('/developer/requests', authMiddleware, autherization, (req, res, next) => {
     sessionController.getSessionRequests(req, res).catch(next);
   });
@@ -83,6 +87,8 @@ export const createSessionRouter = () => {
   sessionRouter.get('/developer/scheduled/:sessionId', authMiddleware, autherization, (req, res, next) => {
     sessionController.getScheduledSessionDetails(req, res).catch(next);
   });
+
+ 
   
   return sessionRouter;
 };
