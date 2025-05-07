@@ -637,5 +637,37 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             throw new AppError('Failed to fetch top developers', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
+
+    async getDefaultUnavailableSlots(developerId: string): Promise<string[]> {
+        try {
+            const developer = await Developer.findOne({userId: developerId});
+            if (!developer) {
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+            }
+            return developer.defaultUnavailableSlots || [];
+        } catch (error) {
+            console.error('Get default unavailable slots error:', error);
+            throw new AppError('Failed to get default unavailable slots', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async updateDefaultUnavailableSlots(developerId: string, slots: string[]): Promise<IDeveloper> {
+        try {
+            const developer = await Developer.findOneAndUpdate(
+                {userId: developerId},
+                { $set: { defaultUnavailableSlots: slots } },
+                { new: true }
+            );
+            
+            if (!developer) {
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+            }
+            
+            return developer;
+        } catch (error) {
+            console.error('Update default unavailable slots error:', error);
+            throw new AppError('Failed to update default unavailable slots', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
 

@@ -1,4 +1,3 @@
-
 import { IDeveloper } from "@/domain/entities/Developer";
 import { DevPaginatedResponse, DevQueryParams } from "../types/types";
 import { CreateDeveloperDTO } from "@/application/dto/developer/CreateDeveloperDTO";
@@ -23,4 +22,6 @@ export interface IDeveloperRepository {
     getPublicProfile(developerId: string): Promise<any>;
     countApproved(): Promise<number>
     getTopPerformingDevelopers(limit: number): Promise<any[]>
+    getDefaultUnavailableSlots(developerId: string): Promise<string[]>;
+    updateDefaultUnavailableSlots(developerId: string, slots: string[]): Promise<IDeveloper>;
 }

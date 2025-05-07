@@ -120,4 +120,12 @@ devRouter.post('/availability', authMiddleware, autherization, (req, res, next) 
   devController.updateUnavailableSlots(req, res).catch(next);
 });
 
+devRouter.get('/default-availability', authMiddleware, autherization, (req, res, next) => {
+  devController.getDefaultUnavailableSlots(req, res).catch(next);
+});
+
+devRouter.post('/default-availability', authMiddleware, autherization, (req, res, next) => {
+  devController.updateDefaultUnavailableSlots(req, res).catch(next);
+});
+
 export default devRouter; 

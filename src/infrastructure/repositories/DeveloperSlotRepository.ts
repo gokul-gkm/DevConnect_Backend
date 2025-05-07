@@ -4,10 +4,11 @@ import mongoose from "mongoose";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { startOfDay, endOfDay } from "date-fns";
+import Developer from "@/domain/entities/Developer";
 
 export class DeveloperSlotRepository implements IDeveloperSlotRepository {
   async getUnavailableSlots(developerId: string, date: Date): Promise<string[]> {
-      try {
+    try {
       const dateToCheck = startOfDay(new Date(date));
       
       const record = await DeveloperSlot.findOne({
@@ -18,7 +19,14 @@ export class DeveloperSlotRepository implements IDeveloperSlotRepository {
         }
       });
       
-      return record ? record.unavailableSlots : [];
+      const developer = await Developer.findOne({userId: developerId});
+    
+      const specificSlots = record ? record.unavailableSlots : [];
+      const defaultSlots = developer && developer.defaultUnavailableSlots ? developer.defaultUnavailableSlots : [];
+      
+      const combinedSlots = [...new Set([...specificSlots, ...defaultSlots])];
+      
+      return combinedSlots;
     } catch (error) {
       console.error('Get unavailable slots error:', error);
       throw new AppError('Failed to get unavailable slots', StatusCodes.INTERNAL_SERVER_ERROR);

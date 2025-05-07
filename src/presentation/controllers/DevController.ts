@@ -10,6 +10,7 @@ import { ProjectRepository } from "@/infrastructure/repositories/ProjectReposito
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { ManageDeveloperUnavailabilityUseCase } from "@/application/useCases/developer/availability/ManageDeveloperUnavailabilityUseCase";
+import { ManageDefaultSlotsUseCase } from "@/application/useCases/developer/availability/ManageDefaultSlotsUseCase";
 
 import { Request, Response } from "express";
 import { StatusCodes } from 'http-status-codes';
@@ -30,6 +31,7 @@ export class DevController {
     private updateProjectUseCase: UpdateProjectUseCase;
     private deleteProjectUseCase: DeleteProjectUseCase;
     private manageDeveloperUnavailabilityUseCase: ManageDeveloperUnavailabilityUseCase;
+    private manageDefaultSlotsUseCase: ManageDefaultSlotsUseCase;
     
 
     constructor(
@@ -47,6 +49,7 @@ export class DevController {
         this.updateProjectUseCase = new UpdateProjectUseCase(projectRepository, s3Service);
         this.deleteProjectUseCase = new DeleteProjectUseCase( projectRepository, developerRepository, s3Service);
         this.manageDeveloperUnavailabilityUseCase = new  ManageDeveloperUnavailabilityUseCase(developerSlotRepository, sessionRepository)
+        this.manageDefaultSlotsUseCase = new ManageDefaultSlotsUseCase(developerRepository);
      }
     
     async getProfile(req: Request, res: Response) {
@@ -323,6 +326,56 @@ export class DevController {
             res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: error.message || 'Failed to update unavailable slots'
+            });
+        }
+    }
+
+    async getDefaultUnavailableSlots(req: Request, res: Response): Promise<void> {
+        try {
+            const developerId = req.userId;
+            
+            const slots = await this.manageDefaultSlotsUseCase.getDefaultUnavailableSlots(
+                developerId as string
+            );
+            
+            res.status(StatusCodes.OK).json({
+                success: true,
+                data: slots
+            });
+        } catch (error: any) {
+            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message || 'Failed to get default unavailable slots'
+            });
+        }
+    }
+
+    async updateDefaultUnavailableSlots(req: Request, res: Response): Promise<void> {
+        try {
+            const developerId = req.userId;
+            const { unavailableSlots } = req.body;
+            
+            if (!Array.isArray(unavailableSlots)) {
+                res.status(StatusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Invalid data provided'
+                });
+                return;
+            }
+            
+            await this.manageDefaultSlotsUseCase.updateDefaultUnavailableSlots(
+                developerId as string,
+                unavailableSlots
+            );
+            
+            res.status(StatusCodes.OK).json({
+                success: true,
+                message: 'Default unavailable slots updated successfully'
+            });
+        } catch (error: any) {
+            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: error.message || 'Failed to update default unavailable slots'
             });
         }
     }
