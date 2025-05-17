@@ -16,6 +16,7 @@ import { StatusCodes } from "http-status-codes";
 import { autherization } from "../middleware/autherization";
 import { SessionRepository } from "@/infrastructure/repositories/SessionRepository";
 import { DeveloperSlotRepository } from "@/infrastructure/repositories/DeveloperSlotRepository";
+import { RatingRepository } from "@/infrastructure/repositories/RatingRepository";
 
 const devRouter = Router();
 
@@ -27,11 +28,12 @@ const walletRepository = new WalletRepository()
 const mailService = new MailService();
 const s3Service = new S3Service()
 const sessionRepository = new SessionRepository()
-const developerSlotRepository = new DeveloperSlotRepository()
+const developerSlotRepository = new DeveloperSlotRepository();
+const ratingRepository = new RatingRepository()
 
 const devAuthController = new DevAuthController(userRepository, otpRepository, devRepository, mailService, s3Service);
 
-const devController = new DevController(userRepository, devRepository,projectRepository,s3Service,developerSlotRepository, sessionRepository)
+const devController = new DevController(userRepository, devRepository,projectRepository,s3Service,developerSlotRepository, sessionRepository, ratingRepository)
 
 const googleAuthController = new GoogleAuthController(userRepository, walletRepository);
 
@@ -126,6 +128,10 @@ devRouter.get('/default-availability', authMiddleware, autherization, (req, res,
 
 devRouter.post('/default-availability', authMiddleware, autherization, (req, res, next) => {
   devController.updateDefaultUnavailableSlots(req, res).catch(next);
+});
+
+devRouter.get('/reviews', authMiddleware, autherization, (req, res, next) => {
+  devController.getDeveloperReviews(req, res).catch(next);
 });
 
 export default devRouter; 

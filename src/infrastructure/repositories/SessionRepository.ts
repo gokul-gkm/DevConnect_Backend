@@ -7,6 +7,7 @@ import { startOfDay, endOfDay } from 'date-fns';
 import { StatusCodes } from 'http-status-codes';
 import mongoose, { Types } from 'mongoose';
 import DeveloperSlot from '@/domain/entities/Slot';
+import { BaseRepository } from './BaseRepository';
 
 interface PopulatedUser {
   _id: Types.ObjectId;
@@ -28,7 +29,16 @@ interface PopulatedDeveloper {
 
 
 
-export class SessionRepository implements ISessionRepository  {
+export class SessionRepository extends BaseRepository<ISession> implements ISessionRepository  {
+
+  constructor() {
+    super(Session);
+  }
+  
+  async save(session: ISession): Promise<ISession> {
+    return await session.save()
+  }
+
   async createSession(sessionData: Partial<ISession>): Promise<ISession> {
     try {
       const session = new Session(sessionData);
@@ -238,11 +248,26 @@ export class SessionRepository implements ISessionRepository  {
 
   async getUpcomingSessions(userId: string, currentDate: Date) {
     try {
+      const today = new Date(currentDate);
+      today.setHours(0, 0, 0, 0);
+      
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
       const sessions = await Session.aggregate([
         {
           $match: {
             userId: new Types.ObjectId(userId),
-            sessionDate: { $gte: currentDate },
+            $or: [
+              { sessionDate: { $gt: today } },
+              {
+                sessionDate: { 
+                  $gte: today, 
+                  $lt: tomorrow 
+                },
+                startTime: { $gte: currentDate }
+              }
+            ],
             status: { 
               $nin: ['cancelled', 'rejected', 'completed'] 
             }
@@ -643,6 +668,202 @@ export class SessionRepository implements ISessionRepository  {
     } catch (error) {
       console.error('Get sessions history repository error:', error);
       throw new AppError('Failed to fetch session history', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getTopEarningDevelopers(page: number = 1, limit: number = 10): Promise<any> {
+    try {
+      const skip = (page - 1) * limit;
+      
+      const totalCount = await Session.aggregate([
+        {
+          $match: {
+            status: 'completed',
+            paymentStatus: 'completed'
+          }
+        },
+        {
+          $group: {
+            _id: '$developerId',
+            count: { $sum: 1 }
+          }
+        }
+      ]).then(results => results.length);
+      
+      const totalPages = Math.ceil(totalCount / limit);
+      
+      const developers = await Session.aggregate([
+        {
+          $match: {
+            status: 'completed',
+            paymentStatus: 'completed'
+          }
+        },
+        {
+          $group: {
+            _id: '$developerId',
+            totalSessions: { $sum: 1 },
+            totalEarnings: { $sum: '$price' },
+            averageRating: { $avg: '$rating' }
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'userInfo'
+          }
+        },
+        {
+          $unwind: '$userInfo'
+        },
+        {
+          $project: {
+            id: '$_id',
+            name: '$userInfo.username',
+            email: '$userInfo.email',
+            profilePicture: '$userInfo.profilePicture',
+            sessions: '$totalSessions',
+            averageRating: { $round: ['$averageRating', 1] },
+            totalEarnings: { $round: ['$totalEarnings', 2] }
+          }
+        },
+        {
+          $sort: { totalEarnings: -1 }
+        },
+        {
+          $skip: skip
+        },
+        {
+          $limit: limit
+        }
+      ]);
+      
+      return {
+        developers,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: totalCount
+        }
+      };
+    } catch (error) {
+      console.error('Error getting top earning developers:', error);
+      throw new AppError('Failed to fetch top earning developers', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async getAdminSessionsList(status: string[], page: number = 1, limit: number = 10, search: string = ''): Promise<any> {
+    try {
+      const skip = (page - 1) * limit;
+      const currentDate = new Date();
+      currentDate.setHours(0, 0, 0, 0); 
+
+      let matchCondition: any = { status: { $in: status } };
+      
+    
+      if (status.includes('pending') || status.includes('approved') || status.includes('scheduled')) {
+   
+        matchCondition.sessionDate = { $gte: currentDate };
+      } else if (status.includes('completed') || status.includes('rejected') || status.includes('cancelled')) {
+     
+        matchCondition.sessionDate = { $lt: currentDate };
+      }
+      
+      if (search) {
+        matchCondition.$or = [
+          { 'title': { $regex: search, $options: 'i' } },
+          { 'description': { $regex: search, $options: 'i' } }
+        ];
+      }
+      
+     
+      const totalCount = await Session.countDocuments(matchCondition);
+      const totalPages = Math.ceil(totalCount / limit);
+      
+      const sessions = await Session.aggregate([
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'userId',
+            foreignField: '_id',
+            as: 'userInfo'
+          }
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'developerId',
+            foreignField: '_id',
+            as: 'developerInfo'
+          }
+        },
+        {
+          $unwind: '$userInfo'
+        },
+        {
+          $unwind: '$developerInfo'
+        },
+        {
+          $match: matchCondition
+        },
+     
+        ...(search ? [{
+          $match: {
+            $or: [
+              { 'userInfo.username': { $regex: search, $options: 'i' } },
+              { 'developerInfo.username': { $regex: search, $options: 'i' } }
+            ]
+          }
+        }] : []),
+        {
+          $sort: { sessionDate: 1, startTime: 1 }
+        },
+        {
+          $skip: skip
+        },
+        {
+          $limit: limit
+        },
+        {
+          $project: {
+            _id: 1,
+            title: 1,
+            description: 1,
+            sessionDate: 1,
+            startTime: 1,
+            duration: 1,
+            price: 1,
+            status: 1,
+            paymentStatus: 1,
+            "user": {
+              _id: '$userInfo._id',
+              username: '$userInfo.username',
+              email: '$userInfo.email',
+              profilePicture: '$userInfo.profilePicture'
+            },
+            "developer": {
+              _id: '$developerInfo._id',
+              username: '$developerInfo.username',
+              email: '$developerInfo.email',
+              profilePicture: '$developerInfo.profilePicture'
+            }
+          }
+        }
+      ]);
+      
+      return {
+        sessions,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: totalCount
+        }
+      };
+    } catch (error) {
+      console.error('Error getting admin sessions:', error);
+      throw new AppError('Failed to fetch sessions', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 

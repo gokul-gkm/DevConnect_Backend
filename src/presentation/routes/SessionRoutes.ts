@@ -11,6 +11,8 @@ import { NotificationRepository } from "@/infrastructure/repositories/Notificati
 import { SocketService } from "@/infrastructure/services/SocketService";
 import { NotificationService } from "@/infrastructure/services/NotificationService";
 import { DeveloperSlotRepository } from "@/infrastructure/repositories/DeveloperSlotRepository";
+import mongoose from "mongoose";
+import { RatingRepository } from "@/infrastructure/repositories/RatingRepository";
 
 export const createSessionRouter = () => {
   const sessionRouter = Router();
@@ -22,7 +24,8 @@ export const createSessionRouter = () => {
   const notificationRepository = new NotificationRepository();
   const socketService = SocketService.getInstance();
   const notificationService = new NotificationService(notificationRepository, socketService);
-  const developerSlotRepository = new DeveloperSlotRepository()
+  const developerSlotRepository = new DeveloperSlotRepository();
+  const ratingRepository = new RatingRepository()
 
   const sessionController = new SessionController(
     sessionRepository, 
@@ -33,7 +36,8 @@ export const createSessionRouter = () => {
     notificationRepository,
     socketService,
     notificationService,
-    developerSlotRepository
+    developerSlotRepository,
+    ratingRepository
   );
 
   sessionRouter.get('/booked-slots', authMiddleware, autherization, (req, res, next) => {
@@ -76,9 +80,7 @@ export const createSessionRouter = () => {
     sessionController.getUnavailableSlots(req, res).catch(next);
   });
 
-  sessionRouter.get('/:sessionId', authMiddleware, autherization, (req, res, next) => {
-    sessionController.getSessionDetails(req, res).catch(next);
-  });
+ 
 
   sessionRouter.get('/developer/scheduled', authMiddleware, autherization, (req, res, next) => {
     sessionController.getScheduledSessions(req, res).catch(next);
@@ -88,7 +90,45 @@ export const createSessionRouter = () => {
     sessionController.getScheduledSessionDetails(req, res).catch(next);
   });
 
- 
+  sessionRouter.post('/:sessionId/start', authMiddleware, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const { userId } = req;
   
+      const objectId = new mongoose.Types.ObjectId(sessionId);
+
+      await sessionRepository.updateSessionStatus(objectId,  'active' );
+      
+
+      const session = await sessionRepository.findById(sessionId);
+      
+      if (session && session.userId) {
+       
+        socketService.emitToUser(session.userId.toString(), 'session:started', { 
+          sessionId, 
+          message: 'Your session is ready to join' 
+        });
+      }
+      
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Error starting session:', error);
+      res.status(500).json({ error: 'Failed to start session' });
+    }
+  });
+
+
+  sessionRouter.get('/:sessionId', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getSessionDetails(req, res).catch(next);
+  });
+
+  sessionRouter.post('/:sessionId/rate', authMiddleware, autherization, (req, res, next) => {
+    sessionController.rateSession(req, res).catch(next);
+  });
+
+sessionRouter.put('/:sessionId/rate', authMiddleware, autherization, (req, res, next) => {
+  sessionController.updateRating(req, res).catch(next);
+});
+
   return sessionRouter;
 };

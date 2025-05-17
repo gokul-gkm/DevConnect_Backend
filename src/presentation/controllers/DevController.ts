@@ -16,6 +16,8 @@ import { Request, Response } from "express";
 import { StatusCodes } from 'http-status-codes';
 import { IDeveloperSlotRepository } from "@/domain/interfaces/IDeveloperSlotRepository";
 import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
+import { GetDeveloperReviewsUseCase } from "@/application/useCases/developer/reviews/GetDeveloperReviewsUseCase";
+import { IRatingRepository } from "@/domain/interfaces/IRatingRepository";
 
 interface MulterFiles {
     profilePicture?: Express.Multer.File[];
@@ -32,6 +34,7 @@ export class DevController {
     private deleteProjectUseCase: DeleteProjectUseCase;
     private manageDeveloperUnavailabilityUseCase: ManageDeveloperUnavailabilityUseCase;
     private manageDefaultSlotsUseCase: ManageDefaultSlotsUseCase;
+    private getDeveloperReviewsUseCase: GetDeveloperReviewsUseCase;
     
 
     constructor(
@@ -40,7 +43,8 @@ export class DevController {
         private projectRepository: ProjectRepository,
         private s3Service: S3Service,
         private developerSlotRepository: IDeveloperSlotRepository,
-        private sessionRepository: ISessionRepository
+        private sessionRepository: ISessionRepository,
+        private ratingRepository: IRatingRepository
     ) {
         this.getDeveloperProfileUseCase = new GetDeveloperProfileUseCase(userRepository, developerRepository,s3Service),
         this.updateDeveloperProfileUseCase = new UpdateDeveloperProfileUseCase(userRepository, developerRepository, s3Service),
@@ -50,6 +54,7 @@ export class DevController {
         this.deleteProjectUseCase = new DeleteProjectUseCase( projectRepository, developerRepository, s3Service);
         this.manageDeveloperUnavailabilityUseCase = new  ManageDeveloperUnavailabilityUseCase(developerSlotRepository, sessionRepository)
         this.manageDefaultSlotsUseCase = new ManageDefaultSlotsUseCase(developerRepository);
+        this.getDeveloperReviewsUseCase = new GetDeveloperReviewsUseCase(ratingRepository, s3Service)
      }
     
     async getProfile(req: Request, res: Response) {
@@ -376,6 +381,47 @@ export class DevController {
             res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
                 message: error.message || 'Failed to update default unavailable slots'
+            });
+        }
+    }
+
+    async getDeveloperReviews(req: Request, res: Response) {
+        try {
+            const developerId = req.userId;
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 10;
+            const search = (req.query.search as string) || '';
+            const sortOrder = (req.query.sortOrder as string) || 'newest';
+            
+            if (!developerId) {
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Developer ID is required'
+                });
+            }
+            
+            const result = await this.getDeveloperReviewsUseCase.execute(
+                developerId,
+                page,
+                limit,
+                search,
+                sortOrder
+            );
+            
+            return res.status(StatusCodes.OK).json({
+                success: true,
+                data: result
+            });
+        } catch (error) {
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: 'Internal server error'
             });
         }
     }

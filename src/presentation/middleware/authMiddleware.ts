@@ -43,7 +43,7 @@ export const authMiddleware = (
 
             res.cookie('accessToken', newAccessToken, {
                 httpOnly: true,
-                maxAge: 15 * 60 * 1000
+                maxAge: 24 * 60 * 60 * 1000
             });
 
             req.userId = decodedRefreshToken.userId;

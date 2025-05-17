@@ -11,6 +11,7 @@ import { ForgotPasswordUseCase } from "@/application/useCases/user/auth/ForgotPa
 import { ResetPasswordUseCase } from "@/application/useCases/user/auth/ResetPasswordUseCase";
 import { StatusCodes } from "http-status-codes";
 import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
+import { SetNewTokenUseCase } from "@/application/useCases/user/auth/SetNewTokenUseCase";
 
 export class AuthController {
     private registerUserUseCase: RegisterUserUseCase;
@@ -19,6 +20,7 @@ export class AuthController {
     private loginUserUseCase: LoginUserUseCase;
     private forgotPasswordUseCase: ForgotPasswordUseCase;
     private resetPasswordUseCase: ResetPasswordUseCase;
+    private setNewTokenUseCase: SetNewTokenUseCase;
 
     constructor(
         private userRepository: UserRepository,
@@ -32,6 +34,7 @@ export class AuthController {
         this.loginUserUseCase = new LoginUserUseCase(userRepository);
         this.forgotPasswordUseCase = new ForgotPasswordUseCase(userRepository, mailService);
         this.resetPasswordUseCase = new ResetPasswordUseCase(userRepository);
+        this.setNewTokenUseCase = new SetNewTokenUseCase();
     }
 
     async register(req: Request, res: Response) {
@@ -129,6 +132,34 @@ export class AuthController {
             const { token, newPassword } = req.body;
             await this.resetPasswordUseCase.execute({ token, newPassword });
             return res.status(StatusCodes.OK).json({message: "Password has been reset successfully", success: true})
+        } catch (error) {
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({ message: error.message, success: false})
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error', success: false });
+        }
+    }
+
+    async setNewToken(req: Request, res: Response) {
+        try {
+            const token = req.cookies?.refreshToken;
+
+            if (!token) {
+              return res
+                .status(StatusCodes.FORBIDDEN)
+                .json({ message: "No refresh token found" });
+            }
+      
+            const response = await this.setNewTokenUseCase.execute(token);
+      
+            if (response?.success) {
+              return res.status(StatusCodes.OK).json({ token: response.token });
+            } else {
+              res.clearCookie("refreshToken");
+              return res
+                .status(StatusCodes.FORBIDDEN)
+                .json({ message: response?.message });
+            }
         } catch (error) {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ message: error.message, success: false})

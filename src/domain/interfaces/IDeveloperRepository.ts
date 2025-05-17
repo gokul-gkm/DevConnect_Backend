@@ -24,4 +24,5 @@ export interface IDeveloperRepository {
     getTopPerformingDevelopers(limit: number): Promise<any[]>
     getDefaultUnavailableSlots(developerId: string): Promise<string[]>;
     updateDefaultUnavailableSlots(developerId: string, slots: string[]): Promise<IDeveloper>;
+    getLeaderboard(page: number, limit:number, sortBy: string): Promise<any>
 }

@@ -669,5 +669,114 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             throw new AppError('Failed to update default unavailable slots', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
+
+    async getLeaderboard(page = 1, limit = 10, sortBy = 'combined'): Promise<any> {
+        try {
+            const skip = (page - 1) * limit;
+            
+            const matchStage = { status: 'approved' };
+            
+            const lookupSessionsStage = {
+                $lookup: {
+                    from: 'sessions',
+                    let: { userId: '$userId' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$developerId', '$$userId'] },
+                                        { $eq: ['$status', 'completed'] },
+                                        { $eq: ['$paymentStatus', 'completed'] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: 'completedSessions'
+                }
+            };
+            
+            const lookupUserStage = {
+                $lookup: {
+                    from: 'users',
+                    localField: 'userId',
+                    foreignField: '_id',
+                    as: 'userDetails'
+                }
+            };
+            
+            const unwindUserStage = {
+                $unwind: {
+                    path: '$userDetails',
+                    preserveNullAndEmptyArrays: true
+                }
+            };
+            
+            const projectStage = {
+                $project: {
+                    _id: 1,
+                    userId: 1,
+                    rating: { $ifNull: ['$rating', 0] },
+                    username: '$userDetails.username',
+                    profilePicture: '$userDetails.profilePicture',
+                    bio: '$userDetails.bio',
+                    expertise: 1,
+                    totalSessions: { $size: '$completedSessions' },
+                    totalEarnings: { $sum: '$completedSessions.price' },
+              
+                    maxPossibleRating: 5,
+                    combinedScore: {
+                        $add: [
+
+                            { $multiply: [{ $ifNull: ['$rating', 0] }, 12] },
+                            { $multiply: [{ $sum: '$completedSessions.price' }, 0.001] }
+                        ]
+                    }
+                }
+            };
+        
+            let sortStage;
+            switch (sortBy) {
+                case 'rating':
+                    sortStage = { $sort: { rating: -1, totalSessions: -1 } };
+                    break;
+                case 'earnings':
+                    sortStage = { $sort: { totalEarnings: -1 } };
+                    break;
+                case 'sessions':
+                    sortStage = { $sort: { totalSessions: -1 } };
+                    break;
+                case 'combined':
+                default:
+                    sortStage = { $sort: { combinedScore: -1 } };
+            }
+
+            const totalItems = await Developer.countDocuments(matchStage);
+            const totalPages = Math.ceil(totalItems / limit);
+            
+            const developers = await Developer.aggregate([
+                { $match: matchStage },
+                lookupSessionsStage,
+                lookupUserStage,
+                unwindUserStage,
+                projectStage,
+                sortStage as any,
+                { $skip: skip },
+                { $limit: limit }
+            ]);
+            return {
+                developers,
+                pagination: {
+                    currentPage: page,
+                    totalPages,
+                    totalItems
+                }
+            };
+        } catch (error) {
+            console.error('Error getting developer leaderboard:', error);
+            throw new AppError('Failed to fetch developer leaderboard', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
 

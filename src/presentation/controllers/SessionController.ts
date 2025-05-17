@@ -22,6 +22,10 @@ import { GetScheduledSessionDetailsUseCase } from '@/application/useCases/develo
 import { IDeveloperSlotRepository } from '@/domain/interfaces/IDeveloperSlotRepository';
 import { GetDeveloperUnavailableSlotsUseCase } from '@/application/useCases/user/availability/GetDeveloperUnavailableSlotsUseCase';
 import { GetSessionHistoryUseCase } from '@/application/useCases/user/session/GetSessionHistoryUseCase';
+import { RatingRepository } from '@/infrastructure/repositories/RatingRepository';
+import mongoose from "mongoose";
+import { IRatingRepository } from '@/domain/interfaces/IRatingRepository';
+import { RateSessionUseCase } from '@/application/useCases/user/rating/RateSessionUseCase';
 
 export class SessionController {
   private createSessionUseCase: CreateSessionUseCase;
@@ -36,6 +40,8 @@ export class SessionController {
   private getScheduledSessionDetailsUseCase: GetScheduledSessionDetailsUseCase;
   private getDeveloperUnavailableSlotsUseCase: GetDeveloperUnavailableSlotsUseCase;
   private getSessionHistoryUseCase: GetSessionHistoryUseCase;
+  private rateSessionUseCase: RateSessionUseCase;
+  
 
   constructor(
     private sessionRepository: SessionRepository,
@@ -46,7 +52,8 @@ export class SessionController {
     private notificationRepository: NotificationRepository,
     private socketService: SocketService,
     private notificationService: NotificationService,
-    private developerSlotRepository: IDeveloperSlotRepository
+    private developerSlotRepository: IDeveloperSlotRepository,
+    private ratingRepository: IRatingRepository
     ) {
     this.createSessionUseCase = new CreateSessionUseCase(sessionRepository, userRepository, developerRepository, notificationService);
     this.getUserSessionsUseCase = new GetUserSessionsUseCase(sessionRepository);
@@ -57,12 +64,17 @@ export class SessionController {
       notificationService
     );
     this.rejectSessionRequestUseCase = new RejectSessionRequestUseCase(sessionRepository, notificationService)
-    this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository, s3Service);
+    this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository, s3Service, ratingRepository);
     this.getSessionRequestDetailsUseCase = new GetSessionRequestDetailsUseCase(sessionRepository, s3Service)
     this.getScheduledSessionsUseCase = new GetScheduledSessionsUseCase(sessionRepository, s3Service);
     this.getScheduledSessionDetailsUseCase = new GetScheduledSessionDetailsUseCase(sessionRepository, s3Service);
     this.getDeveloperUnavailableSlotsUseCase = new GetDeveloperUnavailableSlotsUseCase(developerSlotRepository);
     this.getSessionHistoryUseCase = new GetSessionHistoryUseCase(sessionRepository, s3Service);
+    this.rateSessionUseCase = new RateSessionUseCase(
+      ratingRepository,
+      sessionRepository,
+      notificationService
+    );
   }
 
 
@@ -452,4 +464,87 @@ export class SessionController {
     }
   }
 
+
+  async rateSession(req: Request, res: Response) {
+    try {
+      const { sessionId } = req.params;
+      const userId = req.userId;
+      const { rating, feedback } = req.body;
+      
+      if (!sessionId || !userId) {
+        throw new AppError('Session ID and user ID are required', StatusCodes.BAD_REQUEST);
+      }
+      
+      if (!rating || rating < 1 || rating > 5) {
+        throw new AppError('Rating must be between 1 and 5', StatusCodes.BAD_REQUEST);
+      }
+
+      const ratingData = await this.rateSessionUseCase.execute({
+        userId,
+        sessionId,
+        rating,
+        comment: feedback
+      });
+      
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        data: ratingData
+      });
+      
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  async updateRating(req: Request, res: Response) {
+    try {
+      const { sessionId } = req.params;
+      const userId = req.userId;
+      const { rating, feedback } = req.body;
+      
+      if (!sessionId || !userId) {
+        throw new AppError('Session ID and user ID are required', StatusCodes.BAD_REQUEST);
+      }
+      
+      if (!rating || rating < 1 || rating > 5) {
+        throw new AppError('Rating must be between 1 and 5', StatusCodes.BAD_REQUEST);
+      }
+  
+      const ratingData = await this.rateSessionUseCase.execute({
+        userId,
+        sessionId,
+        rating,
+        comment: feedback,
+        isUpdate: true
+      });
+      
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        data: ratingData
+      });
+      
+    } catch (error: any) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
 }

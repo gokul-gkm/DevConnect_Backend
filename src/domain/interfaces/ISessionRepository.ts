@@ -20,5 +20,7 @@ export interface ISessionRepository {
     countCompletedSessions(): Promise<number>
     getDeveloperScheduledSessions(developerId: Types.ObjectId, page: number, limit: number): Promise<any>
     getScheduledSessionById(sessionId: Types.ObjectId): Promise<any>
-    getSessionHistory(userId: string, currentDate: Date):Promise<any>
+    getSessionHistory(userId: string, currentDate: Date): Promise<any>
+    getTopEarningDevelopers(page: number, limit: number): Promise<any>
+    getAdminSessionsList(status: string[], page: number, limit: number, search: string): Promise<any>
 }

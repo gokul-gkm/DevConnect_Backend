@@ -21,6 +21,9 @@ import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { UserRepository } from '@/infrastructure/repositories/UserRepository';
 import { WalletRepository } from '@/infrastructure/repositories/WalletRepository';
 import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
+import { GetRevenueStatsUseCase } from '@/application/useCases/admin/revenue/GetRevenueStatsUseCase';
+import { GetAdminSessionsUseCase } from '@/application/useCases/admin/sessions/GetAdminSessionsUseCase';
+import { GetDeveloperLeaderboardUseCase } from '@/application/useCases/admin/leaderboard/GetDeveloperLeaderboardUseCase';
 
 
 export class AdminController{
@@ -33,6 +36,9 @@ export class AdminController{
     private getDeveloperDetailsUseCase: GetDeveloperDetailsUseCase;
     private getDeveloperRequestDetailsUseCase: GetDeveloperRequestDetailsUseCase;
     private getDashboardStatsUseCase: GetDashboardStatsUseCase;
+    private getRevenueStatsUseCase: GetRevenueStatsUseCase;
+    private getAdminSessionsUseCase: GetAdminSessionsUseCase;
+    private getDeveloperLeaderboardUseCase: GetDeveloperLeaderboardUseCase;
     constructor(
         private adminRepository: IAdminRepository,
         private userRepository: IUserRepository,
@@ -50,6 +56,13 @@ export class AdminController{
         this.getDeveloperDetailsUseCase = new GetDeveloperDetailsUseCase(developerRepository,s3Service)
         this.getDeveloperRequestDetailsUseCase = new GetDeveloperRequestDetailsUseCase(developerRepository, s3Service);
         this.getDashboardStatsUseCase = new GetDashboardStatsUseCase(userRepository, developerRepository, sessionRepository, walletRepository, s3Service)
+        this.getRevenueStatsUseCase = new GetRevenueStatsUseCase(
+            walletRepository, 
+            sessionRepository,
+            s3Service
+        );
+        this.getAdminSessionsUseCase = new GetAdminSessionsUseCase(sessionRepository, s3Service);
+        this.getDeveloperLeaderboardUseCase = new GetDeveloperLeaderboardUseCase(developerRepository, s3Service);
     }
 
     async login(req: Request, res: Response) {
@@ -300,5 +313,72 @@ export class AdminController{
         }
       }
 
+    async getRevenueStats(req: Request, res: Response): Promise<void> {
+        try {
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 10;
+            
+            const revenueStats = await this.getRevenueStatsUseCase.execute(page, limit);
+            res.json(revenueStats);
+        } catch (error: any) {
+            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+                message: error.message || 'Failed to fetch revenue stats'
+            });
+        }
+    }
+
+    async getAdminSessions(req: Request, res: Response): Promise<void> {
+        try {
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 10;
+            const status = (req.query.status as string || '').split(',');
+            const search = req.query.search as string || '';
+            
+            const sessions = await this.getAdminSessionsUseCase.execute(status, page, limit, search);
+            res.json(sessions);
+        } catch (error: any) {
+            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+                message: error.message || 'Failed to fetch sessions'
+            });
+        }
+    }
+
+    async getDeveloperLeaderboard(req: Request, res: Response) {
+        try {
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 10;
+            const sortBy = (req.query.sortBy as string) || 'combined';
+            
+            const validSortOptions = ['combined', 'rating', 'earnings', 'sessions'];
+            if (!validSortOptions.includes(sortBy)) {
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Invalid sort option. Must be one of: combined, rating, earnings, sessions'
+                });
+            }
+            
+            const result = await this.getDeveloperLeaderboardUseCase.execute(
+                page,
+                limit,
+                sortBy
+            );
+            
+            return res.status(StatusCodes.OK).json({
+                success: true,
+                data: result
+            });
+        } catch (error) {
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                message: 'Internal server error'
+            });
+        }
+    }
 
 }

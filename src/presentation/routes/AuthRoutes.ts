@@ -50,4 +50,8 @@ authRouter.post('/google', async (req, res) => {
   await googleAuthController.googleLogin(req, res);
 })
 
+authRouter.get('/refresh-token', async (req, res) => {
+  await authController.setNewToken(req, res)
+})
+
 export default authRouter; 

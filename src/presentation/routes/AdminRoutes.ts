@@ -45,6 +45,10 @@ adminRouter.get('/developers', adminAuthMiddleware, async (req, res) => {
     await adminController.getAllDeveloper(req, res)
 });
 
+adminRouter.get('/developers/leaderboard', adminAuthMiddleware, async (req, res, next) => {
+    adminController.getDeveloperLeaderboard(req, res).catch(next);
+  });
+
 adminRouter.get('/developer-requests', adminAuthMiddleware, async (req, res) => {
     await adminController.listRequests(req, res)
 });
@@ -69,6 +73,18 @@ adminRouter.get('/dashboard/stats', adminAuthMiddleware,
     async (req, res) => {
         await adminController.getDashboardStats(req, res)
     }
+);
+
+adminRouter.get('/revenue/stats', adminAuthMiddleware,
+  async (req, res) => {
+    await adminController.getRevenueStats(req, res)
+  }
+);
+
+adminRouter.get('/sessions', adminAuthMiddleware,
+  async (req, res) => {
+    await adminController.getAdminSessions(req, res)
+  }
 );
 
 export default adminRouter;
