@@ -130,5 +130,13 @@ sessionRouter.put('/:sessionId/rate', authMiddleware, autherization, (req, res, 
   sessionController.updateRating(req, res).catch(next);
 });
 
+  sessionRouter.get('/developer/history', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getDeveloperSessionHistory(req, res).catch(next);
+  });
+
+  sessionRouter.get('/developer/history/:sessionId', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getDeveloperSessionHistoryDetails(req, res).catch(next);
+  });
+
   return sessionRouter;
 };

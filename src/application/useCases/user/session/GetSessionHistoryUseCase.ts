@@ -10,15 +10,14 @@ export class GetSessionHistoryUseCase {
     private s3Service: S3Service
   ) {}
 
-  async execute(userId: string): Promise<ISession[]> {
+  async execute(userId: string, page = 1, limit = 10): Promise<{ sessions: ISession[], pagination: any }> {
     try {
       if (!userId) {
         throw new AppError('User ID is required', StatusCodes.BAD_REQUEST);
       }
 
       const currentDate = new Date();
-      const sessions = await this.sessionRepository.getSessionHistory(userId, currentDate);
-
+      const { sessions, pagination } = await this.sessionRepository.getSessionHistory(userId, currentDate, page, limit);
 
       const sessionsWithUrls = await Promise.all(
         sessions.map(async (session) => {
@@ -35,11 +34,7 @@ export class GetSessionHistoryUseCase {
         })
       );
 
-      return sessionsWithUrls.sort((a, b) => {
-        const dateA = new Date(a.sessionDate);
-        const dateB = new Date(b.sessionDate);
-        return dateB.getTime() - dateA.getTime();
-      });
+      return { sessions: sessionsWithUrls, pagination };
 
     } catch (error) {
       console.error('Get session history error:', error);

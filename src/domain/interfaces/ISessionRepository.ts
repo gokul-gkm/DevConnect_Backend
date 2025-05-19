@@ -8,7 +8,7 @@ export interface ISessionRepository {
     checkSlotAvailability(developerId: string, sessionDate: Date | string, startTime: Date | string, duration: number): Promise<boolean>
     getUserSessions(userId: string): Promise<ISession[]>
     getDeveloperSessions(developerId: string): Promise<ISession[]>
-    getUpcomingSessions(userId: string, currentDate: Date): Promise<any>
+    getUpcomingSessions(userId: string, currentDate: Date, page?: number, limit?: number): Promise<any>
     getSessionRequests(developerId: Types.ObjectId): Promise<any>
     getSessionById(sessionId: Types.ObjectId): Promise<any>
     deleteSession(sessionId: string): Promise<void>
@@ -20,7 +20,17 @@ export interface ISessionRepository {
     countCompletedSessions(): Promise<number>
     getDeveloperScheduledSessions(developerId: Types.ObjectId, page: number, limit: number): Promise<any>
     getScheduledSessionById(sessionId: Types.ObjectId): Promise<any>
-    getSessionHistory(userId: string, currentDate: Date): Promise<any>
+    getSessionHistory(userId: string, currentDate: Date, page?: number, limit?: number): Promise<any>
     getTopEarningDevelopers(page: number, limit: number): Promise<any>
     getAdminSessionsList(status: string[], page: number, limit: number, search: string): Promise<any>
+    getDeveloperSessionHistory(
+        developerId: string,
+        currentDate: Date,
+        page: number,
+        limit: number,
+        search: string
+    ): Promise<any>
+    getDeveloperSessionHistoryById(developerId: string, sessionId: string): Promise<any>;
+    getDeveloperMonthlyStats(developerId: string, year: number): Promise<any>;
+    getDeveloperUpcomingSessions(developerId: string, limit?: number): Promise<any>;
 }

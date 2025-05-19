@@ -26,6 +26,8 @@ import { RatingRepository } from '@/infrastructure/repositories/RatingRepository
 import mongoose from "mongoose";
 import { IRatingRepository } from '@/domain/interfaces/IRatingRepository';
 import { RateSessionUseCase } from '@/application/useCases/user/rating/RateSessionUseCase';
+import { GetDeveloperSessionHistoryUseCase } from '@/application/useCases/developer/sessions/GetDeveloperSessionHistoryUseCase';
+import { GetDeveloperSessionHistoryDetailsUseCase } from '@/application/useCases/developer/sessions/GetDeveloperSessionHistoryDetailsUseCase';
 
 export class SessionController {
   private createSessionUseCase: CreateSessionUseCase;
@@ -41,6 +43,8 @@ export class SessionController {
   private getDeveloperUnavailableSlotsUseCase: GetDeveloperUnavailableSlotsUseCase;
   private getSessionHistoryUseCase: GetSessionHistoryUseCase;
   private rateSessionUseCase: RateSessionUseCase;
+  private getDeveloperSessionHistoryUseCase: GetDeveloperSessionHistoryUseCase;
+  private getDeveloperSessionHistoryDetailsUseCase: GetDeveloperSessionHistoryDetailsUseCase;
   
 
   constructor(
@@ -75,6 +79,8 @@ export class SessionController {
       sessionRepository,
       notificationService
     );
+    this.getDeveloperSessionHistoryUseCase = new GetDeveloperSessionHistoryUseCase(sessionRepository);
+    this.getDeveloperSessionHistoryDetailsUseCase = new GetDeveloperSessionHistoryDetailsUseCase(sessionRepository, s3Service);
   }
 
 
@@ -174,15 +180,17 @@ export class SessionController {
   async getUpcomingSessions(req: Request, res: Response) {
     try {
       const userId = req.userId;
-      
       if (!userId) {
-        throw new AppError('User not authenticated', StatusCodes.UNAUTHORIZED); 
+        throw new AppError('User not authenticated', StatusCodes.
+        UNAUTHORIZED);
       }
-      const sessions = await this.getUpcomingSessionsUseCase.execute(userId);
-
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const { sessions, pagination } = await this.getUpcomingSessionsUseCase.execute(userId, page, limit);
       return res.status(StatusCodes.OK).json({
-        success: true,  
-        data: sessions
+        success: true,
+        data: sessions,
+        pagination
       });
     } catch (error) {
       if (error instanceof AppError) {
@@ -194,7 +202,7 @@ export class SessionController {
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: 'Internal server error'
-      }); 
+      });
     }
   }
 
@@ -439,16 +447,17 @@ export class SessionController {
   async getSessionHistory(req: Request, res: Response) {
     try {
       const userId = req.userId;
-      
       if (!userId) {
-        throw new AppError('User not authenticated', StatusCodes.UNAUTHORIZED);
+        throw new AppError('User not authenticated', StatusCodes.
+        UNAUTHORIZED);
       }
-
-      const sessions = await this.getSessionHistoryUseCase.execute(userId);
-
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const { sessions, pagination } = await this.getSessionHistoryUseCase.execute(userId, page, limit);
       return res.status(StatusCodes.OK).json({
         success: true,
-        data: sessions
+        data: sessions,
+        pagination
       });
     } catch (error) {
       if (error instanceof AppError) {
@@ -547,4 +556,55 @@ export class SessionController {
       });
     }
   }
+
+  getDeveloperSessionHistory = async (req: Request, res: Response) => {
+    try {
+      const developerId = req.userId;
+      if (!developerId) {
+        throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
+      }
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5;
+      const search = (req.query.search as string) || '';
+      const result = await this.getDeveloperSessionHistoryUseCase.execute(developerId, page, limit, search);
+      res.status(StatusCodes.OK).json({ success: true, ...result });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  };
+
+  getDeveloperSessionHistoryDetails = async (req: Request, res: Response) => {
+    try {
+      const developerId = req.userId;
+      const { sessionId } = req.params;
+      if (!developerId || !sessionId) {
+        throw new AppError('Developer ID and Session ID are required', StatusCodes.BAD_REQUEST);
+      }
+      const session = await this.getDeveloperSessionHistoryDetailsUseCase.execute(developerId, sessionId);
+      if (!session) {
+        return res.status(StatusCodes.NOT_FOUND).json({ success: false, message: 'Session not found' });
+      }
+      res.status(StatusCodes.OK).json({ success: true, data: session });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  };
 }

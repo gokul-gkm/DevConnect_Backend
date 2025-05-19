@@ -134,4 +134,12 @@ devRouter.get('/reviews', authMiddleware, autherization, (req, res, next) => {
   devController.getDeveloperReviews(req, res).catch(next);
 });
 
+devRouter.get('/dashboard/stats', authMiddleware, autherization, (req, res) => {
+  devController.getDashboardStats(req, res);
+});
+
+devRouter.get('/dashboard/upcoming', authMiddleware, autherization, (req, res) => {
+  devController.getUpcomingSessionsPreview(req, res);
+});
+
 export default devRouter; 

@@ -10,14 +10,14 @@ export class GetUpcomingSessionsUseCase {
     private s3Service: S3Service
   ) {}
 
-  async execute(userId: string): Promise<ISession[]> {
+  async execute(userId: string, page = 1, limit = 10): Promise<{ sessions: ISession[], pagination: any }> {
     try {
       if (!userId) {
         throw new AppError('User ID is required', StatusCodes.BAD_REQUEST);
       }
 
       const currentDate = new Date();
-      const sessions = await this.sessionRepository.getUpcomingSessions(userId, currentDate);
+      const { sessions, pagination } = await this.sessionRepository.getUpcomingSessions(userId, currentDate, page, limit);
 
       const sessionWithUrls = await Promise.all(
         sessions.map(async (session) => {
@@ -34,11 +34,11 @@ export class GetUpcomingSessionsUseCase {
         })
     );
 
-      return sessionWithUrls.sort((a, b) => {
+      return { sessions: sessionWithUrls.sort((a, b) => {
         const dateA = new Date(a.sessionDate);
         const dateB = new Date(b.sessionDate);
         return dateA.getTime() - dateB.getTime();
-      });
+      }), pagination };
 
     } catch (error) {
       console.error('Get upcoming sessions error:', error);

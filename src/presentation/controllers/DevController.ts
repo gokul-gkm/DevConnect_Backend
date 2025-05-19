@@ -18,6 +18,8 @@ import { IDeveloperSlotRepository } from "@/domain/interfaces/IDeveloperSlotRepo
 import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
 import { GetDeveloperReviewsUseCase } from "@/application/useCases/developer/reviews/GetDeveloperReviewsUseCase";
 import { IRatingRepository } from "@/domain/interfaces/IRatingRepository";
+import { GetDeveloperMonthlyStatsUseCase } from "@/application/useCases/developer/dashboard/GetDeveloperMonthlyStatsUseCase";
+import { GetDeveloperUpcomingSessionsUseCase } from "@/application/useCases/developer/dashboard/GetDeveloperUpcomingSessionsUseCase";
 
 interface MulterFiles {
     profilePicture?: Express.Multer.File[];
@@ -35,6 +37,8 @@ export class DevController {
     private manageDeveloperUnavailabilityUseCase: ManageDeveloperUnavailabilityUseCase;
     private manageDefaultSlotsUseCase: ManageDefaultSlotsUseCase;
     private getDeveloperReviewsUseCase: GetDeveloperReviewsUseCase;
+    private getDeveloperMonthlyStatsUseCase: GetDeveloperMonthlyStatsUseCase;
+    private getDeveloperUpcomingSessionsUseCase: GetDeveloperUpcomingSessionsUseCase;
     
 
     constructor(
@@ -55,6 +59,8 @@ export class DevController {
         this.manageDeveloperUnavailabilityUseCase = new  ManageDeveloperUnavailabilityUseCase(developerSlotRepository, sessionRepository)
         this.manageDefaultSlotsUseCase = new ManageDefaultSlotsUseCase(developerRepository);
         this.getDeveloperReviewsUseCase = new GetDeveloperReviewsUseCase(ratingRepository, s3Service)
+        this.getDeveloperMonthlyStatsUseCase = new GetDeveloperMonthlyStatsUseCase(sessionRepository);
+        this.getDeveloperUpcomingSessionsUseCase = new GetDeveloperUpcomingSessionsUseCase(sessionRepository,s3Service);
      }
     
     async getProfile(req: Request, res: Response) {
@@ -423,6 +429,40 @@ export class DevController {
                 success: false,
                 message: 'Internal server error'
             });
+        }
+    }
+
+    async getDashboardStats(req: Request, res: Response) {
+        try {
+            const developerId = req.userId;
+            const year = parseInt(req.query.year as string) || new Date().getFullYear();
+            if (!developerId) {
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Developer ID is required'
+                });
+            }
+            const stats = await this.getDeveloperMonthlyStatsUseCase.execute(developerId, year);
+            res.status(200).json({ success: true, data: stats });
+        } catch (error) {
+            res.status(500).json({ success: false, message: "Failed to fetch stats" });
+        }
+    }
+
+    async getUpcomingSessionsPreview(req: Request, res: Response) {
+        try {
+            const developerId = req.userId;
+            const limit = parseInt(req.query.limit as string) || 2;
+            if (!developerId) {
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    success: false,
+                    message: 'Developer ID is required'
+                });
+            }
+            const sessions = await this.getDeveloperUpcomingSessionsUseCase.execute(developerId, limit);
+            res.status(200).json({ success: true, data: sessions });
+        } catch (error) {
+            res.status(500).json({ success: false, message: "Failed to fetch sessions" });
         }
     }
 }
