@@ -714,11 +714,20 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
           }
         },
         {
+          $lookup: {
+            from: 'ratings',
+            localField: '_id',
+            foreignField: 'sessionId',
+            as: 'ratings'
+          }
+        },
+        {
           $group: {
             _id: '$developerId',
             totalSessions: { $sum: 1 },
             totalEarnings: { $sum: '$price' },
-            averageRating: { $avg: '$rating' }
+            averageRating: { $avg: { $arrayElemAt: ['$ratings.rating', 0] } },
+            ratings: { $push: { $arrayElemAt: ['$ratings.rating', 0] } }
           }
         },
         {
@@ -740,7 +749,14 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
             profilePicture: '$userInfo.profilePicture',
             sessions: '$totalSessions',
             averageRating: { $round: ['$averageRating', 1] },
-            totalEarnings: { $round: ['$totalEarnings', 2] }
+            totalEarnings: { $round: ['$totalEarnings', 2] },
+            ratings: {
+              $filter: {
+                input: '$ratings',
+                as: 'rating',
+                cond: { $ne: ['$$rating', null] }
+              }
+            }
           }
         },
         {
@@ -1088,6 +1104,101 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       .lean();
 
     return sessions;
+  }
+
+  async getTopicBasedRevenue(page: number = 1, limit: number = 10): Promise<{
+    topics: Array<{
+      topic: string;
+      totalRevenue: number;
+      sessionCount: number;
+      averageRating: number;
+    }>;
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalItems: number;
+    };
+  }> {
+    try {
+      const skip = (page - 1) * limit;
+      
+      const totalCount = await Session.aggregate([
+        {
+          $match: {
+            status: 'completed',
+            paymentStatus: 'completed'
+          }
+        },
+        {
+          $unwind: '$topics'
+        },
+        {
+          $group: {
+            _id: '$topics',
+            count: { $sum: 1 }
+          }
+        }
+      ]).then(results => results.length);
+      
+      const totalPages = Math.ceil(totalCount / limit);
+      
+      const topics = await Session.aggregate([
+        {
+          $match: {
+            status: 'completed',
+            paymentStatus: 'completed'
+          }
+        },
+        {
+          $unwind: '$topics'
+        },
+        {
+          $lookup: {
+            from: 'ratings',
+            localField: '_id',
+            foreignField: 'sessionId',
+            as: 'rating'
+          }
+        },
+        {
+          $group: {
+            _id: '$topics',
+            totalRevenue: { $sum: '$price' },
+            sessionCount: { $sum: 1 },
+            averageRating: { $avg: { $arrayElemAt: ['$rating.rating', 0] } }
+          }
+        },
+        {
+          $project: {
+            topic: '$_id',
+            totalRevenue: 1,
+            sessionCount: 1,
+            averageRating: { $round: ['$averageRating', 1] }
+          }
+        },
+        {
+          $sort: { totalRevenue: -1 }
+        },
+        {
+          $skip: skip
+        },
+        {
+          $limit: limit
+        }
+      ]);
+      
+      return {
+        topics,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: totalCount
+        }
+      };
+    } catch (error) {
+      console.error('Error getting topic based revenue:', error);
+      throw new AppError('Failed to fetch topic based revenue', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
   }
 
 }

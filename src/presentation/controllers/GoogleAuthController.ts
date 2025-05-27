@@ -68,13 +68,13 @@ export class GoogleAuthController {
             }
 
             const accessToken = jwt.sign(
-                { userId: user._id },
+                { userId: user._id, role: 'user' },
                 process.env.JWT_ACCESS_SECRET as string,
                 { expiresIn: "24h" }
             );
 
             const refreshToken = jwt.sign(
-                { userId: user._id },
+                { userId: user._id, role: 'user' },
                 process.env.JWT_REFRESH_SECRET as string,
                 { expiresIn: '7d' }
             );

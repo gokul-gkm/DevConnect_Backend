@@ -4,6 +4,7 @@ import { S3Service } from "@/infrastructure/services/S3_Service";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
 import { StatusCodes } from "http-status-codes";
+import { ERROR_MESSAGES } from "@/utils/constants";
 
 export class DevRequestUseCase {
     constructor(
@@ -24,7 +25,7 @@ export class DevRequestUseCase {
         try {
             const existingUser = await this.userRepository.findByEmail(data.email);
             if (!existingUser) {
-                throw new AppError('User not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             const existingDeveloper = await this.developerRepository.findByUserId(existingUser.id);

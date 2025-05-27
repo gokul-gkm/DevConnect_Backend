@@ -31,12 +31,12 @@ export class LoginUserUseCase{
             throw new AppError('Invalid credentials')
         }
         const accessToken = jwt.sign(
-            { userId: user._id },
+            { userId: user._id, role: user.role },
             process.env.JWT_ACCESS_SECRET as string,
             {expiresIn : "24h"}
         );
         const refreshToken = jwt.sign(
-            { userId: user._id },
+            { userId: user._id, role: 'user' },
             process.env.JWT_REFRESH_SECRET as string,
             {expiresIn: '7d'}
         )

@@ -7,6 +7,7 @@ import { WalletRepository } from "@/infrastructure/repositories/WalletRepository
 import { Schema, Types } from "mongoose";
 import { StatusCodes } from "http-status-codes";
 import { S3Service } from "@/infrastructure/services/S3_Service";
+import { ERROR_MESSAGES } from "@/utils/constants";
 
 export class ManageDeveloperRequestsUseCase {
     private mailService: MailService;
@@ -67,7 +68,7 @@ export class ManageDeveloperRequestsUseCase {
             );
 
             if (!developer) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
          
             try {        
@@ -132,7 +133,7 @@ export class ManageDeveloperRequestsUseCase {
                 reason
             );
             if (!developer) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             try {

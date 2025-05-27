@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 
 interface DecodedJwt {
     userId: string;
+    role: string;
     iat: number;
     exp?: number;
 }
@@ -36,7 +37,7 @@ export const authMiddleware = (
             const decodedRefreshToken = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as DecodedJwt;
 
             const newAccessToken = jwt.sign(
-                { userId: decodedRefreshToken.userId }, 
+                { userId: decodedRefreshToken.userId, role: decodedRefreshToken.role }, 
                 process.env.JWT_ACCESS_SECRET as string, 
                 { expiresIn: '24h' }
             );

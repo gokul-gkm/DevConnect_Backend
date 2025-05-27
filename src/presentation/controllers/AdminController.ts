@@ -24,6 +24,7 @@ import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
 import { GetRevenueStatsUseCase } from '@/application/useCases/admin/revenue/GetRevenueStatsUseCase';
 import { GetAdminSessionsUseCase } from '@/application/useCases/admin/sessions/GetAdminSessionsUseCase';
 import { GetDeveloperLeaderboardUseCase } from '@/application/useCases/admin/leaderboard/GetDeveloperLeaderboardUseCase';
+import { HTTP_STATUS_MESSAGES } from '@/utils/constants';
 
 
 export class AdminController{
@@ -98,7 +99,7 @@ export class AdminController{
             res.clearCookie('adminRefreshToken');
             return res.status(StatusCodes.OK).json({ message: 'Admin Logout successfully', success: true });
         } catch (error) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error', success: false });
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false });
         }
     }
 
@@ -141,7 +142,7 @@ export class AdminController{
             const user = await this.getUserDetailsUseCase.execute(userId);
             return res.status(StatusCodes.OK).json({user, success: true})
         } catch (error: any) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Internal server error", success: false})
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false})
         }
     }
 
@@ -171,7 +172,7 @@ export class AdminController{
             }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: error.message ||'Internal server error'
+                message: error.message ||HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
             });
         }
     }
@@ -201,7 +202,7 @@ export class AdminController{
             }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: 'Internal server error'
+                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
             });
         }
     }
@@ -225,7 +226,7 @@ export class AdminController{
             }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: 'Internal server error'
+                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
             });
         }
     }
@@ -251,7 +252,7 @@ export class AdminController{
             }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: 'Internal server error'
+                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
             });
         }
     }
@@ -274,7 +275,7 @@ export class AdminController{
             }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: 'Internal server error'
+                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
             });
         }
     }
@@ -297,7 +298,7 @@ export class AdminController{
             }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: 'Internal server error'
+                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
             });
         }
     }
@@ -376,7 +377,7 @@ export class AdminController{
             }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: 'Internal server error'
+                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
             });
         }
     }

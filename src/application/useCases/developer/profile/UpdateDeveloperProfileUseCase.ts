@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { ProfileUpdateData } from '@/domain/types/developer';
 import { DeveloperRepository } from '@/infrastructure/repositories/DeveloperRepository';
+import { ERROR_MESSAGES } from '@/utils/constants';
 
 export class UpdateDeveloperProfileUseCase {
     constructor(
@@ -30,7 +31,7 @@ export class UpdateDeveloperProfileUseCase {
             const existingDeveloper = await this.developerRepository.findByUserId(userId);
 
             if (!existingUser || !existingDeveloper) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             if (files.profilePicture?.[0]) {

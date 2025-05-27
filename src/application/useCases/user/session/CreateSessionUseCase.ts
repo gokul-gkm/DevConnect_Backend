@@ -7,6 +7,7 @@ import { AppError } from '@/domain/errors/AppError';
 import { ISession } from '@/domain/entities/Session';
 import { StatusCodes } from 'http-status-codes';
 import { NotificationService } from '@/infrastructure/services/NotificationService';
+import { ERROR_MESSAGES } from '@/utils/constants';
 
 interface CreateSessionDTO {
   title: string;
@@ -34,12 +35,12 @@ export class CreateSessionUseCase {
       const developer = await this.developerRepository.findByUserId(data.developerId);
       
       if (!developer) {
-        throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+        throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
       }
 
       const user = await this.userRepository.findById(data.userId);
       if (!user) {
-        throw new AppError('User not found', StatusCodes.NOT_FOUND);
+        throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
       }
 
       const isAvailable = await this.sessionRepository.checkSlotAvailability(

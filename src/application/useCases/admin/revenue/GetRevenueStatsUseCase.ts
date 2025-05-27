@@ -10,6 +10,7 @@ interface DeveloperEarning {
   sessions: number;
   averageRating: number;
   totalEarnings: number;
+  ratings: number[];
 }
 
 export class GetRevenueStatsUseCase {
@@ -26,14 +27,16 @@ export class GetRevenueStatsUseCase {
       developerEarnings,
       monthlyRevenue,
       totalSessions,
-      topEarningDevelopersResult
+      topEarningDevelopersResult,
+      topicBasedRevenueResult
     ] = await Promise.all([
       this.walletRepository.getTotalRevenue(),
       this.getPlatformFees(),
       this.getDeveloperEarnings(),
       this.getMonthlyRevenue(),
       this.sessionRepository.countCompletedSessions(),
-      this.getTopEarningDevelopers(page, limit)
+      this.getTopEarningDevelopers(page, limit),
+      this.sessionRepository.getTopicBasedRevenue(page, limit)
     ]);
 
     return {
@@ -43,7 +46,11 @@ export class GetRevenueStatsUseCase {
       sessions: totalSessions,
       monthlyRevenue,
       topEarningDevelopers: topEarningDevelopersResult.developers,
-      pagination: topEarningDevelopersResult.pagination
+      topicBasedRevenue: topicBasedRevenueResult.topics,
+      pagination: {
+        ...topEarningDevelopersResult.pagination,
+        topicPagination: topicBasedRevenueResult.pagination
+      }
     };
   }
 

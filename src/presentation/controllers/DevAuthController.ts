@@ -9,6 +9,7 @@ import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepo
 import { OTPRepository } from "@/infrastructure/repositories/OTPRepository";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { S3Service } from "@/infrastructure/services/S3_Service";
+import { HTTP_STATUS_MESSAGES } from "@/utils/constants";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
@@ -41,7 +42,7 @@ export class DevAuthController {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ message: error.message, success: true })
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error', error, success: false })
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, error, success: false })
         }
     }
     async verifyOTP(req: Request, res: Response) {
@@ -56,7 +57,7 @@ export class DevAuthController {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ message: error.message, success: false });
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Internal Server Error", success: false })
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false })
         }
     }
 
@@ -75,7 +76,7 @@ export class DevAuthController {
                 }
                 return res.status(error.statusCode).json({ message: error.message, success: false })
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error', success: false })
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false })
         }
     }
 
@@ -99,7 +100,7 @@ export class DevAuthController {
             });
         } catch (error: any) {
             console.error(error);
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error', success: false })
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false })
         }
     }
 
@@ -115,7 +116,7 @@ export class DevAuthController {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({message: error.message, success: false})
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: 'Internal server error', success: false})
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false})
         }
     }
 

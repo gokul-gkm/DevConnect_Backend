@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken'
 
 interface DecodedJwt {
-  userId: string;
+    userId: string;
+    role: string;
   iat: number;
   exp?: number;
 }
@@ -16,7 +17,7 @@ export class SetNewTokenUseCase {
             
             if (decoded && decoded.userId) {
                 const newAccessToken = jwt.sign(
-                    { userId: decoded.userId },
+                    { userId: decoded.userId, role: decoded.role },
                     process.env.JWT_ACCESS_SECRET as string,
                     { expiresIn: "24h" }
                 );

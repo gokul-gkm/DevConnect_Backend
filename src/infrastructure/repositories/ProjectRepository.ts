@@ -4,6 +4,7 @@ import { AppError } from "@/domain/errors/AppError";
 import Developer from "@/domain/entities/Developer";
 import { ProjectsResponse } from "@/domain/types/project";
 import { StatusCodes } from "http-status-codes";
+import { ERROR_MESSAGES } from "@/utils/constants";
 
 export class ProjectRepository implements IProjectRepository {
     async addProject(project: Partial<IProject>) {
@@ -28,7 +29,7 @@ export class ProjectRepository implements IProjectRepository {
             const developer = await Developer.findOne({ userId });
             
             if (!developer) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             const projectIds = developer.portfolio;

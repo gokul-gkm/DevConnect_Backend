@@ -2,6 +2,7 @@ import { UserRepository } from '@/infrastructure/repositories/UserRepository';
 import { S3Service } from '@/infrastructure/services/S3_Service';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
+import { ERROR_MESSAGES } from '@/utils/constants';
 
 export class GetUserProfileUseCase {
     constructor(
@@ -14,7 +15,7 @@ export class GetUserProfileUseCase {
             const user = await this.userRepository.findById(userId);
             
             if (!user) {
-                throw new AppError('User not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             let signedProfilePictureUrl = null;

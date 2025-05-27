@@ -14,6 +14,7 @@ import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
 import { SocketService } from "@/infrastructure/services/SocketService";
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { IChats } from "@/types/chat";
+import { ERROR_MESSAGES } from "@/utils/constants";
 
 export class ChatController {
     private createChatUseCase: CreateChatUseCase;
@@ -45,7 +46,7 @@ export class ChatController {
             const { developerId } = schema.parse(req.body);
             const userId = req.userId;
             if (!userId) {
-                throw new AppError("User ID is required",StatusCodes.BAD_REQUEST);
+                throw new AppError(ERROR_MESSAGES.USER_REQUIRED,StatusCodes.BAD_REQUEST);
             }
             const chat = await this.createChatUseCase.execute({
                 userId,
@@ -64,7 +65,7 @@ export class ChatController {
         try {
             const userId = req.userId;
             if (!userId) {
-                throw new AppError('User ID is required', StatusCodes.BAD_REQUEST)
+                throw new AppError(ERROR_MESSAGES.USER_REQUIRED, StatusCodes.BAD_REQUEST)
             }
             const chats = await this.getUserChatsUseCase.execute(userId) as unknown as IChats[];
             

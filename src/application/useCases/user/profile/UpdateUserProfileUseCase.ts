@@ -6,6 +6,7 @@ import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { S3Service } from '@/infrastructure/services/S3_Service';
 import { ProfileUpdateData } from '@/domain/types/types';
+import { ERROR_MESSAGES } from '@/utils/constants';
 
 export class UpdateUserProfileUseCase {
     constructor(
@@ -17,7 +18,7 @@ export class UpdateUserProfileUseCase {
         try {
             const existingUser = await this.userRepository.findById(userId);
             if (!existingUser) {
-                throw new AppError('User not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             let profilePictureKey = existingUser.profilePicture;

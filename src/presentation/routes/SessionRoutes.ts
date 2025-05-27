@@ -90,31 +90,8 @@ export const createSessionRouter = () => {
     sessionController.getScheduledSessionDetails(req, res).catch(next);
   });
 
-  sessionRouter.post('/:sessionId/start', authMiddleware, async (req, res) => {
-    try {
-      const { sessionId } = req.params;
-      const { userId } = req;
-  
-      const objectId = new mongoose.Types.ObjectId(sessionId);
-
-      await sessionRepository.updateSessionStatus(objectId,  'active' );
-      
-
-      const session = await sessionRepository.findById(sessionId);
-      
-      if (session && session.userId) {
-       
-        socketService.emitToUser(session.userId.toString(), 'session:started', { 
-          sessionId, 
-          message: 'Your session is ready to join' 
-        });
-      }
-      
-      res.status(200).json({ success: true });
-    } catch (error) {
-      console.error('Error starting session:', error);
-      res.status(500).json({ error: 'Failed to start session' });
-    }
+  sessionRouter.post('/:sessionId/start', authMiddleware, autherization, (req, res, next) => {
+    sessionController.startSession(req, res).catch(next);
   });
 
 

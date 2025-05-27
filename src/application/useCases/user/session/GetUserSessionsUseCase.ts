@@ -2,6 +2,7 @@ import { SessionRepository } from '@/infrastructure/repositories/SessionReposito
 import { AppError } from '@/domain/errors/AppError';
 import { ISession } from '@/domain/entities/Session';
 import { StatusCodes } from 'http-status-codes';
+import { ERROR_MESSAGES } from '@/utils/constants';
 
 export class GetUserSessionsUseCase {
   constructor(
@@ -11,7 +12,7 @@ export class GetUserSessionsUseCase {
   async execute(userId: string): Promise<ISession[]> {
     try {
       if (!userId) {
-        throw new AppError('User ID is required', StatusCodes.BAD_REQUEST);
+        throw new AppError(ERROR_MESSAGES.USER_REQUIRED, StatusCodes.BAD_REQUEST);
       }
 
       const sessions = await this.sessionRepository.getUserSessions(userId);

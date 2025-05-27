@@ -3,6 +3,7 @@ import { SessionRepository } from '@/infrastructure/repositories/SessionReposito
 import { AppError } from '@/domain/errors/AppError';
 import { S3Service } from '@/infrastructure/services/S3_Service';
 import { StatusCodes } from 'http-status-codes';
+import { ERROR_MESSAGES } from '@/utils/constants';
 
 export class GetScheduledSessionsUseCase {
   constructor(
@@ -13,7 +14,7 @@ export class GetScheduledSessionsUseCase {
   async execute(developerId: string, page: number, limit: number) {
     try {
       if (!developerId) {
-        throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
+        throw new AppError(ERROR_MESSAGES.DEVELOPER_REQUIRED, StatusCodes.BAD_REQUEST);
       }
 
       const result = await this.sessionRepository.getDeveloperScheduledSessions(

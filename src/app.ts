@@ -18,6 +18,7 @@ import { createServer } from 'http';
 import { SocketService } from './infrastructure/services/SocketService';
 import { Server as SocketServer } from 'socket.io';
 import { createNotificationRouter } from './presentation/routes/NotificationRoutes';
+import { createVideoSessionRouter } from './presentation/routes/videoSessionRoutes';
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use('/sessions', sessionRouter);
 app.use('/payments', paymentRouter);
 app.use('/notifications', notificationRouter);
 app.use('/chats', createChatRouter(httpServer));
+app.use('/video-sessions', createVideoSessionRouter());
 
 app.use((req: Request, res: Response) => {
     res.status(StatusCodes.NOT_FOUND).json({

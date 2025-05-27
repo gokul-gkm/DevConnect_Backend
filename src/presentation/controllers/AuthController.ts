@@ -12,6 +12,7 @@ import { ResetPasswordUseCase } from "@/application/useCases/user/auth/ResetPass
 import { StatusCodes } from "http-status-codes";
 import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 import { SetNewTokenUseCase } from "@/application/useCases/user/auth/SetNewTokenUseCase";
+import { HTTP_STATUS_MESSAGES } from "@/utils/constants";
 
 export class AuthController {
     private registerUserUseCase: RegisterUserUseCase;
@@ -47,7 +48,7 @@ export class AuthController {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ message: error.message , success: false});
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error', error , success: false});
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, error , success: false});
         }
     }
 
@@ -63,7 +64,7 @@ export class AuthController {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ message: error.message , success: false});
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: "Internal Server Error", success: false})
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false})
         }
     }
 
@@ -82,7 +83,7 @@ export class AuthController {
                 }
                 return res.status(error.statusCode).json({message: error.message, success: false})
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: 'Internal server error', success: false})
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false})
         }
     }
 
@@ -98,7 +99,7 @@ export class AuthController {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({message: error.message, success: false})
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: 'Internal server error', success: false})
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false})
         }
     }
 
@@ -110,7 +111,7 @@ export class AuthController {
             return res.status(StatusCodes.OK).json({ message: 'Logout successfully' });
         } catch (error) {
             console.error('Logout error: ', error);
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' });
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR });
         }
     }
 
@@ -123,7 +124,7 @@ export class AuthController {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({message: error.message, success: false})
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Internal server error", success: false });
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false });
         }
     }
 
@@ -136,7 +137,7 @@ export class AuthController {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ message: error.message, success: false})
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error', success: false });
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false });
         }
     }
 
@@ -164,7 +165,7 @@ export class AuthController {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ message: error.message, success: false})
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error', success: false });
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false });
         }
     }
 

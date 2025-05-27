@@ -8,6 +8,7 @@ import { DevPaginatedResponse, DevQueryParams} from '@/domain/types/types';
 import { StatusCodes } from 'http-status-codes';
 import mongoose, { FilterQuery, SortOrder } from 'mongoose';
 import { BaseRepository } from './BaseRepository';
+import { ERROR_MESSAGES } from '@/utils/constants';
 
 
 export class DeveloperRepository extends BaseRepository<IDeveloper> implements IDeveloperRepository {
@@ -69,7 +70,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             );
 
             if (!developer) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
             return developer;
         } catch (error) {
@@ -102,7 +103,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             });
                 
             if (!developer) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             return developer;
@@ -263,7 +264,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             );
 
             if (!updatedDeveloper) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             return updatedDeveloper;
@@ -300,7 +301,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             );
 
             if (!result) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
         } catch (error) {
             console.error('Error removing project from portfolio:', error);
@@ -642,7 +643,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
         try {
             const developer = await Developer.findOne({userId: developerId});
             if (!developer) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
             return developer.defaultUnavailableSlots || [];
         } catch (error) {
@@ -660,7 +661,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             );
             
             if (!developer) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
             
             return developer;

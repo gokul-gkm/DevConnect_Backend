@@ -28,6 +28,8 @@ import { IRatingRepository } from '@/domain/interfaces/IRatingRepository';
 import { RateSessionUseCase } from '@/application/useCases/user/rating/RateSessionUseCase';
 import { GetDeveloperSessionHistoryUseCase } from '@/application/useCases/developer/sessions/GetDeveloperSessionHistoryUseCase';
 import { GetDeveloperSessionHistoryDetailsUseCase } from '@/application/useCases/developer/sessions/GetDeveloperSessionHistoryDetailsUseCase';
+import { StartSessionUseCase } from '@/application/useCases/developer/sessions/StartSessionUseCase';
+import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from '@/utils/constants';
 
 export class SessionController {
   private createSessionUseCase: CreateSessionUseCase;
@@ -45,6 +47,7 @@ export class SessionController {
   private rateSessionUseCase: RateSessionUseCase;
   private getDeveloperSessionHistoryUseCase: GetDeveloperSessionHistoryUseCase;
   private getDeveloperSessionHistoryDetailsUseCase: GetDeveloperSessionHistoryDetailsUseCase;
+  private startSessionUseCase: StartSessionUseCase;
   
 
   constructor(
@@ -65,7 +68,8 @@ export class SessionController {
     this.getSessionRequestsUseCase = new GetSessionRequestsUseCase(sessionRepository,s3Service);
     this.acceptSessionRequestUseCase = new AcceptSessionRequestUseCase(
       sessionRepository,
-      notificationService
+      notificationService,
+      socketService
     );
     this.rejectSessionRequestUseCase = new RejectSessionRequestUseCase(sessionRepository, notificationService)
     this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository, s3Service, ratingRepository);
@@ -81,6 +85,7 @@ export class SessionController {
     );
     this.getDeveloperSessionHistoryUseCase = new GetDeveloperSessionHistoryUseCase(sessionRepository);
     this.getDeveloperSessionHistoryDetailsUseCase = new GetDeveloperSessionHistoryDetailsUseCase(sessionRepository, s3Service);
+    this.startSessionUseCase = new StartSessionUseCase(sessionRepository, socketService);
   }
 
 
@@ -142,7 +147,7 @@ export class SessionController {
       
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -172,7 +177,7 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -188,7 +193,7 @@ export class SessionController {
       const limit = parseInt(req.query.limit as string) || 10;
       const { sessions, pagination } = await this.getUpcomingSessionsUseCase.execute(userId, page, limit);
       return res.status(StatusCodes.OK).json({
-        success: true,
+        success: true,  
         data: sessions,
         pagination
       });
@@ -201,8 +206,8 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
-      });
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
+      }); 
     }
   }
 
@@ -212,7 +217,7 @@ export class SessionController {
       const developerId = req.userId;
       
       if (!developerId) {
-        throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
+        throw new AppError(ERROR_MESSAGES.DEVELOPER_REQUIRED, StatusCodes.BAD_REQUEST);
       }
       
       const page = parseInt(req.query.page as string) || 1;
@@ -235,7 +240,7 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       }); 
     }
   };
@@ -263,7 +268,7 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       }); 
     }
   };
@@ -297,7 +302,7 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       }); 
     }
   };
@@ -317,7 +322,7 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       }); 
     }  
   }
@@ -336,7 +341,7 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       }); 
     }  
   }
@@ -346,7 +351,7 @@ export class SessionController {
       const developerId = req.userId;
       
       if (!developerId) {
-        throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
+        throw new AppError(ERROR_MESSAGES.DEVELOPER_REQUIRED, StatusCodes.BAD_REQUEST);
       }
       
       const page = parseInt(req.query.page as string) || 1;
@@ -369,7 +374,7 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -380,7 +385,7 @@ export class SessionController {
       const { sessionId } = req.params;
       
       if (!developerId) {
-        throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
+        throw new AppError(ERROR_MESSAGES.DEVELOPER_REQUIRED, StatusCodes.BAD_REQUEST);
       }
       
       if (!sessionId) {
@@ -402,7 +407,7 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -439,7 +444,7 @@ export class SessionController {
       
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -468,7 +473,7 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -510,7 +515,7 @@ export class SessionController {
       
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -552,7 +557,7 @@ export class SessionController {
       
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -561,7 +566,7 @@ export class SessionController {
     try {
       const developerId = req.userId;
       if (!developerId) {
-        throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
+        throw new AppError(ERROR_MESSAGES.DEVELOPER_REQUIRED, StatusCodes.BAD_REQUEST);
       }
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 5;
@@ -577,7 +582,7 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   };
@@ -603,8 +608,36 @@ export class SessionController {
       }
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: 'Internal server error'
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   };
+
+  async startSession(req: Request, res: Response) {
+    try {
+      const { sessionId } = req.params;
+      
+      if (!sessionId) {
+        throw new AppError('Session ID is required', StatusCodes.BAD_REQUEST);
+      }
+
+      await this.startSessionUseCase.execute(sessionId);
+
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        message: 'Session started successfully'
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
+      });
+    }
+  }
 }

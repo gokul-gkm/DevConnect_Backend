@@ -3,6 +3,7 @@ import { VerifyOTPDTO } from "@/application/dto/VerifyOTPDTO";
 import { AppError } from "@/domain/errors/AppError";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { StatusCodes } from "http-status-codes";
+import { ERROR_MESSAGES } from "@/utils/constants";
 
 export class VerifyOTPUseCase {
     private otpRepository: OTPRepository;
@@ -37,7 +38,7 @@ export class VerifyOTPUseCase {
         const user = await this.userRepository.findByEmail(email);
 
         if (!user) {
-            throw new AppError('User not found', StatusCodes.NOT_FOUND);
+            throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
         }
         user.isVerified = true;
         await this.userRepository.save(user);

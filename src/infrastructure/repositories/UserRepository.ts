@@ -5,6 +5,7 @@ import { AppError } from "@/domain/errors/AppError";
 import { PaginatedResponse, QueryParams } from "@/domain/types/types";
 import { StatusCodes } from "http-status-codes";
 import { BaseRepository } from "./BaseRepository";
+import { ERROR_MESSAGES } from "@/utils/constants";
 
 export class UserRepository extends BaseRepository<IUser> implements IUserRepository{
     constructor() {
@@ -56,7 +57,7 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
             const objectId = new Types.ObjectId(id);
             const updatedUser = await User.findByIdAndUpdate(objectId, updateData, { new: true });
             if (!updatedUser) {
-                throw new AppError('User not found', StatusCodes.NOT_FOUND)
+                throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND)
             }
             return updatedUser;
         } catch (error) {
@@ -141,7 +142,7 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
           const user = await User.findById(userId).select('email username profilePicture');
           
           if (!user) {
-            throw new AppError('User not found', StatusCodes.NOT_FOUND);
+            throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
           }
           return user;
         } catch (error) {

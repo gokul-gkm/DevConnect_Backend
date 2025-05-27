@@ -3,6 +3,7 @@ import { AppError } from '@/domain/errors/AppError';
 import { DeveloperRepository } from '@/infrastructure/repositories/DeveloperRepository';
 import { S3Service } from '@/infrastructure/services/S3_Service';
 import { StatusCodes } from 'http-status-codes';
+import { ERROR_MESSAGES } from '@/utils/constants';
 
 
 export class GetDeveloperProfileUseCase {
@@ -14,7 +15,7 @@ export class GetDeveloperProfileUseCase {
             const developer = await this.developerRepository.findByUserId(userId);
             
             if (!user) {
-                throw new AppError('User not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             let signedProfilePictureUrl = null;

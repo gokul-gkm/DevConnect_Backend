@@ -33,4 +33,17 @@ export interface ISessionRepository {
     getDeveloperSessionHistoryById(developerId: string, sessionId: string): Promise<any>;
     getDeveloperMonthlyStats(developerId: string, year: number): Promise<any>;
     getDeveloperUpcomingSessions(developerId: string, limit?: number): Promise<any>;
+    getTopicBasedRevenue(page: number, limit: number): Promise<{
+        topics: Array<{
+          topic: string;
+          totalRevenue: number;
+          sessionCount: number;
+          averageRating: number;
+        }>;
+        pagination: {
+          currentPage: number;
+          totalPages: number;
+          totalItems: number;
+        };
+      }> 
 }

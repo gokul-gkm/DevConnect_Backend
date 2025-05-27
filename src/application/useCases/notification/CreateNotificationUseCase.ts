@@ -54,6 +54,7 @@ export class CreateNotificationUseCase {
       const notification = await this.notificationRepository.create(notificationData);
 
       if (this.socketService.isUserOnline(recipientId)) {
+        console.log('user is online. emitting notification')
         this.socketService.emitToUser(recipientId, 'notification:new', {
           notification: {
             id: notification._id,
@@ -68,6 +69,7 @@ export class CreateNotificationUseCase {
       }
 
       if (this.socketService.isDeveloperOnline(recipientId)) {
+        console.log('developer is online. emitting notification')
         this.socketService.emitToDeveloper(recipientId, 'notification:new', {
           notification: {
             id: notification._id,
@@ -80,6 +82,8 @@ export class CreateNotificationUseCase {
           }
         });
       }
+
+      console.log('notification created and emitted')
 
       return notification;
     } catch (error) {

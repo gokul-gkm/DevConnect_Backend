@@ -7,6 +7,7 @@ import { AppError } from "@/domain/errors/AppError";
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { S3Service } from "@/infrastructure/services/S3_Service";
+import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from "@/utils/constants";
 import { Request, Response } from "express";
 import { StatusCodes } from 'http-status-codes';
 
@@ -32,16 +33,16 @@ export class UserController {
         try {
             const userId = req.userId;
             if (!userId) {
-                throw new AppError("User ID is required",);
+                throw new AppError(ERROR_MESSAGES.USER_REQUIRED,StatusCodes.BAD_REQUEST);
             }
             const user = await this.getUserProfileUseCase.execute(userId);
             if(!user) {
-                throw new AppError("User not found",StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND,StatusCodes.NOT_FOUND);
             }
             return res.status(StatusCodes.OK).json({data: user, success: true});
             
         } catch (error) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'});
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({success: false, message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR});
         }
     }
 
@@ -81,7 +82,7 @@ export class UserController {
             }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 status: true,
-                message: 'Internal server error'
+                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
             });
         }
     }

@@ -8,6 +8,7 @@ import { AppError } from '@/domain/errors/AppError';
 import { INotificationRepository } from '@/domain/interfaces/INotificationRepository';
 import { NotificationRepository } from '@/infrastructure/repositories/NotificationRepositoty';
 import { SocketService } from '@/infrastructure/services/SocketService';
+import { HTTP_STATUS_MESSAGES } from '@/utils/constants';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
@@ -49,7 +50,7 @@ export class NotificationController {
       
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -74,7 +75,7 @@ export class NotificationController {
       
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -97,7 +98,7 @@ export class NotificationController {
       
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -122,7 +123,7 @@ export class NotificationController {
       
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -145,7 +146,7 @@ export class NotificationController {
       
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }

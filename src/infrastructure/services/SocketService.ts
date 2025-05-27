@@ -3,6 +3,14 @@ import { Server } from 'http';
 import jwt from 'jsonwebtoken';
 import logger from '@/utils/logger';
 
+const DEBUG = true;
+
+function debugLog(component: string, message: string, data?: any) {
+  if (DEBUG) {
+    console.log(`[Backend:${component}] ${message}`, data || '');
+  }
+}
+
 interface SocketData {
   userId?: string;
   role?: string;
@@ -46,6 +54,10 @@ export class SocketService {
           developerId?: string;
         };
 
+        if (!decoded.role || !['user', 'developer'].includes(decoded.role)) {
+          throw new Error('Invalid role');
+        }
+
         socket.data = {
           userId: decoded.userId,
           role: decoded.role,
@@ -64,15 +76,26 @@ export class SocketService {
   private setupEventHandlers() {
     this.io.on('connection', (socket) => {
       const { userId, role, developerId } = socket.data;
-      logger.info(`Socket connected: ${socket.id} - Role: ${role}`);
-      logger.info(`Current connections - Users: ${this.countUserSockets()}, Developers: ${this.countDeveloperSockets()}`);
+      
+      // Clear any existing connections for this user/developer
+      if (role === 'developer' && userId) {
+        this.developerSockets.delete(userId);
+      } else if (role === 'user' && userId) {
+        this.userSockets.delete(userId);
+      }
 
+      logger.info(`Socket connected: ${socket.id} - Role: ${role}`);
+      
       if (role === 'developer' && userId) {
         this.addSocket(this.developerSockets, userId, socket.id);
         this.handleDeveloperEvents(socket);
-      } else if (userId) {
+      } else if (role === 'user' && userId) {
         this.addSocket(this.userSockets, userId, socket.id);
         this.handleUserEvents(socket);
+      } else {
+        logger.warn(`Invalid role or missing ID for socket ${socket.id}`);
+        socket.disconnect();
+        return;
       }
 
       socket.on('notification:mark-read', async (notificationId: string) => {
@@ -112,7 +135,7 @@ export class SocketService {
         try {
           if (data.developerId) {
             const isOnline = this.isDeveloperOnline(data.developerId);
-            console.log(`Developer ${data.developerId} online status: ${isOnline}`);
+            console.log(`🛜Developer ${data.developerId} online status: ${isOnline} ${isOnline ? '✅' : '❌'}`);
             socket.emit('developer:online', { 
               developerId: data.developerId, 
               isOnline: isOnline 
@@ -121,7 +144,7 @@ export class SocketService {
           
           if (data.userId) {
             const isOnline = this.isUserOnline(data.userId);
-            console.log(`User ${data.userId} online status: ${isOnline}`);
+            console.log(`🛜User ${data.userId} online status: ${isOnline} ${isOnline ? '✅' : '❌'}`);
             socket.emit('user:online', { 
               userId: data.userId, 
               isOnline: isOnline 
@@ -143,6 +166,8 @@ export class SocketService {
           }
         }
       });
+
+      
 
       socket.on('disconnect', () => {
         this.handleDisconnect(socket);
@@ -189,19 +214,22 @@ export class SocketService {
   private setupWebRTCHandlers(socket: any) {
     const { userId, role, developerId } = socket.data;
     const participantId = role === 'developer' ? developerId : userId;
+    
+    debugLog('WebRTC', `Setting up WebRTC handlers for ${participantId} (${role})`);
 
     socket.on('webrtc:join-room', (data: { roomId: string, userId: string, role: string }) => {
       try {
         const { roomId } = data;
+        debugLog('WebRTC:Join', `User ${participantId} joining room ${roomId}`);
         
         if (!roomId || !participantId) {
-          logger.error('Invalid room ID or participant ID for WebRTC room join');
+          debugLog('WebRTC:Join', 'Invalid room ID or participant ID');
           return;
         }
         
         const roomName = `webrtc:${roomId}`;
         socket.join(roomName);
-        logger.info(`User ${participantId} joined WebRTC room ${roomId}`);
+        debugLog('WebRTC:Join', `User ${participantId} joined room ${roomId}`);
         
         if (!this.webRTCRooms.has(roomId)) {
           this.webRTCRooms.set(roomId, new Set());
@@ -216,18 +244,14 @@ export class SocketService {
           };
         });
         
-        socket.emit('webrtc:session-info', {
+        this.io.to(roomName).emit('webrtc:session-info', {
           roomId,
           participants
         });
         
-        socket.to(roomName).emit('webrtc:user-joined', {
-          userId: participantId,
-          role: role,
-          roomId
-        });
+        logger.info(`Emitted session info to room ${roomId}:`, participants);
       } catch (error) {
-        logger.error('Error in webrtc:join-room:', error);
+        debugLog('WebRTC:Join', 'Error in join-room handler:', error);
       }
     });
     
@@ -265,17 +289,16 @@ export class SocketService {
     socket.on('webrtc:offer', (data: { sdp: any, to: string, from: string, sessionId: string }) => {
       try {
         const { to, sessionId } = data;
+        debugLog('WebRTC:Offer', `Relaying offer from ${participantId} to ${to} in room ${sessionId}`);
         
         if (!to || !sessionId) {
-          logger.error('Invalid WebRTC offer data');
+          debugLog('WebRTC:Offer', 'Invalid offer data');
           return;
         }
         
-        logger.info(`Relaying WebRTC offer from ${participantId} to ${to} in room ${sessionId}`);
-
         this.relayWebRTCMessage(to, 'webrtc:offer', data);
       } catch (error) {
-        logger.error('Error in webrtc:offer:', error);
+        debugLog('WebRTC:Offer', 'Error in offer handler:', error);
       }
     });
     
@@ -378,6 +401,9 @@ export class SocketService {
       map.set(id, new Set());
     }
     map.get(id)!.add(socketId);
+    // Add logging to track socket additions
+    logger.info(`Added socket ${socketId} to ${map === this.userSockets ? 'user' : 'developer'} ${id}`);
+    logger.info(`Current connections - Users: ${this.countUserSockets()}, Developers: ${this.countDeveloperSockets()}`);
   }
 
   private handleUserEvents(socket: any) {
@@ -460,19 +486,16 @@ export class SocketService {
 
   private handleDisconnect(socket: any) {
     const { userId, role, developerId } = socket.data;
-    const participantId = role === 'developer' ? developerId : userId;
     
-    logger.info(`Socket disconnected: ${socket.id} - Role: ${role}`);
-
-    if (role === 'developer' && developerId) {
-      const sockets = this.developerSockets.get(developerId);
+    if (role === 'developer' && userId) {
+      const sockets = this.developerSockets.get(userId);
       if (sockets) {
         sockets.delete(socket.id);
         if (sockets.size === 0) {
-          this.developerSockets.delete(developerId);
+          this.developerSockets.delete(userId);
         }
       }
-    } else if (userId) {
+    } else if (role === 'user' && userId) {
       const sockets = this.userSockets.get(userId);
       if (sockets) {
         sockets.delete(socket.id);
@@ -483,12 +506,12 @@ export class SocketService {
     }
 
     this.webRTCRooms.forEach((participants, roomId) => {
-      if (participants.has(participantId)) {
-        participants.delete(participantId);
+      if (participants.has(userId)) {
+        participants.delete(userId);
         
         const roomName = `webrtc:${roomId}`;
         socket.to(roomName).emit('webrtc:user-disconnected', {
-          userId: participantId,
+          userId: userId,
           roomId
         });
         
@@ -497,11 +520,16 @@ export class SocketService {
         }
       }
     });
+
+    logger.info(`Socket disconnected: ${socket.id} - Role: ${role}`);
+    logger.info(`Current connections - Users: ${this.countUserSockets()}, Developers: ${this.countDeveloperSockets()}`);
   }
 
   public emitToUser(userId: string, event: string, data: any) {
     const sockets = this.userSockets.get(userId);
     if (sockets) {
+      console.log(`Emitting ${event} to user ${userId} on sockets:`, Array.from(sockets));
+
       sockets.forEach(socketId => {
         this.io.to(socketId).emit(event, data);
       });
@@ -511,6 +539,7 @@ export class SocketService {
   public emitToDeveloper(developerId: string, event: string, data: any) {
     const sockets = this.developerSockets.get(developerId);
     if (sockets) {
+      console.log(`Emitting ${event} to developer ${developerId} on sockets:`, Array.from(sockets));
       sockets.forEach(socketId => {
         this.io.to(socketId).emit(event, data);
       });

@@ -20,6 +20,7 @@ import { GetDeveloperReviewsUseCase } from "@/application/useCases/developer/rev
 import { IRatingRepository } from "@/domain/interfaces/IRatingRepository";
 import { GetDeveloperMonthlyStatsUseCase } from "@/application/useCases/developer/dashboard/GetDeveloperMonthlyStatsUseCase";
 import { GetDeveloperUpcomingSessionsUseCase } from "@/application/useCases/developer/dashboard/GetDeveloperUpcomingSessionsUseCase";
+import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from "@/utils/constants";
 
 interface MulterFiles {
     profilePicture?: Express.Multer.File[];
@@ -67,11 +68,11 @@ export class DevController {
         try {
             const userId = req.userId;
             if (!userId) {
-                throw new AppError("Developer ID is required",StatusCodes.BAD_REQUEST);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_REQUIRED,StatusCodes.BAD_REQUEST);
             }
             const user = await this.getDeveloperProfileUseCase.execute(userId);
             if(!user) {
-                throw new AppError("Developer not found",StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND,StatusCodes.NOT_FOUND);
             }
             return res.status(StatusCodes.OK).json({data: user, success: true});
             
@@ -145,7 +146,7 @@ export class DevController {
             }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: 'Internal server error'
+                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
             });
         }
     }
@@ -402,7 +403,7 @@ export class DevController {
             if (!developerId) {
                 return res.status(StatusCodes.BAD_REQUEST).json({
                     success: false,
-                    message: 'Developer ID is required'
+                    message: ERROR_MESSAGES.DEVELOPER_REQUIRED
                 });
             }
             
@@ -427,7 +428,7 @@ export class DevController {
             }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: 'Internal server error'
+                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
             });
         }
     }
@@ -439,7 +440,7 @@ export class DevController {
             if (!developerId) {
                 return res.status(StatusCodes.BAD_REQUEST).json({
                     success: false,
-                    message: 'Developer ID is required'
+                    message: ERROR_MESSAGES.DEVELOPER_REQUIRED
                 });
             }
             const stats = await this.getDeveloperMonthlyStatsUseCase.execute(developerId, year);
@@ -456,7 +457,7 @@ export class DevController {
             if (!developerId) {
                 return res.status(StatusCodes.BAD_REQUEST).json({
                     success: false,
-                    message: 'Developer ID is required'
+                    message: ERROR_MESSAGES.DEVELOPER_REQUIRED
                 });
             }
             const sessions = await this.getDeveloperUpcomingSessionsUseCase.execute(developerId, limit);

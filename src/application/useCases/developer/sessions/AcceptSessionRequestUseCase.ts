@@ -3,11 +3,13 @@ import { AppError } from '@/domain/errors/AppError';
 import { Types } from 'mongoose';
 import { StatusCodes } from 'http-status-codes';
 import { NotificationService } from '@/infrastructure/services/NotificationService';
+import { SocketService } from '@/infrastructure/services/SocketService';
 
 export class AcceptSessionRequestUseCase {
   constructor(
     private sessionRepository: SessionRepository,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private socketService: SocketService
   ) {}
 
   async execute(sessionId: string, developerId: string) {
@@ -40,8 +42,9 @@ export class AcceptSessionRequestUseCase {
       if (updatedSession && updatedSession.userId) {
         try {
           const recipientId = updatedSession.userId._id.toString();
-
-          await this.notificationService.notify(
+          
+          // Create and send notification
+          const notification = await this.notificationService.notify(
             recipientId,
             'Session Request Accepted',
             `Your session "${updatedSession.title}" has been accepted.`,
@@ -49,8 +52,36 @@ export class AcceptSessionRequestUseCase {
             developerId,
             sessionId
           );
+
+          // Emit session update to both user and developer
+          if (this.socketService.isUserOnline(recipientId)) {
+            console.log('user is online. emitting session updated')
+            this.socketService.emitToUser(recipientId, 'session:updated', {
+              sessionId: sessionId,
+              status: 'approved',
+              notification: {
+                id: notification._id,
+                title: notification.title,
+                message: notification.message,
+                type: notification.type,
+                isRead: notification.isRead,
+                timestamp: notification.createdAt,
+                sender: notification.sender
+              }
+            });
+          }
+
+          // Also emit to developer if they're online
+          if (this.socketService.isDeveloperOnline(developerId)) {
+            this.socketService.emitToDeveloper(developerId, 'session:updated', {
+              sessionId: sessionId,
+              status: 'approved'
+            });
+          }
+
         } catch (notificationError) {
-          console.error('Failed to create notification:', notificationError);
+          console.error('Failed to create or send notification:', notificationError);
+          // Don't throw the error, as the session was successfully updated
         }
       }
 

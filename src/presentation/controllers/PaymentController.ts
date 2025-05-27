@@ -11,6 +11,7 @@ import { Types } from 'mongoose';
 import { AppError } from '@/domain/errors/AppError';
 import { GetAdminWalletDetailsUseCase } from '@/application/useCases/user/payment/GetAdminWalletDetailsUseCase';
 import { StatusCodes } from 'http-status-codes';
+import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from '@/utils/constants';
 
 export class PaymentController {
   private createPaymentSessionUseCase: CreatePaymentSessionUseCase;
@@ -64,7 +65,7 @@ export class PaymentController {
       res.json({ url: checkoutUrl });
     } catch (error: any) {
       res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -109,7 +110,7 @@ export class PaymentController {
     try {
       const userId = req.userId;
       if (!userId) {
-        throw new AppError('User ID is required', StatusCodes.BAD_REQUEST);
+        throw new AppError(ERROR_MESSAGES.USER_REQUIRED, StatusCodes.BAD_REQUEST);
       }
       
       const wallet = await this.getWalletDetailsUseCase.execute(userId);
