@@ -7,8 +7,7 @@ import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepo
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 import { SessionRepository } from "@/infrastructure/repositories/SessionRepository";
-
-
+import { MailService } from "@/infrastructure/mail/MailService";
 
 const adminRouter = Router();
 const adminRepository = new AdminRepository();
@@ -17,7 +16,17 @@ const developerRepository = new DeveloperRepository()
 const walletRepository = new WalletRepository();
 const sessionRepository = new SessionRepository();
 const s3Service = new S3Service()
-const adminController = new AdminController(adminRepository, userRepository, developerRepository,s3Service, walletRepository, sessionRepository);
+const mailService = new MailService()
+
+const adminController = new AdminController(
+    adminRepository,
+    userRepository,
+    developerRepository,
+    s3Service,
+    walletRepository,
+    sessionRepository,
+    mailService
+);
 
 
 

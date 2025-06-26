@@ -4,8 +4,10 @@ import { IWallet, IWalletTransaction } from '@/domain/entities/Wallet';
 import { WalletModel } from '@/domain/entities/Wallet';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
+import { BaseRepository } from './BaseRepository';
 
 export class WalletRepository implements IWalletRepository {
+
   async findByUserId(userId: Types.ObjectId): Promise<IWallet | null> {
     try {
       return await WalletModel.findOne({ userId });

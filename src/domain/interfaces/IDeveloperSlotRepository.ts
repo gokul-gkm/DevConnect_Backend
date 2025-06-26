@@ -1,6 +1,7 @@
 import { IDeveloperSlot } from "@/domain/entities/Slot";
+import { IBaseRepository } from "./IBaseRepository";
 
-export interface IDeveloperSlotRepository {
+export interface IDeveloperSlotRepository extends IBaseRepository<IDeveloperSlot> {
   getUnavailableSlots(developerId: string, date: Date): Promise<string[]>;
   updateUnavailableSlots(
     developerId: string,

@@ -3,7 +3,7 @@ import { IPaymentService, CreateCheckoutSessionParams } from '@/domain/interface
 import { AppError } from '@/domain/errors/AppError';
 import { IPaymentRepository } from '@/domain/interfaces/IPaymentRepository';
 import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
-import { ObjectId, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { StatusCodes } from 'http-status-codes';
 

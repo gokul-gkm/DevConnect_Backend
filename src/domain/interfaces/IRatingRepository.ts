@@ -1,7 +1,8 @@
 import { Types } from "mongoose";
 import { IRating } from "../entities/Rating";
+import { IBaseRepository } from "./IBaseRepository";
 
-export interface IRatingRepository{
+export interface IRatingRepository extends IBaseRepository<IRating> {
     createRating(rating: {
         userId: Types.ObjectId;
         sessionId: Types.ObjectId;

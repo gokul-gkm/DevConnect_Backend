@@ -2,6 +2,7 @@ import { Server as SocketServer } from 'socket.io';
 import { Server } from 'http';
 import jwt from 'jsonwebtoken';
 import logger from '@/utils/logger';
+import { ISocketService } from '@/domain/interfaces/ISocketService';
 
 const DEBUG = true;
 
@@ -17,12 +18,13 @@ interface SocketData {
   developerId?: string;
 }
 
-export class SocketService {
+export class SocketService implements ISocketService {
   private static instance: SocketService | null = null; 
   private io: SocketServer;
   private userSockets: Map<string, Set<string>> = new Map();
   private developerSockets: Map<string, Set<string>> = new Map();
   private webRTCRooms: Map<string, Set<string>> = new Map();
+  private connectionStates: Map<string, string> = new Map();
 
   private constructor(server: Server, io: SocketServer) {
     this.io = io;
@@ -76,16 +78,18 @@ export class SocketService {
   private setupEventHandlers() {
     this.io.on('connection', (socket) => {
       const { userId, role, developerId } = socket.data;
-      
-      // Clear any existing connections for this user/developer
+      console.log("🔰 Role and userID : ", role, userId)
+ 
       if (role === 'developer' && userId) {
+        console.log('💻 Developer socket ')
         this.developerSockets.delete(userId);
       } else if (role === 'user' && userId) {
+        console.log('👤 User socket ')
         this.userSockets.delete(userId);
       }
 
       logger.info(`Socket connected: ${socket.id} - Role: ${role}`);
-      
+
       if (role === 'developer' && userId) {
         this.addSocket(this.developerSockets, userId, socket.id);
         this.handleDeveloperEvents(socket);
@@ -126,6 +130,7 @@ export class SocketService {
       this.handleCommonEvents(socket);
 
       if (role === 'developer' && developerId) {
+        console.log("🔀 online", developerId)
         this.io.emit('developer:online', { developerId });
       } else if (userId) {
         this.io.emit('user:online', { userId });
@@ -213,23 +218,27 @@ export class SocketService {
 
   private setupWebRTCHandlers(socket: any) {
     const { userId, role, developerId } = socket.data;
-    const participantId = role === 'developer' ? developerId : userId;
+    const participantId = userId;
     
-    debugLog('WebRTC', `Setting up WebRTC handlers for ${participantId} (${role})`);
+    console.log(`[Backend:WebRTC Step 1] Setting up WebRTC handlers for ${participantId} (${role})`);
+
+    if (role === 'developer' && userId) {
+        this.addSocket(this.developerSockets, userId, socket.id);
+    } else if (role === 'user' && userId) {
+        this.addSocket(this.userSockets, userId, socket.id);
+    }
 
     socket.on('webrtc:join-room', (data: { roomId: string, userId: string, role: string }) => {
       try {
         const { roomId } = data;
-        debugLog('WebRTC:Join', `User ${participantId} joining room ${roomId}`);
+        const roomName = `webrtc:${roomId}`;
         
-        if (!roomId || !participantId) {
-          debugLog('WebRTC:Join', 'Invalid room ID or participant ID');
+        if (this.webRTCRooms.get(roomId)?.has(participantId)) {
+          console.log(`[Backend:WebRTC] User ${participantId} already in room ${roomId}`);
           return;
         }
         
-        const roomName = `webrtc:${roomId}`;
         socket.join(roomName);
-        debugLog('WebRTC:Join', `User ${participantId} joined room ${roomId}`);
         
         if (!this.webRTCRooms.has(roomId)) {
           this.webRTCRooms.set(roomId, new Set());
@@ -238,161 +247,181 @@ export class SocketService {
         this.webRTCRooms.get(roomId)!.add(participantId);
         
         const participants = Array.from(this.webRTCRooms.get(roomId) || []).map(id => {
+            const isDeveloper = this.developerSockets.has(id);
           return {
             userId: id,
-            role: role === 'developer' ? 'developer' : 'user'
+            role: isDeveloper ? 'developer' : 'user'
           };
         });
         
+        console.log(`[Backend:WebRTC Step 6] Emitting session info to room ${roomId}:`, participants);
         this.io.to(roomName).emit('webrtc:session-info', {
           roomId,
           participants
         });
-        
-        logger.info(`Emitted session info to room ${roomId}:`, participants);
       } catch (error) {
-        debugLog('WebRTC:Join', 'Error in join-room handler:', error);
+        console.error('[Backend:WebRTC] Error in join-room handler:', error);
       }
     });
     
     socket.on('webrtc:leave-room', (data: { roomId: string, userId: string, role: string }) => {
       try {
         const { roomId } = data;
+        console.log(`[Backend:WebRTC Step 8] User ${participantId} leaving room ${roomId}`);
         
         if (!roomId || !participantId) {
-          logger.error('Invalid room ID or participant ID for WebRTC room leave');
+          console.log('[Backend:WebRTC Step 8.1] Invalid room ID or participant ID for WebRTC room leave');
           return;
         }
         
         const roomName = `webrtc:${roomId}`;
+        console.log(`[Backend:WebRTC Step 9] Leaving socket room ${roomName}`);
         socket.leave(roomName);
-        logger.info(`User ${participantId} left WebRTC room ${roomId}`);
         
         const room = this.webRTCRooms.get(roomId);
         if (room) {
+          console.log(`[Backend:WebRTC Step 10] Removing participant ${participantId} from room ${roomId}`);
           room.delete(participantId);
           
           if (room.size === 0) {
+            console.log(`[Backend:WebRTC Step 11] Room ${roomId} is empty, removing it`);
             this.webRTCRooms.delete(roomId);
           }
         }
         
+        console.log(`[Backend:WebRTC Step 12] Notifying other participants about disconnection`);
         socket.to(roomName).emit('webrtc:user-disconnected', {
           userId: participantId,
           roomId
         });
       } catch (error) {
-        logger.error('Error in webrtc:leave-room:', error);
+        console.error('[Backend:WebRTC Step 13] Error in webrtc:leave-room:', error);
       }
     });
     
     socket.on('webrtc:offer', (data: { sdp: any, to: string, from: string, sessionId: string }) => {
       try {
         const { to, sessionId } = data;
-        debugLog('WebRTC:Offer', `Relaying offer from ${participantId} to ${to} in room ${sessionId}`);
+        if (to === participantId) {
+          console.log('[Backend:WebRTC] Preventing self-signaling');
+          return;
+        }
+        console.log(`[Backend:WebRTC Step 14] Relaying offer from ${participantId} to ${to} in room ${sessionId}`);
         
         if (!to || !sessionId) {
-          debugLog('WebRTC:Offer', 'Invalid offer data');
+          console.log('[Backend:WebRTC Step 14.1] Invalid offer data');
           return;
         }
         
+        console.log(`[Backend:WebRTC Step 15] Relaying WebRTC offer`);
         this.relayWebRTCMessage(to, 'webrtc:offer', data);
       } catch (error) {
-        debugLog('WebRTC:Offer', 'Error in offer handler:', error);
+        console.error('[Backend:WebRTC Step 16] Error in offer handler:', error);
       }
     });
     
     socket.on('webrtc:answer', (data: { sdp: any, to: string, from: string, sessionId: string }) => {
       try {
         const { to, sessionId } = data;
+        console.log(`[Backend:WebRTC Step 17] Relaying answer from ${participantId} to ${to} in room ${sessionId}`);
         
         if (!to || !sessionId) {
-          logger.error('Invalid WebRTC answer data');
+          console.log('[Backend:WebRTC Step 17.1] Invalid WebRTC answer data');
           return;
         }
         
-        logger.info(`Relaying WebRTC answer from ${participantId} to ${to} in room ${sessionId}`);
-        
+        console.log(`[Backend:WebRTC Step 18] Relaying WebRTC answer`);
         this.relayWebRTCMessage(to, 'webrtc:answer', data);
       } catch (error) {
-        logger.error('Error in webrtc:answer:', error);
+        console.error('[Backend:WebRTC Step 19] Error in webrtc:answer:', error);
       }
     });
 
     socket.on('webrtc:ice-candidate', (data: { candidate: any, to: string, from: string }) => {
       try {
         const { to } = data;
+        console.log(`[Backend:WebRTC Step 20] Relaying ICE candidate from ${participantId} to ${to}`);
         
         if (!to) {
-          logger.error('Invalid ICE candidate data');
+          console.log('[Backend:WebRTC Step 20.1] Invalid ICE candidate data');
           return;
         }
         
-        logger.info(`Relaying ICE candidate from ${participantId} to ${to}`);
-        
+        console.log(`[Backend:WebRTC Step 21] Relaying ICE candidate`);
         this.relayWebRTCMessage(to, 'webrtc:ice-candidate', data);
       } catch (error) {
-        logger.error('Error in webrtc:ice-candidate:', error);
+        console.error('[Backend:WebRTC Step 22] Error in webrtc:ice-candidate:', error);
       }
     });
 
     socket.on('webrtc:screen-sharing-started', (data: { roomId: string, userId: string }) => {
       try {
         const { roomId } = data;
+        console.log(`[Backend:WebRTC Step 23] User ${participantId} started screen sharing in room ${roomId}`);
         
         if (!roomId) {
-          logger.error('Invalid screen sharing data');
+          console.log('[Backend:WebRTC Step 23.1] Invalid screen sharing data');
           return;
         }
         
         const roomName = `webrtc:${roomId}`;
-        logger.info(`User ${participantId} started screen sharing in room ${roomId}`);
-        
+        console.log(`[Backend:WebRTC Step 24] Notifying room about screen sharing`);
         socket.to(roomName).emit('webrtc:screen-sharing-started', {
           userId: participantId,
           roomId
         });
       } catch (error) {
-        logger.error('Error in webrtc:screen-sharing-started:', error);
+        console.error('[Backend:WebRTC Step 25] Error in webrtc:screen-sharing-started:', error);
       }
     });
     
     socket.on('webrtc:screen-sharing-stopped', (data: { roomId: string, userId: string }) => {
       try {
         const { roomId } = data;
+        console.log(`[Backend:WebRTC Step 26] User ${participantId} stopped screen sharing in room ${roomId}`);
         
         if (!roomId) {
-          logger.error('Invalid screen sharing data');
+          console.log('[Backend:WebRTC Step 26.1] Invalid screen sharing data');
           return;
         }
         
         const roomName = `webrtc:${roomId}`;
-        logger.info(`User ${participantId} stopped screen sharing in room ${roomId}`);
-        
+        console.log(`[Backend:WebRTC Step 27] Notifying room about screen sharing stop`);
         socket.to(roomName).emit('webrtc:screen-sharing-stopped', {
           userId: participantId,
           roomId
         });
       } catch (error) {
-        logger.error('Error in webrtc:screen-sharing-stopped:', error);
+        console.error('[Backend:WebRTC Step 28] Error in webrtc:screen-sharing-stopped:', error);
       }
+    });
+
+    socket.on('webrtc:connection-state-change', (data: { state: string, roomId: string }) => {
+      const { state, roomId } = data;
+      this.connectionStates.set(`${participantId}:${roomId}`, state);
+      console.log(`[Backend:WebRTC] Connection state for ${participantId} in room ${roomId}: ${state}`);
     });
   }
 
 
   private relayWebRTCMessage(targetUserId: string, event: string, data: any) {
+    console.log(`[Backend:WebRTC Step 29] Attempting to relay ${event} to ${targetUserId}`);
+    
     let targetSockets = this.userSockets.get(targetUserId);
     
     if (!targetSockets || targetSockets.size === 0) {
+        console.log(`[Backend:WebRTC Step 30] No user sockets found, checking developer sockets`);
       targetSockets = this.developerSockets.get(targetUserId);
     }
     
     if (targetSockets && targetSockets.size > 0) {
+        console.log(`[Backend:WebRTC Step 31] Found ${targetSockets.size} sockets for target user`);
       targetSockets.forEach(socketId => {
+            console.log(`[Backend:WebRTC Step 32] Emitting ${event} to socket ${socketId}`);
         this.io.to(socketId).emit(event, data);
       });
     } else {
-      logger.warn(`Could not find target user ${targetUserId} for WebRTC signal relay`);
+        console.log(`[Backend:WebRTC Step 33] Could not find target user ${targetUserId} for WebRTC signal relay`);
     }
   }
 
@@ -400,10 +429,23 @@ export class SocketService {
     if (!map.has(id)) {
       map.set(id, new Set());
     }
-    map.get(id)!.add(socketId);
-    // Add logging to track socket additions
+    const sockets = map.get(id)!;
+    
+    if (sockets.size >= 2) {
+      const oldestSocket = Array.from(sockets)[0];
+      this.io.sockets.sockets.get(oldestSocket)?.disconnect();
+      sockets.delete(oldestSocket);
+    }
+    
+    sockets.add(socketId);
     logger.info(`Added socket ${socketId} to ${map === this.userSockets ? 'user' : 'developer'} ${id}`);
-    logger.info(`Current connections - Users: ${this.countUserSockets()}, Developers: ${this.countDeveloperSockets()}`);
+
+    const connectedUserIds = Array.from(this.userSockets.keys());
+    const connectedDeveloperIds = Array.from(this.developerSockets.keys());
+    logger.info(
+      `Current connections - Users: ${this.countUserSockets()} [${connectedUserIds.join(', ')}], ` +
+      `Developers: ${this.countDeveloperSockets()} [${connectedDeveloperIds.join(', ')}]`
+    );
   }
 
   private handleUserEvents(socket: any) {
@@ -486,7 +528,7 @@ export class SocketService {
 
   private handleDisconnect(socket: any) {
     const { userId, role, developerId } = socket.data;
-    
+
     if (role === 'developer' && userId) {
       const sockets = this.developerSockets.get(userId);
       if (sockets) {
@@ -522,7 +564,12 @@ export class SocketService {
     });
 
     logger.info(`Socket disconnected: ${socket.id} - Role: ${role}`);
-    logger.info(`Current connections - Users: ${this.countUserSockets()}, Developers: ${this.countDeveloperSockets()}`);
+    const connectedUserIds = Array.from(this.userSockets.keys());
+    const connectedDeveloperIds = Array.from(this.developerSockets.keys());
+    logger.info(
+      `Current connections - Users: ${this.countUserSockets()} [${connectedUserIds.join(', ')}], ` +
+      `Developers: ${this.countDeveloperSockets()} [${connectedDeveloperIds.join(', ')}]`
+    );
   }
 
   public emitToUser(userId: string, event: string, data: any) {

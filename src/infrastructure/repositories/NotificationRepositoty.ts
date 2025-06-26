@@ -3,8 +3,12 @@ import { INotification, Notification } from '@/domain/entities/Notification';
 import  { Types } from 'mongoose';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
+import { BaseRepository } from './BaseRepository';
 
-export class NotificationRepository implements INotificationRepository {
+export class NotificationRepository extends BaseRepository<INotification> implements INotificationRepository {
+  constructor() {
+    super(Notification)
+  }
   async create(notificationData: Partial<INotification>): Promise<INotification> {
     try {
       const notification = new Notification(notificationData);

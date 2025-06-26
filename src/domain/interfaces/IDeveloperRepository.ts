@@ -1,9 +1,10 @@
 import { IDeveloper } from "@/domain/entities/Developer";
 import { DevPaginatedResponse, DevQueryParams } from "../types/types";
 import { CreateDeveloperDTO } from "@/application/dto/developer/CreateDeveloperDTO";
-import { DeveloperSearchDTO, DeveloperSearchResponse, ValidatedSearchParams } from "@/application/dto/users/DeveloperSearchDTO";
+import { DeveloperSearchResponse, ValidatedSearchParams } from "@/application/dto/users/DeveloperSearchDTO";
+import { IBaseRepository } from "./IBaseRepository";
 
-export interface IDeveloperRepository {
+export interface IDeveloperRepository extends IBaseRepository<IDeveloper> {
     createDeveloper(data: CreateDeveloperDTO): Promise<IDeveloper> 
     findByUserId(userId: string): Promise<IDeveloper | null> 
     updateDeveloper(developerId: string, updateData: Partial<IDeveloper>): Promise<IDeveloper | null>

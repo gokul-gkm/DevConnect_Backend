@@ -543,17 +543,21 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
   async getDeveloperScheduledSessions(developerId: Types.ObjectId, page: number = 1, limit: number = 5){
     try {
       const skip = (page - 1) * limit;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       const totalCount = await Session.countDocuments({ 
         developerId,
-        status: 'scheduled'
+        status: 'scheduled',
+        sessionDate: { $gte: today }
       });
       
       const totalPages = Math.ceil(totalCount / limit);
       
       const sessions = await Session.find({
         developerId,
-        status: 'scheduled'
+        status: 'scheduled',
+        sessionDate: { $gte: today }
       })
       .populate({
         path: 'userId',

@@ -1,8 +1,9 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import { IMailService } from '../../domain/interfaces/IMailService';
 dotenv.config();
 
-export class MailService {
+export class MailService implements IMailService {
     private transporter: nodemailer.Transporter;
 
     constructor() {

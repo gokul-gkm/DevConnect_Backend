@@ -1,75 +1,84 @@
 import { Request, Response } from 'express';
-import {AdminLoginUseCase} from '@/application/useCases/admin/auth/AdminLoginUseCase';
-import { GetUsersUseCase } from '@/application/useCases/admin/users/GetUsersUseCase';
-import { ToggleUserStatusUseCase } from '@/application/useCases/admin/users/ToggleUserStatusUseCase';
-import { GetUserDetailsUseCase } from '@/application/useCases/admin/users/GetUserDetailsUseCase';
 import { DevQueryParams, QueryParams } from '@/domain/types/types';
-import { GetDevelopersUseCase } from '@/application/useCases/developer/GetDevelopersUseCase';
-import { DeveloperRepository } from '@/infrastructure/repositories/DeveloperRepository';
 import { AppError } from '@/domain/errors/AppError';
-import { ManageDeveloperRequestsUseCase } from '@/application/useCases/developer/ManageDeveloperRequestsUseCase';
-import { GetDeveloperDetailsUseCase } from '@/application/useCases/admin/developers/GetDeveloperDetailsUseCase';
-import { GetDeveloperRequestDetailsUseCase } from '@/application/useCases/developer/GetDeveloperRequestDetails';
 import { StatusCodes } from 'http-status-codes';
-import { S3Service } from '@/infrastructure/services/S3_Service';
+import { HTTP_STATUS_MESSAGES } from '@/utils/constants';
+
 import { IAdminRepository } from '@/domain/interfaces/IAdminRepository';
+import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
 import { IUserRepository } from '@/domain/interfaces/IUserRepository';
 import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
-import { GetDashboardStatsUseCase } from '@/application/useCases/admin/dashboard/GetDashboardStatsUseCase';
-import { SessionRepository } from '@/infrastructure/repositories/SessionRepository';
+import { S3Service } from '@/infrastructure/services/S3_Service';
+import { IMailService } from '@/domain/interfaces/IMailService';
+
+import {AdminLoginUseCase} from '@/application/useCases/implements/admin/auth/AdminLoginUseCase';
+import { GetUsersUseCase } from '@/application/useCases/implements/admin/users/GetUsersUseCase';
+import { ToggleUserStatusUseCase } from '@/application/useCases/implements/admin/users/ToggleUserStatusUseCase';
+import { GetUserDetailsUseCase } from '@/application/useCases/implements/admin/users/GetUserDetailsUseCase';
+import { GetDevelopersUseCase } from '@/application/useCases/implements/admin/developers/GetDevelopersUseCase';
+import { ManageDeveloperRequestsUseCase } from '@/application/useCases/implements/admin/developers/ManageDeveloperRequestsUseCase';
+import { GetDeveloperDetailsUseCase } from '@/application/useCases/implements/admin/developers/GetDeveloperDetailsUseCase';
+import { GetDeveloperRequestDetailsUseCase } from '@/application/useCases/implements/admin/developers/GetDeveloperRequestDetails';
+import { GetDashboardStatsUseCase } from '@/application/useCases/implements/admin/dashboard/GetDashboardStatsUseCase';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { UserRepository } from '@/infrastructure/repositories/UserRepository';
-import { WalletRepository } from '@/infrastructure/repositories/WalletRepository';
-import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
-import { GetRevenueStatsUseCase } from '@/application/useCases/admin/revenue/GetRevenueStatsUseCase';
-import { GetAdminSessionsUseCase } from '@/application/useCases/admin/sessions/GetAdminSessionsUseCase';
-import { GetDeveloperLeaderboardUseCase } from '@/application/useCases/admin/leaderboard/GetDeveloperLeaderboardUseCase';
-import { HTTP_STATUS_MESSAGES } from '@/utils/constants';
+import { GetRevenueStatsUseCase } from '@/application/useCases/implements/admin/revenue/GetRevenueStatsUseCase';
+import { GetAdminSessionsUseCase } from '@/application/useCases/implements/admin/sessions/GetAdminSessionsUseCase';
+import { GetDeveloperLeaderboardUseCase } from '@/application/useCases/implements/admin/leaderboard/GetDeveloperLeaderboardUseCase';
+
+import { IAdminLoginUseCase } from '@/application/useCases/interfaces/admin/auth/IAdminLoginUseCase';
+import { IGetUsersUseCase } from '@/application/useCases/interfaces/admin/users/IGetUsersUseCase';
+import { IToggleUserStatusUseCase } from '@/application/useCases/interfaces/admin/users/IToggleUserStatusUseCase';
+import { IGetUserDetailsUseCase } from '@/application/useCases/interfaces/admin/users/IGetUserDetailsUseCase';
+import { IGetDevelopersUseCase } from '@/application/useCases/interfaces/admin/developers/IGetDevelopersUseCase';
+import { IManageDeveloperRequestsUseCase } from '@/application/useCases/interfaces/admin/developers/IManageDeveloperRequestsUseCase';
+import { IGetDeveloperDetailsUseCase } from '@/application/useCases/interfaces/admin/developers/IGetDeveloperDetailsUseCase';
+import { IGetDeveloperRequestDetailsUseCase } from '@/application/useCases/interfaces/admin/developers/IGetDeveloperRequestDetailsUseCase';
+import { IGetDashboardStatsUseCase } from '@/application/useCases/interfaces/admin/dashboard/IGetDashboardStatsUseCase';
+import { IGetRevenueStatsUseCase } from '@/application/useCases/interfaces/admin/revenue/IGetRevenueStatsUseCase';
+import { IGetAdminSessionsUseCase } from '@/application/useCases/interfaces/admin/sessions/IGetAdminSessionsUseCase';
+import { IGetDeveloperLeaderboardUseCase } from '@/application/useCases/interfaces/admin/leaderboard/IGetDeveloperLeaderboardUseCase';
 
 
 export class AdminController{
-    private adminLoginUseCase: AdminLoginUseCase;
-    private getUsersUseCase: GetUsersUseCase;
-    private toggleUserStatusUseCase: ToggleUserStatusUseCase;
-    private getUserDetailsUseCase: GetUserDetailsUseCase;
-    private getDeveloperUseCase: GetDevelopersUseCase;
-    private manageDeveloperRequestsUseCase: ManageDeveloperRequestsUseCase;
-    private getDeveloperDetailsUseCase: GetDeveloperDetailsUseCase;
-    private getDeveloperRequestDetailsUseCase: GetDeveloperRequestDetailsUseCase;
-    private getDashboardStatsUseCase: GetDashboardStatsUseCase;
-    private getRevenueStatsUseCase: GetRevenueStatsUseCase;
-    private getAdminSessionsUseCase: GetAdminSessionsUseCase;
-    private getDeveloperLeaderboardUseCase: GetDeveloperLeaderboardUseCase;
+    private _adminLoginUseCase: IAdminLoginUseCase;
+    private _getUsersUseCase: IGetUsersUseCase;
+    private _toggleUserStatusUseCase: IToggleUserStatusUseCase;
+    private _getUserDetailsUseCase: IGetUserDetailsUseCase;
+    private _getDeveloperUseCase: IGetDevelopersUseCase;
+    private _manageDeveloperRequestsUseCase: IManageDeveloperRequestsUseCase;
+    private _getDeveloperDetailsUseCase: IGetDeveloperDetailsUseCase;
+    private _getDeveloperRequestDetailsUseCase: IGetDeveloperRequestDetailsUseCase;
+    private _getDashboardStatsUseCase: IGetDashboardStatsUseCase;
+    private _getRevenueStatsUseCase: IGetRevenueStatsUseCase;
+    private _getAdminSessionsUseCase: IGetAdminSessionsUseCase;
+    private _getDeveloperLeaderboardUseCase: IGetDeveloperLeaderboardUseCase;
     constructor(
-        private adminRepository: IAdminRepository,
-        private userRepository: IUserRepository,
-        private developerRepository: DeveloperRepository,
-        private s3Service: S3Service,
-        private walletRepository: IWalletRepository,
-        private sessionRepository: ISessionRepository
+        private _adminRepository: IAdminRepository,
+        private _userRepository: IUserRepository,
+        private _developerRepository: IDeveloperRepository,
+        private _s3Service: S3Service,
+        private _walletRepository: IWalletRepository,
+        private _sessionRepository: ISessionRepository,
+        private _mailService: IMailService
     ) {
-        this.adminLoginUseCase = new AdminLoginUseCase(adminRepository);
-        this.getUsersUseCase = new GetUsersUseCase(userRepository,s3Service);
-        this.toggleUserStatusUseCase = new ToggleUserStatusUseCase(userRepository);
-        this.getUserDetailsUseCase = new GetUserDetailsUseCase(userRepository,s3Service);
-        this.getDeveloperUseCase = new GetDevelopersUseCase(developerRepository,s3Service)
-        this.manageDeveloperRequestsUseCase = new ManageDeveloperRequestsUseCase(developerRepository, walletRepository,s3Service)
-        this.getDeveloperDetailsUseCase = new GetDeveloperDetailsUseCase(developerRepository,s3Service)
-        this.getDeveloperRequestDetailsUseCase = new GetDeveloperRequestDetailsUseCase(developerRepository, s3Service);
-        this.getDashboardStatsUseCase = new GetDashboardStatsUseCase(userRepository, developerRepository, sessionRepository, walletRepository, s3Service)
-        this.getRevenueStatsUseCase = new GetRevenueStatsUseCase(
-            walletRepository, 
-            sessionRepository,
-            s3Service
-        );
-        this.getAdminSessionsUseCase = new GetAdminSessionsUseCase(sessionRepository, s3Service);
-        this.getDeveloperLeaderboardUseCase = new GetDeveloperLeaderboardUseCase(developerRepository, s3Service);
+        this._adminLoginUseCase = new AdminLoginUseCase(_adminRepository);
+        this._getUsersUseCase = new GetUsersUseCase(_userRepository,_s3Service);
+        this._toggleUserStatusUseCase = new ToggleUserStatusUseCase(_userRepository);
+        this._getUserDetailsUseCase = new GetUserDetailsUseCase(_userRepository,_s3Service);
+        this._getDeveloperUseCase = new GetDevelopersUseCase(_developerRepository,_s3Service)
+        this._manageDeveloperRequestsUseCase = new ManageDeveloperRequestsUseCase(_developerRepository, _walletRepository,_s3Service, _mailService)
+        this._getDeveloperDetailsUseCase = new GetDeveloperDetailsUseCase(_developerRepository,_s3Service)
+        this._getDeveloperRequestDetailsUseCase = new GetDeveloperRequestDetailsUseCase(_developerRepository, _s3Service);
+        this._getDashboardStatsUseCase = new GetDashboardStatsUseCase(_userRepository, _developerRepository, _sessionRepository, _walletRepository, _s3Service)
+        this._getRevenueStatsUseCase = new GetRevenueStatsUseCase( _walletRepository, _sessionRepository, _s3Service);
+        this._getAdminSessionsUseCase = new GetAdminSessionsUseCase(_sessionRepository, _s3Service);
+        this._getDeveloperLeaderboardUseCase = new GetDeveloperLeaderboardUseCase(_developerRepository, _s3Service);
     }
 
     async login(req: Request, res: Response) {
         try {
             const { email, password } = req.body;
-            const { accessToken, refreshToken, admin } = await this.adminLoginUseCase.execute({ email, password });
+            const { accessToken, refreshToken, admin } = await this._adminLoginUseCase.execute({ email, password });
 
             res.cookie('adminAccessToken', accessToken, {
                 httpOnly: true,
@@ -118,7 +127,7 @@ export class AdminController{
             if (queryParams.sortBy && !allowedSortFields.includes(queryParams.sortBy)) {
                 queryParams.sortBy = 'createdAt'
             }
-            const users = await this.getUsersUseCase.execute(queryParams);
+            const users = await this._getUsersUseCase.execute(queryParams);
 
             return res.status(StatusCodes.OK).json({ success: true, ...users });
         } catch (error) {
@@ -129,7 +138,7 @@ export class AdminController{
     async toggleUserStatus(req: Request, res: Response) { 
         try {
             const userId = req.params.id;
-            const response = await this.toggleUserStatusUseCase.execute(userId);
+            const response = await this._toggleUserStatusUseCase.execute(userId);
             return res.status(StatusCodes.OK).json({ message: "User Status Updated Successfully", success: true });
         } catch (error: any) {
             return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message, success: false });
@@ -139,7 +148,7 @@ export class AdminController{
     async getUserDetails(req: Request, res: Response) {
         try {
             const userId = req.params.id;
-            const user = await this.getUserDetailsUseCase.execute(userId);
+            const user = await this._getUserDetailsUseCase.execute(userId);
             return res.status(StatusCodes.OK).json({user, success: true})
         } catch (error: any) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false})
@@ -158,7 +167,7 @@ export class AdminController{
                 status: req.query.status as string
             }
 
-            const result = await this.getDeveloperUseCase.execute(queryParams);
+            const result = await this._getDeveloperUseCase.execute(queryParams);
             return res.status(StatusCodes.OK).json({success: true, ...result})
 
 
@@ -187,7 +196,7 @@ export class AdminController{
                 sortOrder: req.query.sortOrder as 'asc' | 'desc'
             };
 
-            const result = await this.manageDeveloperRequestsUseCase.listRequests(queryParams);
+            const result = await this._manageDeveloperRequestsUseCase.listRequests(queryParams);
 
             return res.status(StatusCodes.OK).json({
                 success: true,
@@ -210,7 +219,7 @@ export class AdminController{
     async approveRequest(req: Request, res: Response) {
         try {
             const { id } = req.params;
-            const developer = await this.manageDeveloperRequestsUseCase.approveRequest(id);
+            const developer = await this._manageDeveloperRequestsUseCase.approveRequest(id);
 
             return res.status(StatusCodes.OK).json({
                 success: true,
@@ -236,7 +245,7 @@ export class AdminController{
             const { id } = req.params;
             const { reason } = req.body;
 
-            const developer = await this.manageDeveloperRequestsUseCase.rejectRequest(id, reason);
+            const developer = await this._manageDeveloperRequestsUseCase.rejectRequest(id, reason);
 
             return res.status(StatusCodes.OK).json({
                 success: true,
@@ -260,7 +269,7 @@ export class AdminController{
     async getDeveloperDetails(req: Request, res: Response) {
         try {
             const developerId = req.params.id;
-            const developer = await this.getDeveloperDetailsUseCase.execute(developerId);
+            const developer = await this._getDeveloperDetailsUseCase.execute(developerId);
             
             return res.status(StatusCodes.OK).json({
                 success: true,
@@ -283,7 +292,7 @@ export class AdminController{
     async getDeveloperRequestDetails(req: Request, res: Response) {
         try {
             const developerId = req.params.id;
-            const developer = await this.getDeveloperRequestDetailsUseCase.execute(developerId);
+            const developer = await this._getDeveloperRequestDetailsUseCase.execute(developerId);
             
             return res.status(StatusCodes.OK).json({
                 success: true,
@@ -305,7 +314,7 @@ export class AdminController{
 
     async getDashboardStats(req: Request, res: Response): Promise<void> {
         try {
-          const stats = await this.getDashboardStatsUseCase.execute();
+          const stats = await this._getDashboardStatsUseCase.execute();
           res.json(stats);
         } catch (error: any) {
           res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -319,7 +328,7 @@ export class AdminController{
             const page = parseInt(req.query.page as string) || 1;
             const limit = parseInt(req.query.limit as string) || 10;
             
-            const revenueStats = await this.getRevenueStatsUseCase.execute(page, limit);
+            const revenueStats = await this._getRevenueStatsUseCase.execute(page, limit);
             res.json(revenueStats);
         } catch (error: any) {
             res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -335,7 +344,7 @@ export class AdminController{
             const status = (req.query.status as string || '').split(',');
             const search = req.query.search as string || '';
             
-            const sessions = await this.getAdminSessionsUseCase.execute(status, page, limit, search);
+            const sessions = await this._getAdminSessionsUseCase.execute(status, page, limit, search);
             res.json(sessions);
         } catch (error: any) {
             res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -358,7 +367,7 @@ export class AdminController{
                 });
             }
             
-            const result = await this.getDeveloperLeaderboardUseCase.execute(
+            const result = await this._getDeveloperLeaderboardUseCase.execute(
                 page,
                 limit,
                 sortBy

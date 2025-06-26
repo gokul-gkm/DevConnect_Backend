@@ -5,8 +5,12 @@ import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { startOfDay, endOfDay } from "date-fns";
 import Developer from "@/domain/entities/Developer";
+import { BaseRepository } from "./BaseRepository";
 
-export class DeveloperSlotRepository implements IDeveloperSlotRepository {
+export class DeveloperSlotRepository extends BaseRepository<IDeveloperSlot> implements IDeveloperSlotRepository {
+  constructor() {
+    super(DeveloperSlot)
+  }
   async getUnavailableSlots(developerId: string, date: Date): Promise<string[]> {
     try {
       const dateToCheck = startOfDay(new Date(date));

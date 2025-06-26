@@ -1,40 +1,49 @@
-import { CreateChatUseCase } from "@/application/useCases/chat/CreateChatUseCase";
-import { GetChatMessagesUseCase } from "@/application/useCases/chat/GetChatMessagesUseCase";
-import { GetDeveloperChatsUseCase } from "@/application/useCases/chat/GetDeveloperChatsUseCase";
-import { GetUserChatsUseCase } from "@/application/useCases/chat/GetUserChatsUseCase";
-import { MarkMessagesAsReadUseCase } from "@/application/useCases/chat/MarkMessagesAsReadUseCase";
-import { SendMessageUseCase } from "@/application/useCases/chat/SendMessageUseCase";
 import { NextFunction } from "express";
 import { z } from "zod";
+import { IChats } from "@/types/chat";
 import { Request, Response } from "express";
 import { AppError } from "@/domain/errors/AppError";
+import { ERROR_MESSAGES } from "@/utils/constants";
 import { StatusCodes } from "http-status-codes";
+
 import { IChatRepository } from "@/domain/interfaces/IChatRepository";
 import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
 import { SocketService } from "@/infrastructure/services/SocketService";
 import { S3Service } from "@/infrastructure/services/S3_Service";
-import { IChats } from "@/types/chat";
-import { ERROR_MESSAGES } from "@/utils/constants";
+
+import { CreateChatUseCase } from "@/application/useCases/implements/chat/CreateChatUseCase";
+import { GetChatMessagesUseCase } from "@/application/useCases/implements/chat/GetChatMessagesUseCase";
+import { GetDeveloperChatsUseCase } from "@/application/useCases/implements/chat/GetDeveloperChatsUseCase";
+import { GetUserChatsUseCase } from "@/application/useCases/implements/chat/GetUserChatsUseCase";
+import { MarkMessagesAsReadUseCase } from "@/application/useCases/implements/chat/MarkMessagesAsReadUseCase";
+import { SendMessageUseCase } from "@/application/useCases/implements/chat/SendMessageUseCase";
+
+import { ICreateChatUseCase } from "@/application/useCases/interfaces/chat/ICreateChatUseCase";
+import { IGetUserChatsUseCase } from "@/application/useCases/interfaces/chat/IGetUserChatsUseCase";
+import { IGetDeveloperChatsUseCase } from "@/application/useCases/interfaces/chat/IGetDeveloperChatsUseCase";
+import { IGetChatMessagesUseCase } from "@/application/useCases/interfaces/chat/IGetChatMessagesUseCase";
+import { ISendMessageUseCase } from "@/application/useCases/interfaces/chat/ISendMessageUseCase";
+import { IMarkMessagesAsReadUseCase } from "@/application/useCases/interfaces/chat/IMarkMessagesAsReadUseCase";
 
 export class ChatController {
-    private createChatUseCase: CreateChatUseCase;
-    private getUserChatsUseCase: GetUserChatsUseCase;
-    private getDeveloperChatsUseCase: GetDeveloperChatsUseCase;
-    private getChatMessagesUseCase: GetChatMessagesUseCase;
-    private sendMessageUseCase: SendMessageUseCase;
-    private markMessagesAsReadUseCase: MarkMessagesAsReadUseCase;
+    private _createChatUseCase: ICreateChatUseCase;
+    private _getUserChatsUseCase: IGetUserChatsUseCase;
+    private _getDeveloperChatsUseCase: IGetDeveloperChatsUseCase;
+    private _getChatMessagesUseCase: IGetChatMessagesUseCase;
+    private _sendMessageUseCase: ISendMessageUseCase;
+    private _markMessagesAsReadUseCase: IMarkMessagesAsReadUseCase;
     constructor(
-        private chatRepository: IChatRepository,
-        private messageRepository: IMessageRepository,
-        private socketService: SocketService,
-        private s3Service: S3Service
+        private _chatRepository: IChatRepository,
+        private _messageRepository: IMessageRepository,
+        private _socketService: SocketService,
+        private _s3Service: S3Service
     ) {
-        this.createChatUseCase = new CreateChatUseCase(chatRepository);
-        this.getUserChatsUseCase = new GetUserChatsUseCase(chatRepository);
-        this.getDeveloperChatsUseCase = new GetDeveloperChatsUseCase(chatRepository);
-        this.getChatMessagesUseCase = new GetChatMessagesUseCase(messageRepository, chatRepository, s3Service);
-        this.sendMessageUseCase = new SendMessageUseCase(messageRepository, chatRepository, socketService, s3Service)
-        this.markMessagesAsReadUseCase = new MarkMessagesAsReadUseCase(messageRepository, chatRepository, socketService)
+        this._createChatUseCase = new CreateChatUseCase(_chatRepository);
+        this._getUserChatsUseCase = new GetUserChatsUseCase(_chatRepository);
+        this._getDeveloperChatsUseCase = new GetDeveloperChatsUseCase(_chatRepository);
+        this._getChatMessagesUseCase = new GetChatMessagesUseCase(_messageRepository, _chatRepository, _s3Service);
+        this._sendMessageUseCase = new SendMessageUseCase(_messageRepository, _chatRepository, _socketService, _s3Service)
+        this._markMessagesAsReadUseCase = new MarkMessagesAsReadUseCase(_messageRepository, _chatRepository, _socketService)
     }
     
     async createChat(req: Request, res: Response, next: NextFunction) {
@@ -48,7 +57,7 @@ export class ChatController {
             if (!userId) {
                 throw new AppError(ERROR_MESSAGES.USER_REQUIRED,StatusCodes.BAD_REQUEST);
             }
-            const chat = await this.createChatUseCase.execute({
+            const chat = await this._createChatUseCase.execute({
                 userId,
                 developerId
             })
@@ -67,17 +76,17 @@ export class ChatController {
             if (!userId) {
                 throw new AppError(ERROR_MESSAGES.USER_REQUIRED, StatusCodes.BAD_REQUEST)
             }
-            const chats = await this.getUserChatsUseCase.execute(userId) as unknown as IChats[];
+            const chats = await this._getUserChatsUseCase.execute(userId) as unknown as IChats[];
             
             const transformedChats = await Promise.all(chats.map(async (chat: IChats) => {
                 let profilePictureUrl = null;
                 if (chat.developerId?.profilePicture) {
-                    profilePictureUrl = await this.s3Service.generateSignedUrl(chat.developerId.profilePicture);
+                    profilePictureUrl = await this._s3Service.generateSignedUrl(chat.developerId.profilePicture);
                 }
 
                 let userProfilePictureUrl = null;
                 if (chat.userId?.profilePicture) {
-                    userProfilePictureUrl = await this.s3Service.generateSignedUrl(chat.userId?.profilePicture);
+                    userProfilePictureUrl = await this._s3Service.generateSignedUrl(chat.userId?.profilePicture);
                 }
     
                 return {
@@ -117,17 +126,17 @@ export class ChatController {
                 throw new AppError('Developer ID not found', StatusCodes.BAD_REQUEST)
             }
 
-            const chats = await this.getDeveloperChatsUseCase.execute(developerId) as unknown as IChats[];
+            const chats = await this._getDeveloperChatsUseCase.execute(developerId) as unknown as IChats[];
             
             const transformedChats = await Promise.all(chats.map(async (chat: IChats) => {
                 let userProfilePictureUrl = null;
                 if (chat.userId?.profilePicture) {
-                    userProfilePictureUrl = await this.s3Service.generateSignedUrl(chat.userId.profilePicture);
+                    userProfilePictureUrl = await this._s3Service.generateSignedUrl(chat.userId.profilePicture);
                 }
 
                 let developerProfilePictureUrl = null;
                 if (chat.developerId?.profilePicture) {
-                    developerProfilePictureUrl = await this.s3Service.generateSignedUrl(chat.developerId.profilePicture);
+                    developerProfilePictureUrl = await this._s3Service.generateSignedUrl(chat.developerId.profilePicture);
                 }
     
                 return {
@@ -170,7 +179,7 @@ export class ChatController {
             const { chatId } = req.params;
             const { page, limit } = schema.parse(req.query);
 
-            const result = await this.getChatMessagesUseCase.execute({
+            const result = await this._getChatMessagesUseCase.execute({
                 chatId,
                 page,
                 limit
@@ -201,7 +210,7 @@ export class ChatController {
                 throw new AppError('ID is required', StatusCodes.BAD_REQUEST);
             }
             
-            const chat = await this.chatRepository.getChatById(chatId);
+            const chat = await this._chatRepository.getChatById(chatId);
             if (!chat) {
                 throw new AppError('Chat not found', StatusCodes.NOT_FOUND);
             }
@@ -209,7 +218,7 @@ export class ChatController {
             const senderType = chat.userId.id.toString() === userId ? 'user' : 'developer';
             const senderId = senderType === 'user' ? chat.userId.id.toString() : chat.developerId.id.toString();
 
-            const message = await this.sendMessageUseCase.execute({
+            const message = await this._sendMessageUseCase.execute({
                 chatId,
                 senderId,
                 content,
@@ -230,7 +239,7 @@ export class ChatController {
     async markMessagesAsRead(req: Request, res: Response, next: NextFunction) {
         try {
             const { chatId } = req.params;
-            const chat = await this.chatRepository.getChatById(chatId);
+            const chat = await this._chatRepository.getChatById(chatId);
             if (!chat) {
                 throw new AppError('Chat not found', StatusCodes.NOT_FOUND)
             }
@@ -244,7 +253,7 @@ export class ChatController {
             
             const recipientType = isUser ? 'user' : 'developer';
 
-            await this.markMessagesAsReadUseCase.execute(chatId, recipientType);
+            await this._markMessagesAsReadUseCase.execute(chatId, recipientType);
             return res.status(StatusCodes.OK).json({
                 success: true,
                 message: 'Messages marked as read'

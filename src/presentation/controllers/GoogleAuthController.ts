@@ -1,19 +1,19 @@
-import e, { Request, Response } from "express";
+import { Request, Response } from "express";
 import { OAuth2Client } from "google-auth-library";
-import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { User } from "@/domain/entities/User";
 import jwt from 'jsonwebtoken';
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 import { Types } from "mongoose";
+import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class GoogleAuthController {
     constructor(
-        private userRepository: UserRepository,
-        private walletRepository: WalletRepository
+        private _userRepository: IUserRepository,
+        private _walletRepository: IWalletRepository
     ) { }
 
     async googleLogin(req: Request, res: Response) { 
@@ -29,7 +29,7 @@ export class GoogleAuthController {
                 return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Invalid token', success: false });
             }
             const { email, name, picture, sub } = payload;
-            let user = await this.userRepository.findByEmail(email!);
+            let user = await this._userRepository.findByEmail(email!);
 
             if (user && user.status === 'blocked') {
                 throw new AppError('User account is blocked',StatusCodes.BAD_REQUEST);
@@ -49,19 +49,19 @@ export class GoogleAuthController {
                 });
                
 
-                user = await this.userRepository.save(newUser);
+                user = await this._userRepository.save(newUser);
             }
 
-            const existingWallet = await this.walletRepository.findByUserId(new Types.ObjectId(user._id));
+            const existingWallet = await this._walletRepository.findByUserId(new Types.ObjectId(user._id));
             
             if (!existingWallet) {
                 try {
                     console.log(`Creating wallet for user: ${user._id}`);
-                    await this.walletRepository.create(new Types.ObjectId(user._id));
+                    await this._walletRepository.create(new Types.ObjectId(user._id));
                 } catch (error) {
                     console.error('Wallet creation error:', error);
                     if (!user.createdAt) {
-                        await this.userRepository.deleteById(user._id);
+                        await this._userRepository.deleteById(user._id);
                     }
                     throw new AppError('Failed to create user wallet', StatusCodes.INTERNAL_SERVER_ERROR);
                 }

@@ -1,11 +1,11 @@
 import { Types } from 'mongoose';
 import { IPaymentRepository } from '@/domain/interfaces/IPaymentRepository';
-import { IPayment } from '@/domain/entities/Payment';
-import { PaymentModel } from '@/domain/entities/Payment';
+import { IPayment, PaymentModel } from '@/domain/entities/Payment';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 
-export class PaymentRepository implements IPaymentRepository {
+export class PaymentRepository  implements IPaymentRepository {
+  
   async create(payment: Partial<IPayment>): Promise<IPayment> {
     try {
       const newPayment = new PaymentModel(payment);

@@ -73,6 +73,9 @@ devRouter.post('/auth/dev-request', upload.fields([
 devRouter.post('/auth/login', async (req, res) => {
   await devAuthController.login(req, res);
 })
+devRouter.post('/auth/logout', async (req, res) => {
+  await devAuthController.logout(req, res);
+})
 
 devRouter
   .use(authMiddleware, autherization)

@@ -43,5 +43,9 @@ export const createVideoSessionRouter = () => {
         videoSessionController.getVideoSessionStatus(req, res).catch(next);
     });
 
+    videoSessionRouter.post('/:sessionId/leave', authMiddleware, autherization, (req, res, next) => {
+        videoSessionController.leaveVideoSession(req, res).catch(next);
+    });
+
     return videoSessionRouter;
 };

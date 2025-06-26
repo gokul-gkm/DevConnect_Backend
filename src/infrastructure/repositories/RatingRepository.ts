@@ -4,8 +4,12 @@ import { IRatingRepository } from '@/domain/interfaces/IRatingRepository';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import Developer from '@/domain/entities/Developer';
+import { BaseRepository } from './BaseRepository';
 
-export class RatingRepository implements IRatingRepository {
+export class RatingRepository extends BaseRepository<IRating> implements IRatingRepository {
+  constructor() {
+    super(Rating)
+  }
   async createRating(rating: {
     userId: Types.ObjectId;
     sessionId: Types.ObjectId;

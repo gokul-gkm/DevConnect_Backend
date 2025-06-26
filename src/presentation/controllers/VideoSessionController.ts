@@ -1,38 +1,51 @@
 import { Request, Response } from 'express';
-import { IVideoSessionRepository } from '@/domain/interfaces/IVideoSessionRepository';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { SocketService } from '@/infrastructure/services/SocketService';
-import { InitVideoSessionUseCase } from '@/application/useCases/video/InitVideoSessionUseCase';
-import { JoinVideoSessionUseCase } from '@/application/useCases/video/JoinVideoSessionUseCase';
-import { EndVideoSessionUseCase } from '@/application/useCases/video/EndVideoSessionUseCase'; 
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { Types } from 'mongoose';
 import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from '@/utils/constants';
 
+import { IVideoSessionRepository } from '@/domain/interfaces/IVideoSessionRepository';
+import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
+import { SocketService } from '@/infrastructure/services/SocketService';
+
+import { InitVideoSessionUseCase } from '@/application/useCases/implements/video/InitVideoSessionUseCase';
+import { JoinVideoSessionUseCase } from '@/application/useCases/implements/video/JoinVideoSessionUseCase';
+import { EndVideoSessionUseCase } from '@/application/useCases/implements/video/EndVideoSessionUseCase'; 
+import { LeaveVideoSessionUseCase } from '@/application/useCases/implements/video/LeaveVideoSessionUseCase';
+
+import { IInitVideoSessionUseCase } from '@/application/useCases/interfaces/video/IInitVideoSessionUseCase';
+import { IJoinVideoSessionUseCase } from '@/application/useCases/interfaces/video/IJoinVideoSessionUseCase';
+import { IEndVideoSessionUseCase } from '@/application/useCases/interfaces/video/IEndVideoSessionUseCase';
+import { ILeaveVideoSessionUseCase } from '@/application/useCases/interfaces/video/ILeaveVideoSessionUseCase';
+
 export class VideoSessionController {
-    private initVideoSessionUseCase: InitVideoSessionUseCase;
-    private joinVideoSessionUseCase: JoinVideoSessionUseCase;
-    private endVideoSessionUseCase: EndVideoSessionUseCase;
+    private _initVideoSessionUseCase: IInitVideoSessionUseCase;
+    private _joinVideoSessionUseCase: IJoinVideoSessionUseCase;
+    private _endVideoSessionUseCase: IEndVideoSessionUseCase;
+    private _leaveVideoSessionUseCase: ILeaveVideoSessionUseCase;
 
     constructor(
-        private videoSessionRepository: IVideoSessionRepository,
-        private sessionRepository: ISessionRepository,
-        private socketService: SocketService
+        private _videoSessionRepository: IVideoSessionRepository,
+        private _sessionRepository: ISessionRepository,
+        private _socketService: SocketService
     ) {
-        this.initVideoSessionUseCase = new InitVideoSessionUseCase(
-            videoSessionRepository,
-            sessionRepository,
-            socketService
+        this._initVideoSessionUseCase = new InitVideoSessionUseCase(
+            _videoSessionRepository,
+            _sessionRepository,
+            _socketService
         );
-        this.joinVideoSessionUseCase = new JoinVideoSessionUseCase(
-            videoSessionRepository,
-            socketService
+        this._joinVideoSessionUseCase = new JoinVideoSessionUseCase(
+            _videoSessionRepository,
+            _socketService
         );
-        this.endVideoSessionUseCase = new EndVideoSessionUseCase(
-            videoSessionRepository,
-            sessionRepository,
-            socketService
+        this._endVideoSessionUseCase = new EndVideoSessionUseCase(
+            _videoSessionRepository,
+            _sessionRepository,
+            _socketService
+        );
+        this._leaveVideoSessionUseCase = new LeaveVideoSessionUseCase(
+            _videoSessionRepository,
+            _socketService
         );
     }
 
@@ -45,7 +58,7 @@ export class VideoSessionController {
                 throw new AppError(ERROR_MESSAGES.DEVELOPER_REQUIRED, StatusCodes.UNAUTHORIZED);
             }
 
-            const videoSession = await this.initVideoSessionUseCase.execute(sessionId, developerId);
+            const videoSession = await this._initVideoSessionUseCase.execute(sessionId, developerId);
             return res.status(StatusCodes.OK).json({ data: videoSession, success: true });
         } catch (error) {
             if (error instanceof AppError) {
@@ -68,7 +81,7 @@ export class VideoSessionController {
                 throw new AppError(ERROR_MESSAGES.USER_REQUIRED, StatusCodes.UNAUTHORIZED);
             }
 
-            const videoSession = await this.joinVideoSessionUseCase.execute(sessionId, userId, isHost);
+            const videoSession = await this._joinVideoSessionUseCase.execute(sessionId, userId, isHost);
             return res.status(StatusCodes.OK).json({ data: videoSession, success: true });
         } catch (error) {
             if (error instanceof AppError) {
@@ -90,7 +103,7 @@ export class VideoSessionController {
                 throw new AppError(ERROR_MESSAGES.DEVELOPER_REQUIRED, StatusCodes.UNAUTHORIZED);
             }
 
-            const videoSession = await this.endVideoSessionUseCase.execute(sessionId, developerId);
+            const videoSession = await this._endVideoSessionUseCase.execute(sessionId, developerId);
             return res.status(StatusCodes.OK).json({ data: videoSession, success: true });
         } catch (error) {
             if (error instanceof AppError) {
@@ -106,7 +119,7 @@ export class VideoSessionController {
     async getVideoSessionDetails(req: Request, res: Response) {
         try {
             const { sessionId } = req.params;
-            const videoSession = await this.videoSessionRepository.getVideoSessionBySessionId(
+            const videoSession = await this._videoSessionRepository.getVideoSessionBySessionId(
                 new Types.ObjectId(sessionId)
             );
 
@@ -129,7 +142,7 @@ export class VideoSessionController {
     async getVideoSessionStatus(req: Request, res: Response) {
         try {
             const { sessionId } = req.params;
-            const videoSession = await this.videoSessionRepository.getVideoSessionBySessionId(
+            const videoSession = await this._videoSessionRepository.getVideoSessionBySessionId(
                 new Types.ObjectId(sessionId)
             );
 
@@ -144,6 +157,28 @@ export class VideoSessionController {
                 data: { status: videoSession.status }, 
                 success: true 
             });
+        } catch (error) {
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({ message: error.message, success: false });
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
+                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, 
+                success: false 
+            });
+        }
+    }
+
+    async leaveVideoSession(req: Request, res: Response) {
+        try {
+            const { sessionId } = req.params;
+            const userId = req.userId;
+
+            if (!userId) {
+                throw new AppError(ERROR_MESSAGES.USER_REQUIRED, StatusCodes.UNAUTHORIZED);
+            }
+
+            await this._leaveVideoSessionUseCase.execute(sessionId, userId);
+            return res.status(StatusCodes.OK).json({ success: true });
         } catch (error) {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({ message: error.message, success: false });

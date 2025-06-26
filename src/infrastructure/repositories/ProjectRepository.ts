@@ -5,8 +5,12 @@ import Developer from "@/domain/entities/Developer";
 import { ProjectsResponse } from "@/domain/types/project";
 import { StatusCodes } from "http-status-codes";
 import { ERROR_MESSAGES } from "@/utils/constants";
+import { BaseRepository } from "./BaseRepository";
 
-export class ProjectRepository implements IProjectRepository {
+export class ProjectRepository extends BaseRepository<IProject> implements IProjectRepository {
+    constructor() {
+        super(Project)
+    }
     async addProject(project: Partial<IProject>) {
         try {
             const newProject = new Project({
@@ -82,7 +86,7 @@ export class ProjectRepository implements IProjectRepository {
         }
     }
 
-    async getProjectById(projectId: string) {
+    async getProjectById(projectId: string):Promise<any> {
         try {
             const project = await Project.findById(projectId);
             if (!project) {
@@ -95,7 +99,7 @@ export class ProjectRepository implements IProjectRepository {
         }
     }
 
-    async updateProject(projectId: string, updateData: Partial<IProject>) {
+    async updateProject(projectId: string, updateData: Partial<IProject>):Promise<any> {
         try {
             const project = await Project.findByIdAndUpdate(
                 projectId,

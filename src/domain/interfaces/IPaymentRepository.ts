@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { IPayment } from '../entities/Payment';
+import { IBaseRepository } from './IBaseRepository';
 
 export interface IPaymentRepository {
   create(payment: Partial<IPayment>): Promise<IPayment>;

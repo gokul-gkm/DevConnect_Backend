@@ -25,14 +25,7 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
         }  
         
     }
-    // async findById(id: string): Promise<IUser | null> {
-    //     try {
-    //         return await User.findById(id)
-    //     } catch (error) {
-    //         console.error('Error fetching User by Id:', error);
-    //         throw new AppError('Failed to fetch user', StatusCodes.INTERNAL_SERVER_ERROR);
-    //     }    
-    // }
+
     async findByUsername(username: string): Promise<IUser | null>{
         try {
             return await User.findOne({username})
@@ -42,15 +35,7 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
         }
         
     }
-    // async deleteById(id: string): Promise<void> {  
-    //     try {
-    //         await User.deleteOne({_id: id})
-    //     } catch (error) {
-    //         console.error('Error deleting user:', error);
-    //         throw new AppError('Failed to remove user', StatusCodes.INTERNAL_SERVER_ERROR);
-    //     }
-        
-    // }
+
 
     async update(id: string, updateData: Partial<IUser>): Promise<IUser>{
         try {

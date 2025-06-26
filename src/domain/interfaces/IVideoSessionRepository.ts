@@ -1,7 +1,8 @@
 import { IVideoSession } from "../entities/VideoSession";
 import { Types } from "mongoose";
+import { IBaseRepository } from "./IBaseRepository";
 
-export interface IVideoSessionRepository {
+export interface IVideoSessionRepository extends IBaseRepository<IVideoSession> {
     createVideoSession(sessionData: Partial<IVideoSession>): Promise<IVideoSession>;
     getVideoSessionBySessionId(sessionId: Types.ObjectId): Promise<IVideoSession | null>;
     getVideoSessionByRoomId(roomId: string): Promise<IVideoSession | null>;

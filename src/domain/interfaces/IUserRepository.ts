@@ -1,13 +1,12 @@
-import { ObjectId, Types } from "mongoose";
 import { IUser } from "@/domain/entities/User";
 import { PaginatedResponse, QueryParams } from "../types/types";
+import { IBaseRepository } from "./IBaseRepository";
 
-export interface IUserRepository {
+export interface IUserRepository extends IBaseRepository<IUser>  {
     save(user: IUser): Promise<IUser>
     findByEmail(email: string): Promise<IUser | null>
     findById(id: string): Promise<IUser | null>
     findByUsername(username: string): Promise<IUser | null>
-    // deleteById(id: string): Promise<void>
     update(id: string, updateData: Partial<IUser>): Promise<IUser>
     findByRole(role: string): Promise<IUser[]>
     findUsers(queryParams: QueryParams): Promise<PaginatedResponse<IUser>>
