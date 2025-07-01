@@ -1,7 +1,8 @@
-import { Schema, model, Types } from 'mongoose';
+import { Schema, model, Types, Document } from 'mongoose';
 
-export interface IChat {
-  _id?: string;
+export interface IChat extends Document {
+  // _id?: string;
+  _id: string;
   userId: Types.ObjectId;
   developerId: Types.ObjectId;
   lastMessage?: string;

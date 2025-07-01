@@ -3,9 +3,14 @@ import { AppError } from "@/domain/errors/AppError";
 import { IChatRepository } from "@/domain/interfaces/IChatRepository";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
+import { BaseRepository } from "./BaseRepository";
 
 
-export class ChatRepository implements IChatRepository {
+export class ChatRepository extends BaseRepository<IChat> implements IChatRepository {
+
+    constructor() {
+        super(Chat)
+    }
 
     async createChat(userId: string, developerId: string): Promise<IChat> {
         try {

@@ -263,7 +263,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
             startTime: { $gte: currentDate }
           }
         ],
-        status: { $nin: ['cancelled', 'rejected', 'completed'] }
+        status: { $nin: [ 'rejected', 'completed'] }
       };
 
       const totalItems = await Session.countDocuments(match);
@@ -1202,6 +1202,23 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
     } catch (error) {
       console.error('Error getting topic based revenue:', error);
       throw new AppError('Failed to fetch topic based revenue', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async cancelSession(sessionId: string, reason: string): Promise<void> {
+    try {
+      const session = await Session.findById(sessionId);
+      
+      if (!session) {
+        throw new AppError('Session not found', StatusCodes.NOT_FOUND);
+      }
+  
+      session.status = 'cancelled';
+      session.rejectionReason = reason;
+      await session.save();
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError('Failed to cancel session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 

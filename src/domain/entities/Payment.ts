@@ -1,7 +1,7 @@
 
-import { Types, Schema, model } from 'mongoose';
+import { Types, Schema, model, Document } from 'mongoose';
 
-export interface IPayment {
+export interface IPayment extends Document {
   _id: Types.ObjectId;
   sessionId: Types.ObjectId;
   amount: number;

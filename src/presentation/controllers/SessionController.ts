@@ -12,6 +12,7 @@ import { IRatingRepository } from '@/domain/interfaces/IRatingRepository';
 import { ISocketService } from '@/domain/interfaces/ISocketService';
 import { INotificationService } from '@/domain/interfaces/INotificationService';
 import { IDeveloperSlotRepository } from '@/domain/interfaces/IDeveloperSlotRepository';
+import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 
 import { CreateSessionUseCase } from '@/application/useCases/implements/user/session/CreateSessionUseCase';
 import { GetUserSessionsUseCase } from '@/application/useCases/implements/user/session/GetUserSessionsUseCase';
@@ -30,6 +31,7 @@ import { RateSessionUseCase } from '@/application/useCases/implements/user/ratin
 import { GetDeveloperSessionHistoryUseCase } from '@/application/useCases/implements/developer/sessions/GetDeveloperSessionHistoryUseCase';
 import { GetDeveloperSessionHistoryDetailsUseCase } from '@/application/useCases/implements/developer/sessions/GetDeveloperSessionHistoryDetailsUseCase';
 import { StartSessionUseCase } from '@/application/useCases/implements/developer/sessions/StartSessionUseCase';
+import { CancelSessionUseCase } from '@/application/useCases/implements/user/session/CancelSessionUseCase';
 
 import { ICreateSessionUseCase } from '@/application/useCases/interfaces/user/session/ICreateSessionUseCase';
 import { IGetUserSessionsUseCase } from '@/application/useCases/interfaces/user/session/IGetUserSessionsUseCase';
@@ -47,6 +49,7 @@ import { IRateSessionUseCase } from '@/application/useCases/interfaces/user/rati
 import { IGetDeveloperSessionHistoryUseCase } from '@/application/useCases/interfaces/developer/sessions/IGetDeveloperSessionHistoryUseCase';
 import { IGetDeveloperSessionHistoryDetailsUseCase } from '@/application/useCases/interfaces/developer/sessions/IGetDeveloperSessionHistoryDetailsUseCase';
 import { IStartSessionUseCase } from '@/application/useCases/interfaces/developer/sessions/IStartSessionUseCase';
+import { ICancelSessionUseCase } from '@/application/useCases/interfaces/user/session/ICancelSessionUseCase';
 
 
 export class SessionController {
@@ -66,6 +69,7 @@ export class SessionController {
   private _getDeveloperSessionHistoryUseCase: IGetDeveloperSessionHistoryUseCase;
   private _getDeveloperSessionHistoryDetailsUseCase: IGetDeveloperSessionHistoryDetailsUseCase;
   private _startSessionUseCase: IStartSessionUseCase;
+  private _cancelSessionUseCase: ICancelSessionUseCase;
   
 
   constructor(
@@ -78,7 +82,8 @@ export class SessionController {
     private _socketService: ISocketService,
     private _notificationService: INotificationService,
     private _developerSlotRepository: IDeveloperSlotRepository,
-    private _ratingRepository: IRatingRepository
+    private _ratingRepository: IRatingRepository,
+    private _walletRepository: IWalletRepository
     ) {
     this._createSessionUseCase = new CreateSessionUseCase(_sessionRepository, _userRepository, _developerRepository, _notificationService);
     this._getUserSessionsUseCase = new GetUserSessionsUseCase(_sessionRepository);
@@ -104,6 +109,7 @@ export class SessionController {
     this._getDeveloperSessionHistoryUseCase = new GetDeveloperSessionHistoryUseCase(_sessionRepository);
     this._getDeveloperSessionHistoryDetailsUseCase = new GetDeveloperSessionHistoryDetailsUseCase(_sessionRepository, _s3Service);
     this._startSessionUseCase = new StartSessionUseCase(_sessionRepository, _socketService);
+    this._cancelSessionUseCase = new CancelSessionUseCase(_sessionRepository, _notificationService, _walletRepository)
   }
 
 
@@ -644,6 +650,36 @@ export class SessionController {
       return res.status(StatusCodes.OK).json({
         success: true,
         message: 'Session started successfully'
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
+      });
+    }
+  }
+
+  async cancelSession(req: Request, res: Response) {
+    try {
+      const { sessionId } = req.params;
+      const userId = req.userId;
+      const { reason } = req.body;
+
+      if (!sessionId || !userId) {
+        throw new AppError('Session ID and user ID are required', StatusCodes.BAD_REQUEST);
+      }
+  
+      await this._cancelSessionUseCase.execute(sessionId, userId, reason);
+  
+      return res.status(StatusCodes.OK).json({
+        success: true,
+        message: 'Session cancelled successfully'
       });
     } catch (error) {
       if (error instanceof AppError) {

@@ -1,18 +1,19 @@
 import { CreateNotificationUseCase } from "@/application/useCases/implements/notification/CreateNotificationUseCase";
+import { ICreateNotificationUseCase } from "@/application/useCases/interfaces/notification/ICreateNotificationUseCase";
 import { INotificationRepository } from "@/domain/interfaces/INotificationRepository";
 import { INotificationService } from "@/domain/interfaces/INotificationService";
 import { ISocketService } from "@/domain/interfaces/ISocketService";
 
 export class NotificationService implements INotificationService {
-  private createNotificationUseCase: CreateNotificationUseCase;
+  private _createNotificationUseCase: ICreateNotificationUseCase;
 
   constructor(
-    private notificationRepository: INotificationRepository,
-    private socketService: ISocketService
+    private _notificationRepository: INotificationRepository,
+    private _socketService: ISocketService
   ) {
-    this.createNotificationUseCase = new CreateNotificationUseCase(
-      this.notificationRepository,
-      this.socketService
+    this._createNotificationUseCase = new CreateNotificationUseCase(
+      _notificationRepository,
+      _socketService
     );
   }
 
@@ -25,7 +26,7 @@ export class NotificationService implements INotificationService {
     relatedId?: string
   ): Promise<any> {
     try {
-      const notification = await this.createNotificationUseCase.execute(
+      const notification = await this._createNotificationUseCase.execute(
         recipientId,
         title,
         message,

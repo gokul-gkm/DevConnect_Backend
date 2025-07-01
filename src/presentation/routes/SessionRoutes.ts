@@ -13,6 +13,7 @@ import { NotificationService } from "@/infrastructure/services/NotificationServi
 import { DeveloperSlotRepository } from "@/infrastructure/repositories/DeveloperSlotRepository";
 import mongoose from "mongoose";
 import { RatingRepository } from "@/infrastructure/repositories/RatingRepository";
+import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 
 export const createSessionRouter = () => {
   const sessionRouter = Router();
@@ -25,7 +26,8 @@ export const createSessionRouter = () => {
   const socketService = SocketService.getInstance();
   const notificationService = new NotificationService(notificationRepository, socketService);
   const developerSlotRepository = new DeveloperSlotRepository();
-  const ratingRepository = new RatingRepository()
+  const ratingRepository = new RatingRepository();
+  const walletRepository = new WalletRepository()
 
   const sessionController = new SessionController(
     sessionRepository, 
@@ -37,7 +39,8 @@ export const createSessionRouter = () => {
     socketService,
     notificationService,
     developerSlotRepository,
-    ratingRepository
+    ratingRepository,
+    walletRepository
   );
 
   sessionRouter.get('/booked-slots', authMiddleware, autherization, (req, res, next) => {
@@ -113,6 +116,10 @@ sessionRouter.put('/:sessionId/rate', authMiddleware, autherization, (req, res, 
 
   sessionRouter.get('/developer/history/:sessionId', authMiddleware, autherization, (req, res, next) => {
     sessionController.getDeveloperSessionHistoryDetails(req, res).catch(next);
+  });
+
+  sessionRouter.patch('/:sessionId/cancel', authMiddleware, autherization, (req, res, next) => {
+    sessionController.cancelSession(req, res).catch(next);
   });
 
   return sessionRouter;

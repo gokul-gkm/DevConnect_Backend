@@ -16,4 +16,11 @@ export interface IWalletRepository {
   createAdminWallet(): Promise<IWallet>
   getTotalRevenue(): Promise<number>
   getMonthlyRevenue(startDate: Date): Promise<Array<{ year: number; month: number; revenue: number }>>
+  processRefund(
+    sessionId: string,
+    userId: string,
+    developerId: string,
+    amount: number,
+    reason: string
+  ): Promise<any>;
 }

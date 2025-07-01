@@ -46,5 +46,6 @@ export interface ISessionRepository extends IBaseRepository<ISession>{
           totalPages: number;
           totalItems: number;
         };
-      }> 
+    }> 
+    cancelSession(sessionId: string, reason: string): Promise<void>;
 }
