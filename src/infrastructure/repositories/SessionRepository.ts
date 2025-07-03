@@ -1212,7 +1212,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       if (!session) {
         throw new AppError('Session not found', StatusCodes.NOT_FOUND);
       }
-  
+     
       session.status = 'cancelled';
       session.rejectionReason = reason;
       await session.save();

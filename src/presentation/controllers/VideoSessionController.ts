@@ -6,7 +6,8 @@ import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from '@/utils/constants';
 
 import { IVideoSessionRepository } from '@/domain/interfaces/IVideoSessionRepository';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { SocketService } from '@/infrastructure/services/SocketService';
+import { ISocketService } from '@/domain/interfaces/ISocketService';
+import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 
 import { InitVideoSessionUseCase } from '@/application/useCases/implements/video/InitVideoSessionUseCase';
 import { JoinVideoSessionUseCase } from '@/application/useCases/implements/video/JoinVideoSessionUseCase';
@@ -27,7 +28,8 @@ export class VideoSessionController {
     constructor(
         private _videoSessionRepository: IVideoSessionRepository,
         private _sessionRepository: ISessionRepository,
-        private _socketService: SocketService
+        private _socketService: ISocketService,
+        private _walletRepository: IWalletRepository
     ) {
         this._initVideoSessionUseCase = new InitVideoSessionUseCase(
             _videoSessionRepository,
@@ -41,7 +43,8 @@ export class VideoSessionController {
         this._endVideoSessionUseCase = new EndVideoSessionUseCase(
             _videoSessionRepository,
             _sessionRepository,
-            _socketService
+            _socketService,
+            _walletRepository
         );
         this._leaveVideoSessionUseCase = new LeaveVideoSessionUseCase(
             _videoSessionRepository,

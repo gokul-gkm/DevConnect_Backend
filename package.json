@@ -6,7 +6,7 @@
     "dev": "nodemon -r tsconfig-paths/register src/app.ts",
     "start": "node dist/app.js",
     "build": "tsc",
-    "create-admin-wallet": "ts-node src/domain/entities/Wallet.ts"
+    "create-admin-wallet": "ts-node -r tsconfig-paths/register src/domain/entities/Wallet.ts"
   },
   "keywords": [],
   "author": "",

@@ -1,9 +1,9 @@
 import mongoose, { connect } from 'mongoose';
-import { WalletRepository } from '@/infrastructure/repositories/WalletRepository';
+import { WalletRepository } from '@/infrastructure/repositories/WalletRepository'
 
 async function createAdminWallet() {
   try {
-    await connect(process.env.MONGODB_URI!);
+    await connect(process.env.MONGODB_URL!);
     
     const walletRepository = new WalletRepository();
 

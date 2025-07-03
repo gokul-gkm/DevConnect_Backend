@@ -5,17 +5,20 @@ import { VideoSessionController } from "../controllers/VideoSessionController";
 import { VideoSessionRepository } from "@/infrastructure/repositories/VideoSessionRepository";
 import { SessionRepository } from "@/infrastructure/repositories/SessionRepository";
 import { SocketService } from "@/infrastructure/services/SocketService";
+import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 
 export const createVideoSessionRouter = () => {
     const videoSessionRouter = Router();
     const videoSessionRepository = new VideoSessionRepository();
     const sessionRepository = new SessionRepository();
     const socketService = SocketService.getInstance();
+    const walletRepository = new WalletRepository();
 
     const videoSessionController = new VideoSessionController(
         videoSessionRepository,
         sessionRepository,
-        socketService
+        socketService,
+        walletRepository
     );
 
     videoSessionRouter.post('/:sessionId/init', authMiddleware, autherization, (req, res, next) => {

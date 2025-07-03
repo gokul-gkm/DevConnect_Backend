@@ -215,28 +215,30 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
   async processRefund(sessionId: string, userId: string, developerId: string, amount: number, reason: string): Promise<any> {
     try {
       
-      const adminWallet = await WalletModel.findOne({ userId: 'admin' });
+      const adminWallet = await WalletModel.findOne({ adminId: process.env.ADMIN_ID });
+      console.log('adminWallet', adminWallet);
       if (!adminWallet) {
         throw new AppError('Admin wallet not found', StatusCodes.INTERNAL_SERVER_ERROR);
       }
   
-      // Get user wallet
       const userWallet = await WalletModel.findOne({ userId });
+      console.log('userWallet', userWallet);
       if (!userWallet) {
         throw new AppError('User wallet not found', StatusCodes.NOT_FOUND);
       }
-  
-      // Check if admin wallet has sufficient balance
+      console.log('adminWallet.balance', adminWallet.balance);
+
       if (adminWallet.balance < amount) {
         throw new AppError('Insufficient admin wallet balance', StatusCodes.INTERNAL_SERVER_ERROR);
       }
   
-      // Start transaction
       const session = await mongoose.startSession();
       session.startTransaction();
   
       try {
-        // Deduct from admin wallet
+        console.log('adminWallet._id', adminWallet._id);
+        console.log('sessionId', sessionId, typeof sessionId);
+
         await WalletModel.findByIdAndUpdate(
           adminWallet._id,
           { 
@@ -254,8 +256,8 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
           },
           { session }
         );
+        console.log('adminWallet', adminWallet);
   
-        // Add to user wallet
         await WalletModel.findByIdAndUpdate(
           userWallet._id,
           { 
@@ -267,12 +269,13 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
                 status: 'completed',
                 description: `Refund received for cancelled session: ${reason}`,
                 sessionId: new Types.ObjectId(sessionId),
-                createdAt: new Date()
+                // createdAt: new Date()
               }
             }
           },
           { session }
         );
+        console.log('userWallet', userWallet);
   
         await session.commitTransaction();
         session.endSession();
@@ -284,6 +287,7 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
           status: 'completed'
         };
       } catch (error) {
+        console.error('Refund transaction error:', error);
         await session.abortTransaction();
         session.endSession();
         throw error;
