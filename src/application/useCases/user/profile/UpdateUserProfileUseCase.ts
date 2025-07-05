@@ -1,0 +1,84 @@
+
+
+
+import { UserRepository } from '@/infrastructure/repositories/UserRepository';
+import { AppError } from '@/domain/errors/AppError';
+import { StatusCodes } from 'http-status-codes';
+import { S3Service } from '@/infrastructure/services/S3_Service';
+import { ProfileUpdateData } from '@/domain/types/types';
+
+export class UpdateUserProfileUseCase {
+    constructor(
+        private userRepository: UserRepository,
+        private s3Service: S3Service
+    ) {}
+
+    async execute(userId: string, profileData: ProfileUpdateData, files: { profilePicture?: Express.Multer.File[] }) {
+        try {
+            const existingUser = await this.userRepository.findById(userId);
+            if (!existingUser) {
+                throw new AppError('User not found', StatusCodes.NOT_FOUND);
+            }
+
+            console.log("exist user : ", existingUser);
+
+            let profilePictureKey = existingUser.profilePicture;
+
+            if (files.profilePicture && files.profilePicture[0]) {
+                console.log("files.profilePicture : ", files.profilePicture);
+                if (existingUser.profilePicture) {
+                    try {
+                        await this.s3Service.deleteFile(existingUser.profilePicture);
+                    } catch (error) {
+                        console.error('Error deleting old profile picture:', error);
+                    }
+                }
+
+                const profilePictureResult = await this.s3Service.uploadFile(
+                    files.profilePicture[0],
+                    'profile-images'
+                );
+                console.log("profile picture result : ", profilePictureResult);
+                profilePictureKey = profilePictureResult.Key;
+                console.log("profile picture key : ", profilePictureKey);
+            }
+
+            const updatedUser = await this.userRepository.update(userId, {
+                ...profileData,
+                profilePicture: profilePictureKey
+            });
+            console.log("updateUser: ", updatedUser);
+
+            if (!updatedUser) {
+                throw new AppError('Failed to update profile', StatusCodes.INTERNAL_SERVER_ERROR);
+            }
+
+            const signedProfilePictureUrl = updatedUser.profilePicture
+                ? await this.s3Service.generateSignedUrl(updatedUser.profilePicture)
+                : null;
+            
+            console.log("signed : ", signedProfilePictureUrl)
+
+            return {
+                id: updatedUser._id,
+                username: updatedUser.username,
+                email: updatedUser.email,
+                contact: updatedUser.contact,
+                location: updatedUser.location,
+                bio: updatedUser.bio,
+                profilePicture: signedProfilePictureUrl,
+                skills: updatedUser.skills,
+                socialLinks: updatedUser.socialLinks,
+                memberSince: updatedUser.createdAt
+            };
+        } catch (error: any) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            throw new AppError(
+                error.message || 'Error updating profile',
+                error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+}

@@ -5,11 +5,6 @@ export interface IDeveloper extends Document {
   expertise: String[] | null;
   hourlyRate: number | null;
   rating: number | null;
-  education: {
-    degree: string | null;
-    institution: string | null;
-    year: number | null;
-  };
   timezone: string | null;
   experience: number | null;
   schedule: {
@@ -32,6 +27,11 @@ export interface IDeveloper extends Document {
     experience: number | null;
     jobTitle: string | null;
   };
+  education: {
+    degree: string | null;
+    institution: string | null;
+    year: number | null;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,9 +42,9 @@ const DeveloperSchema: Schema = new Schema(
     hourlyRate: { type: Number },
     rating: { type: Number },
     education: {
-      Degree: { type: String },
-      Institution: { type: String },
-      Year: { type: Number },
+      degree: { type: String },
+      institution: { type: String },
+      year: { type: Number },
     },
     timezone: { type: String },
     experience: { type: Number },
@@ -61,7 +61,7 @@ const DeveloperSchema: Schema = new Schema(
     ],
     totalSessions: { type: Number },
     availability: { type: Schema.Types.Mixed },
-    portfolio: [{ type: Schema.Types.ObjectId, ref: 'Portfolio' }],
+    portfolio: [{ type: Schema.Types.ObjectId, ref: 'Project' }],
     status: {
       type: String,
       enum: ['pending', 'approved', 'rejected'],

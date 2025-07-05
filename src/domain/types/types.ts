@@ -33,3 +33,19 @@ export interface DevPaginatedResponse<T> {
         limit: number;
     };
 }
+
+export type ProfileUpdateData = {
+    username?: string;
+    email?: string;
+    contact?: number;
+    location?: string;
+    bio?: string;
+    skills?: string[];
+    socialLinks?: {
+        github: string | null;
+        linkedIn: string | null;
+        twitter: string | null;
+        portfolio: string | null;
+    };
+    profilePicture?: string;
+}

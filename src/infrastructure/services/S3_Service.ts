@@ -1,10 +1,14 @@
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+
+import { AppError } from '@/domain/errors/AppError';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dotenv from 'dotenv';
 
-dotenv.config()
+dotenv.config();
 
-export class S3Service{
+export class S3Service {
     private S3Client: S3Client;
+    private bucket: string;
 
     constructor() {
         this.S3Client = new S3Client({
@@ -12,36 +16,49 @@ export class S3Service{
             credentials: {
                 accessKeyId: process.env.S3_BUCKET_ACCESS_KEY!,
                 secretAccessKey: process.env.S3_BUCKET_SECRET_ACCESS_KEY!,
-            }, 
-        })
+            },
+        });
+      
+        this.bucket = process.env.S3_BUCKET_NAME!;
     }
 
     async uploadFile(file: Express.Multer.File, folder: string = '') {
+        const key = `${folder}/${Date.now()}-${file.originalname}`;
 
         const params = {
-            Bucket: process.env.S3_BUCKET_NAME!,
-            Key: `${folder}/${Date.now()}-${file.originalname}`,
+            Bucket: this.bucket,
+            Key: key,
             Body: file.buffer,
             ContentType: file.mimetype,
-        }
-
+        };
 
         const command = new PutObjectCommand(params);
-        const data = await this.S3Client.send(command);
+        await this.S3Client.send(command);
 
-        return {
-            ...data,
-            Location: `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.S3_BUCKET_REGION}.amazonaws.com/${params.Key}`
-        };
+        return { Key: key };
     }
 
-    async deleteFile(fileUrl: string) {
-        const key = fileUrl.split('.com/')[1];
+    async deleteFile(fileKey: string) {
         const params = {
-            Bucket: process.env.S3_BUCKET_NAME!,
-            Key: key,
+            Bucket: this.bucket,
+            Key: fileKey,
         };
         const command = new DeleteObjectCommand(params);
         await this.S3Client.send(command);
     }
+
+    async generateSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+        try {
+            const command = new GetObjectCommand({
+                Bucket: this.bucket,
+                Key: key,
+            });
+
+            return await getSignedUrl(this.S3Client, command, { expiresIn });
+        } catch (error) {
+            console.error('Error generating signed URL:', error);
+            throw new AppError('Error generating signed URL', 500);
+        }
+    }
 }
+
