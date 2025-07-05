@@ -2,6 +2,15 @@ import { Server as SocketServer } from 'socket.io';
 import { Server } from 'http';
 import jwt from 'jsonwebtoken';
 import logger from '@/utils/logger';
+import { ISocketService } from '@/domain/interfaces/ISocketService';
+
+const DEBUG = true;
+
+function debugLog(component: string, message: string, data?: any) {
+  if (DEBUG) {
+    console.log(`[Backend:${component}] ${message}`, data || '');
+  }
+}
 
 interface SocketData {
   userId?: string;
@@ -9,11 +18,13 @@ interface SocketData {
   developerId?: string;
 }
 
-export class SocketService {
+export class SocketService implements ISocketService {
   private static instance: SocketService | null = null; 
   private io: SocketServer;
   private userSockets: Map<string, Set<string>> = new Map();
   private developerSockets: Map<string, Set<string>> = new Map();
+  private webRTCRooms: Map<string, Set<string>> = new Map();
+  private connectionStates: Map<string, string> = new Map();
 
   private constructor(server: Server, io: SocketServer) {
     this.io = io;
@@ -45,6 +56,10 @@ export class SocketService {
           developerId?: string;
         };
 
+        if (!decoded.role || !['user', 'developer'].includes(decoded.role)) {
+          throw new Error('Invalid role');
+        }
+
         socket.data = {
           userId: decoded.userId,
           role: decoded.role,
@@ -63,15 +78,28 @@ export class SocketService {
   private setupEventHandlers() {
     this.io.on('connection', (socket) => {
       const { userId, role, developerId } = socket.data;
+      console.log("🔰 Role and userID : ", role, userId)
+ 
+      if (role === 'developer' && userId) {
+        console.log('💻 Developer socket ')
+        this.developerSockets.delete(userId);
+      } else if (role === 'user' && userId) {
+        console.log('👤 User socket ')
+        this.userSockets.delete(userId);
+      }
+
       logger.info(`Socket connected: ${socket.id} - Role: ${role}`);
-      logger.info(`Current connections - Users: ${this.countUserSockets()}, Developers: ${this.countDeveloperSockets()}`);
 
       if (role === 'developer' && userId) {
         this.addSocket(this.developerSockets, userId, socket.id);
         this.handleDeveloperEvents(socket);
-      } else if (userId) {
+      } else if (role === 'user' && userId) {
         this.addSocket(this.userSockets, userId, socket.id);
         this.handleUserEvents(socket);
+      } else {
+        logger.warn(`Invalid role or missing ID for socket ${socket.id}`);
+        socket.disconnect();
+        return;
       }
 
       socket.on('notification:mark-read', async (notificationId: string) => {
@@ -102,6 +130,7 @@ export class SocketService {
       this.handleCommonEvents(socket);
 
       if (role === 'developer' && developerId) {
+        console.log("🔀 online", developerId)
         this.io.emit('developer:online', { developerId });
       } else if (userId) {
         this.io.emit('user:online', { userId });
@@ -111,7 +140,7 @@ export class SocketService {
         try {
           if (data.developerId) {
             const isOnline = this.isDeveloperOnline(data.developerId);
-            console.log(`Developer ${data.developerId} online status: ${isOnline}`);
+            console.log(`🛜Developer ${data.developerId} online status: ${isOnline} ${isOnline ? '✅' : '❌'}`);
             socket.emit('developer:online', { 
               developerId: data.developerId, 
               isOnline: isOnline 
@@ -120,7 +149,7 @@ export class SocketService {
           
           if (data.userId) {
             const isOnline = this.isUserOnline(data.userId);
-            console.log(`User ${data.userId} online status: ${isOnline}`);
+            console.log(`🛜User ${data.userId} online status: ${isOnline} ${isOnline ? '✅' : '❌'}`);
             socket.emit('user:online', { 
               userId: data.userId, 
               isOnline: isOnline 
@@ -142,6 +171,8 @@ export class SocketService {
           }
         }
       });
+
+      
 
       socket.on('disconnect', () => {
         this.handleDisconnect(socket);
@@ -180,14 +211,241 @@ export class SocketService {
           logger.info(`Developer ${data.developerId} set online manually`);
         }
       });
+
+      this.setupWebRTCHandlers(socket);
     });
+  }
+
+  private setupWebRTCHandlers(socket: any) {
+    const { userId, role, developerId } = socket.data;
+    const participantId = userId;
+    
+    console.log(`[Backend:WebRTC Step 1] Setting up WebRTC handlers for ${participantId} (${role})`);
+
+    if (role === 'developer' && userId) {
+        this.addSocket(this.developerSockets, userId, socket.id);
+    } else if (role === 'user' && userId) {
+        this.addSocket(this.userSockets, userId, socket.id);
+    }
+
+    socket.on('webrtc:join-room', (data: { roomId: string, userId: string, role: string }) => {
+      try {
+        const { roomId } = data;
+        const roomName = `webrtc:${roomId}`;
+        
+        if (this.webRTCRooms.get(roomId)?.has(participantId)) {
+          console.log(`[Backend:WebRTC] User ${participantId} already in room ${roomId}`);
+          return;
+        }
+        
+        socket.join(roomName);
+        
+        if (!this.webRTCRooms.has(roomId)) {
+          this.webRTCRooms.set(roomId, new Set());
+        }
+        
+        this.webRTCRooms.get(roomId)!.add(participantId);
+        
+        const participants = Array.from(this.webRTCRooms.get(roomId) || []).map(id => {
+            const isDeveloper = this.developerSockets.has(id);
+          return {
+            userId: id,
+            role: isDeveloper ? 'developer' : 'user'
+          };
+        });
+        
+        console.log(`[Backend:WebRTC Step 6] Emitting session info to room ${roomId}:`, participants);
+        this.io.to(roomName).emit('webrtc:session-info', {
+          roomId,
+          participants
+        });
+      } catch (error) {
+        console.error('[Backend:WebRTC] Error in join-room handler:', error);
+      }
+    });
+    
+    socket.on('webrtc:leave-room', (data: { roomId: string, userId: string, role: string }) => {
+      try {
+        const { roomId } = data;
+        console.log(`[Backend:WebRTC Step 8] User ${participantId} leaving room ${roomId}`);
+        
+        if (!roomId || !participantId) {
+          console.log('[Backend:WebRTC Step 8.1] Invalid room ID or participant ID for WebRTC room leave');
+          return;
+        }
+        
+        const roomName = `webrtc:${roomId}`;
+        console.log(`[Backend:WebRTC Step 9] Leaving socket room ${roomName}`);
+        socket.leave(roomName);
+        
+        const room = this.webRTCRooms.get(roomId);
+        if (room) {
+          console.log(`[Backend:WebRTC Step 10] Removing participant ${participantId} from room ${roomId}`);
+          room.delete(participantId);
+          
+          if (room.size === 0) {
+            console.log(`[Backend:WebRTC Step 11] Room ${roomId} is empty, removing it`);
+            this.webRTCRooms.delete(roomId);
+          }
+        }
+        
+        console.log(`[Backend:WebRTC Step 12] Notifying other participants about disconnection`);
+        socket.to(roomName).emit('webrtc:user-disconnected', {
+          userId: participantId,
+          roomId
+        });
+      } catch (error) {
+        console.error('[Backend:WebRTC Step 13] Error in webrtc:leave-room:', error);
+      }
+    });
+    
+    socket.on('webrtc:offer', (data: { sdp: any, to: string, from: string, sessionId: string }) => {
+      try {
+        const { to, sessionId } = data;
+        if (to === participantId) {
+          console.log('[Backend:WebRTC] Preventing self-signaling');
+          return;
+        }
+        console.log(`[Backend:WebRTC Step 14] Relaying offer from ${participantId} to ${to} in room ${sessionId}`);
+        
+        if (!to || !sessionId) {
+          console.log('[Backend:WebRTC Step 14.1] Invalid offer data');
+          return;
+        }
+        
+        console.log(`[Backend:WebRTC Step 15] Relaying WebRTC offer`);
+        this.relayWebRTCMessage(to, 'webrtc:offer', data);
+      } catch (error) {
+        console.error('[Backend:WebRTC Step 16] Error in offer handler:', error);
+      }
+    });
+    
+    socket.on('webrtc:answer', (data: { sdp: any, to: string, from: string, sessionId: string }) => {
+      try {
+        const { to, sessionId } = data;
+        console.log(`[Backend:WebRTC Step 17] Relaying answer from ${participantId} to ${to} in room ${sessionId}`);
+        
+        if (!to || !sessionId) {
+          console.log('[Backend:WebRTC Step 17.1] Invalid WebRTC answer data');
+          return;
+        }
+        
+        console.log(`[Backend:WebRTC Step 18] Relaying WebRTC answer`);
+        this.relayWebRTCMessage(to, 'webrtc:answer', data);
+      } catch (error) {
+        console.error('[Backend:WebRTC Step 19] Error in webrtc:answer:', error);
+      }
+    });
+
+    socket.on('webrtc:ice-candidate', (data: { candidate: any, to: string, from: string }) => {
+      try {
+        const { to } = data;
+        console.log(`[Backend:WebRTC Step 20] Relaying ICE candidate from ${participantId} to ${to}`);
+        
+        if (!to) {
+          console.log('[Backend:WebRTC Step 20.1] Invalid ICE candidate data');
+          return;
+        }
+        
+        console.log(`[Backend:WebRTC Step 21] Relaying ICE candidate`);
+        this.relayWebRTCMessage(to, 'webrtc:ice-candidate', data);
+      } catch (error) {
+        console.error('[Backend:WebRTC Step 22] Error in webrtc:ice-candidate:', error);
+      }
+    });
+
+    socket.on('webrtc:screen-sharing-started', (data: { roomId: string, userId: string }) => {
+      try {
+        const { roomId } = data;
+        console.log(`[Backend:WebRTC Step 23] User ${participantId} started screen sharing in room ${roomId}`);
+        
+        if (!roomId) {
+          console.log('[Backend:WebRTC Step 23.1] Invalid screen sharing data');
+          return;
+        }
+        
+        const roomName = `webrtc:${roomId}`;
+        console.log(`[Backend:WebRTC Step 24] Notifying room about screen sharing`);
+        socket.to(roomName).emit('webrtc:screen-sharing-started', {
+          userId: participantId,
+          roomId
+        });
+      } catch (error) {
+        console.error('[Backend:WebRTC Step 25] Error in webrtc:screen-sharing-started:', error);
+      }
+    });
+    
+    socket.on('webrtc:screen-sharing-stopped', (data: { roomId: string, userId: string }) => {
+      try {
+        const { roomId } = data;
+        console.log(`[Backend:WebRTC Step 26] User ${participantId} stopped screen sharing in room ${roomId}`);
+        
+        if (!roomId) {
+          console.log('[Backend:WebRTC Step 26.1] Invalid screen sharing data');
+          return;
+        }
+        
+        const roomName = `webrtc:${roomId}`;
+        console.log(`[Backend:WebRTC Step 27] Notifying room about screen sharing stop`);
+        socket.to(roomName).emit('webrtc:screen-sharing-stopped', {
+          userId: participantId,
+          roomId
+        });
+      } catch (error) {
+        console.error('[Backend:WebRTC Step 28] Error in webrtc:screen-sharing-stopped:', error);
+      }
+    });
+
+    socket.on('webrtc:connection-state-change', (data: { state: string, roomId: string }) => {
+      const { state, roomId } = data;
+      this.connectionStates.set(`${participantId}:${roomId}`, state);
+      console.log(`[Backend:WebRTC] Connection state for ${participantId} in room ${roomId}: ${state}`);
+    });
+  }
+
+
+  private relayWebRTCMessage(targetUserId: string, event: string, data: any) {
+    console.log(`[Backend:WebRTC Step 29] Attempting to relay ${event} to ${targetUserId}`);
+    
+    let targetSockets = this.userSockets.get(targetUserId);
+    
+    if (!targetSockets || targetSockets.size === 0) {
+        console.log(`[Backend:WebRTC Step 30] No user sockets found, checking developer sockets`);
+      targetSockets = this.developerSockets.get(targetUserId);
+    }
+    
+    if (targetSockets && targetSockets.size > 0) {
+        console.log(`[Backend:WebRTC Step 31] Found ${targetSockets.size} sockets for target user`);
+      targetSockets.forEach(socketId => {
+            console.log(`[Backend:WebRTC Step 32] Emitting ${event} to socket ${socketId}`);
+        this.io.to(socketId).emit(event, data);
+      });
+    } else {
+        console.log(`[Backend:WebRTC Step 33] Could not find target user ${targetUserId} for WebRTC signal relay`);
+    }
   }
 
   private addSocket(map: Map<string, Set<string>>, id: string, socketId: string) {
     if (!map.has(id)) {
       map.set(id, new Set());
     }
-    map.get(id)!.add(socketId);
+    const sockets = map.get(id)!;
+    
+    if (sockets.size >= 2) {
+      const oldestSocket = Array.from(sockets)[0];
+      this.io.sockets.sockets.get(oldestSocket)?.disconnect();
+      sockets.delete(oldestSocket);
+    }
+    
+    sockets.add(socketId);
+    logger.info(`Added socket ${socketId} to ${map === this.userSockets ? 'user' : 'developer'} ${id}`);
+
+    const connectedUserIds = Array.from(this.userSockets.keys());
+    const connectedDeveloperIds = Array.from(this.developerSockets.keys());
+    logger.info(
+      `Current connections - Users: ${this.countUserSockets()} [${connectedUserIds.join(', ')}], ` +
+      `Developers: ${this.countDeveloperSockets()} [${connectedDeveloperIds.join(', ')}]`
+    );
   }
 
   private handleUserEvents(socket: any) {
@@ -203,6 +461,16 @@ export class SocketService {
       socket.leave(`chat:${chatId}`);
       logger.info(`User ${socket.data.userId} left chat ${chatId}`);
     });
+
+    socket.on('user:join-video', (sessionId: string) => { 
+      socket.join(`video:${sessionId}`);
+      logger.info(`User ${socket.data.userId} joined video room ${sessionId}`);
+    });
+
+    socket.on('user:leave-video', (sessionId: string) => {
+      socket.leave(`video:${sessionId}`);
+      logger.info(`User ${socket.data.userId} left video room ${sessionId}`);
+    });
   }
 
   private handleDeveloperEvents(socket: any) {
@@ -214,6 +482,16 @@ export class SocketService {
     socket.on('developer:leave-chat', (chatId: string) => {
       socket.leave(`chat:${chatId}`);
       logger.info(`Developer ${socket.data.developerId} left chat ${chatId}`);
+    });
+
+    socket.on('developer:join-video', (sessionId: string) => {
+      socket.join(`video:${sessionId}`);
+      logger.info(`Developer ${socket.data.developerId} joined video room ${sessionId}`);
+    });
+
+    socket.on('developer:leave-video', (sessionId: string) => {
+      socket.leave(`video:${sessionId}`);
+      logger.info(`Developer ${socket.data.developerId} left video room ${sessionId}`);
     });
   }
 
@@ -250,17 +528,16 @@ export class SocketService {
 
   private handleDisconnect(socket: any) {
     const { userId, role, developerId } = socket.data;
-    logger.info(`Socket disconnected: ${socket.id} - Role: ${role}`);
 
-    if (role === 'developer' && developerId) {
-      const sockets = this.developerSockets.get(developerId);
+    if (role === 'developer' && userId) {
+      const sockets = this.developerSockets.get(userId);
       if (sockets) {
         sockets.delete(socket.id);
         if (sockets.size === 0) {
-          this.developerSockets.delete(developerId);
+          this.developerSockets.delete(userId);
         }
       }
-    } else if (userId) {
+    } else if (role === 'user' && userId) {
       const sockets = this.userSockets.get(userId);
       if (sockets) {
         sockets.delete(socket.id);
@@ -269,11 +546,37 @@ export class SocketService {
         }
       }
     }
+
+    this.webRTCRooms.forEach((participants, roomId) => {
+      if (participants.has(userId)) {
+        participants.delete(userId);
+        
+        const roomName = `webrtc:${roomId}`;
+        socket.to(roomName).emit('webrtc:user-disconnected', {
+          userId: userId,
+          roomId
+        });
+        
+        if (participants.size === 0) {
+          this.webRTCRooms.delete(roomId);
+        }
+      }
+    });
+
+    logger.info(`Socket disconnected: ${socket.id} - Role: ${role}`);
+    const connectedUserIds = Array.from(this.userSockets.keys());
+    const connectedDeveloperIds = Array.from(this.developerSockets.keys());
+    logger.info(
+      `Current connections - Users: ${this.countUserSockets()} [${connectedUserIds.join(', ')}], ` +
+      `Developers: ${this.countDeveloperSockets()} [${connectedDeveloperIds.join(', ')}]`
+    );
   }
 
   public emitToUser(userId: string, event: string, data: any) {
     const sockets = this.userSockets.get(userId);
     if (sockets) {
+      console.log(`Emitting ${event} to user ${userId} on sockets:`, Array.from(sockets));
+
       sockets.forEach(socketId => {
         this.io.to(socketId).emit(event, data);
       });
@@ -283,6 +586,7 @@ export class SocketService {
   public emitToDeveloper(developerId: string, event: string, data: any) {
     const sockets = this.developerSockets.get(developerId);
     if (sockets) {
+      console.log(`Emitting ${event} to developer ${developerId} on sockets:`, Array.from(sockets));
       sockets.forEach(socketId => {
         this.io.to(socketId).emit(event, data);
       });

@@ -1,11 +1,15 @@
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 import { IWallet, IWalletTransaction } from '@/domain/entities/Wallet';
 import { WalletModel } from '@/domain/entities/Wallet';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
+import { BaseRepository } from './BaseRepository';
 
-export class WalletRepository implements IWalletRepository {
+export class WalletRepository extends BaseRepository<IWallet> implements IWalletRepository {
+  constructor() {
+    super(WalletModel)
+}
   async findByUserId(userId: Types.ObjectId): Promise<IWallet | null> {
     try {
       return await WalletModel.findOne({ userId });
@@ -204,6 +208,93 @@ export class WalletRepository implements IWalletRepository {
     } catch (error) {
       console.error('Error fetching monthly revenue:', error);
       throw new AppError('Failed to fetch revenue data', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+
+  async processRefund(sessionId: string, userId: string, developerId: string, amount: number, reason: string): Promise<any> {
+    try {
+      
+      const adminWallet = await WalletModel.findOne({ adminId: process.env.ADMIN_ID });
+      console.log('adminWallet', adminWallet);
+      if (!adminWallet) {
+        throw new AppError('Admin wallet not found', StatusCodes.INTERNAL_SERVER_ERROR);
+      }
+  
+      const userWallet = await WalletModel.findOne({ userId });
+      console.log('userWallet', userWallet);
+      if (!userWallet) {
+        throw new AppError('User wallet not found', StatusCodes.NOT_FOUND);
+      }
+      console.log('adminWallet.balance', adminWallet.balance);
+
+      if (adminWallet.balance < amount) {
+        throw new AppError('Insufficient admin wallet balance', StatusCodes.INTERNAL_SERVER_ERROR);
+      }
+  
+      const session = await mongoose.startSession();
+      session.startTransaction();
+  
+      try {
+        console.log('adminWallet._id', adminWallet._id);
+        console.log('sessionId', sessionId, typeof sessionId);
+
+        await WalletModel.findByIdAndUpdate(
+          adminWallet._id,
+          { 
+            $inc: { balance: -amount },
+            $push: {
+              transactions: {
+                amount,
+                type: 'debit',
+                status: 'completed',
+                description: `Refund to user for cancelled session: ${reason}`,
+                sessionId: new Types.ObjectId(sessionId),
+                createdAt: new Date()
+              }
+            }
+          },
+          { session }
+        );
+        console.log('adminWallet', adminWallet);
+  
+        await WalletModel.findByIdAndUpdate(
+          userWallet._id,
+          { 
+            $inc: { balance: amount },
+            $push: {
+              transactions: {
+                amount,
+                type: 'credit',
+                status: 'completed',
+                description: `Refund received for cancelled session: ${reason}`,
+                sessionId: new Types.ObjectId(sessionId),
+                // createdAt: new Date()
+              }
+            }
+          },
+          { session }
+        );
+        console.log('userWallet', userWallet);
+  
+        await session.commitTransaction();
+        session.endSession();
+  
+        return {
+          sessionId,
+          amount,
+          reason,
+          status: 'completed'
+        };
+      } catch (error) {
+        console.error('Refund transaction error:', error);
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+      }
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError('Failed to process refund', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }

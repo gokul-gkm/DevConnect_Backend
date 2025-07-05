@@ -1,11 +1,15 @@
 import { Types } from 'mongoose';
 import { IPaymentRepository } from '@/domain/interfaces/IPaymentRepository';
-import { IPayment } from '@/domain/entities/Payment';
-import { PaymentModel } from '@/domain/entities/Payment';
+import { IPayment, PaymentModel } from '@/domain/entities/Payment';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
+import { BaseRepository } from './BaseRepository';
 
-export class PaymentRepository implements IPaymentRepository {
+export class PaymentRepository extends BaseRepository<IPayment> implements IPaymentRepository {
+  constructor() {
+    super(PaymentModel)
+}
+  
   async create(payment: Partial<IPayment>): Promise<IPayment> {
     try {
       const newPayment = new PaymentModel(payment);
@@ -15,7 +19,7 @@ export class PaymentRepository implements IPaymentRepository {
     }
   }
 
-  async findById(id: Types.ObjectId): Promise<IPayment | null> {
+  async findByPaymentId(id: Types.ObjectId): Promise<IPayment | null> {
     try {
       return await PaymentModel.findById(id);
     } catch (error) {

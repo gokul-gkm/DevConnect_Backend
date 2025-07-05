@@ -1,34 +1,44 @@
-import { CreateNotificationUseCase } from '@/application/useCases/notification/CreateNotificationUseCase';
-import { DeleteNotificationUseCase } from '@/application/useCases/notification/DeleteNotificationUseCase';
-import { GetNotificationsUseCase } from '@/application/useCases/notification/GetNotificationsUseCase';
-import { GetUnreadCountUseCase } from '@/application/useCases/notification/GetUnreadCountUseCase';
-import { MarkAllNotificationsAsReadUseCase } from '@/application/useCases/notification/MarkAllNotificationsAsReadUseCase';
-import { MarkNotificationAsReadUseCase } from '@/application/useCases/notification/MarkNotificationAsReadUseCase';
-import { AppError } from '@/domain/errors/AppError';
-import { INotificationRepository } from '@/domain/interfaces/INotificationRepository';
-import { NotificationRepository } from '@/infrastructure/repositories/NotificationRepositoty';
-import { SocketService } from '@/infrastructure/services/SocketService';
+import { HTTP_STATUS_MESSAGES } from '@/utils/constants';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { AppError } from '@/domain/errors/AppError';
+
+import { INotificationRepository } from '@/domain/interfaces/INotificationRepository';
+import { ISocketService } from '@/domain/interfaces/ISocketService';
+
+import { CreateNotificationUseCase } from '@/application/useCases/implements/notification/CreateNotificationUseCase';
+import { DeleteNotificationUseCase } from '@/application/useCases/implements/notification/DeleteNotificationUseCase';
+import { GetNotificationsUseCase } from '@/application/useCases/implements/notification/GetNotificationsUseCase';
+import { GetUnreadCountUseCase } from '@/application/useCases/implements/notification/GetUnreadCountUseCase';
+import { MarkAllNotificationsAsReadUseCase } from '@/application/useCases/implements/notification/MarkAllNotificationsAsReadUseCase';
+import { MarkNotificationAsReadUseCase } from '@/application/useCases/implements/notification/MarkNotificationAsReadUseCase';
+
+import { IGetNotificationsUseCase } from '@/application/useCases/interfaces/notification/IGetNotificationsUseCase';
+import { IMarkNotificationAsReadUseCase } from '@/application/useCases/interfaces/notification/IMarkNotificationAsReadUseCase';
+import { IMarkAllNotificationsAsReadUseCase } from '@/application/useCases/interfaces/notification/IMarkAllNotificationsAsReadUseCase';
+import { IDeleteNotificationUseCase } from '@/application/useCases/interfaces/notification/IDeleteNotificationUseCase';
+import { IGetUnreadCountUseCase } from '@/application/useCases/interfaces/notification/IGetUnreadCountUseCase';
+import { ICreateNotificationUseCase } from '@/application/useCases/interfaces/notification/ICreateNotificationUseCase';
+
 
 export class NotificationController {
-  private getNotificationsUseCase: GetNotificationsUseCase;
-  private markNotificationAsReadUseCase: MarkNotificationAsReadUseCase;
-  private markAllNotificationsAsReadUseCase: MarkAllNotificationsAsReadUseCase;
-  private deleteNotificationUseCase: DeleteNotificationUseCase;
-  private getUnreadCountUseCase: GetUnreadCountUseCase;
-  private createNotificationUseCase: CreateNotificationUseCase;
+  private _getNotificationsUseCase: IGetNotificationsUseCase;
+  private _markNotificationAsReadUseCase: IMarkNotificationAsReadUseCase;
+  private _markAllNotificationsAsReadUseCase: IMarkAllNotificationsAsReadUseCase;
+  private _deleteNotificationUseCase: IDeleteNotificationUseCase;
+  private _getUnreadCountUseCase: IGetUnreadCountUseCase;
+  private _createNotificationUseCase: ICreateNotificationUseCase;
 
   constructor(
-    private notificationRepository: INotificationRepository,
-    private socketService: SocketService
+    private _notificationRepository: INotificationRepository,
+    private _socketService: ISocketService
   ) {
-    this.getNotificationsUseCase = new GetNotificationsUseCase(notificationRepository);
-    this.markNotificationAsReadUseCase = new MarkNotificationAsReadUseCase(notificationRepository);
-    this.markAllNotificationsAsReadUseCase = new MarkAllNotificationsAsReadUseCase(notificationRepository, socketService);
-    this.deleteNotificationUseCase = new DeleteNotificationUseCase(notificationRepository);
-    this.getUnreadCountUseCase = new GetUnreadCountUseCase(notificationRepository);
-    this.createNotificationUseCase = new CreateNotificationUseCase(notificationRepository, socketService);
+    this._getNotificationsUseCase = new GetNotificationsUseCase(_notificationRepository);
+    this._markNotificationAsReadUseCase = new MarkNotificationAsReadUseCase(_notificationRepository);
+    this._markAllNotificationsAsReadUseCase = new MarkAllNotificationsAsReadUseCase(_notificationRepository, _socketService);
+    this._deleteNotificationUseCase = new DeleteNotificationUseCase(_notificationRepository);
+    this._getUnreadCountUseCase = new GetUnreadCountUseCase(_notificationRepository);
+    this._createNotificationUseCase = new CreateNotificationUseCase(_notificationRepository, _socketService);
   }
 
   async getNotifications(req: Request, res: Response) {
@@ -38,7 +48,7 @@ export class NotificationController {
         throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
       }
 
-      const notifications = await this.getNotificationsUseCase.execute(userId);
+      const notifications = await this._getNotificationsUseCase.execute(userId);
       
       return res.status(StatusCodes.OK).json({
         success: true,
@@ -49,7 +59,7 @@ export class NotificationController {
       
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -63,7 +73,7 @@ export class NotificationController {
 
       const { notificationId } = req.params;
       
-      const notification = await this.markNotificationAsReadUseCase.execute(notificationId, userId);
+      const notification = await this._markNotificationAsReadUseCase.execute(notificationId, userId);
       
       return res.status(StatusCodes.OK).json({
         success: true,
@@ -74,7 +84,7 @@ export class NotificationController {
       
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -86,7 +96,7 @@ export class NotificationController {
         throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
       }
       
-      await this.markAllNotificationsAsReadUseCase.execute(userId);
+      await this._markAllNotificationsAsReadUseCase.execute(userId);
       
       return res.status(StatusCodes.OK).json({
         success: true,
@@ -97,7 +107,7 @@ export class NotificationController {
       
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -111,7 +121,7 @@ export class NotificationController {
 
       const { notificationId } = req.params;
       
-      const deleted = await this.deleteNotificationUseCase.execute(notificationId, userId);
+      const deleted = await this._deleteNotificationUseCase.execute(notificationId, userId);
       
       return res.status(StatusCodes.OK).json({
         success: deleted,
@@ -122,7 +132,7 @@ export class NotificationController {
       
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -134,7 +144,7 @@ export class NotificationController {
         throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
       }
 
-      const count = await this.getUnreadCountUseCase.execute(userId);
+      const count = await this._getUnreadCountUseCase.execute(userId);
       
       return res.status(StatusCodes.OK).json({
         success: true,
@@ -145,7 +155,7 @@ export class NotificationController {
       
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }

@@ -30,6 +30,9 @@ export interface SessionDetails {
   developerId: UserInfo;
   createdAt: Date;
   updatedAt: Date;
+  rejectionReason?: string;
+  rating?: number; 
+  feedback?: string;
 }
 
 export type SessionDocument = {
@@ -47,4 +50,5 @@ export type SessionDocument = {
   developerId: Types.ObjectId | UserInfo;
   createdAt: Date;
   updatedAt: Date;
+  rejectionReason?: string;
 }

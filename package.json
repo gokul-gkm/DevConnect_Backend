@@ -4,12 +4,17 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon -r tsconfig-paths/register src/app.ts",
-    "create-admin-wallet": "ts-node src/domain/entities/Wallet.ts"
+    "start": "node dist/app.js",
+    "build": "tsc",
+    "create-admin-wallet": "ts-node -r tsconfig-paths/register src/domain/entities/Wallet.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
+  "_moduleAliases": {
+    "@": "dist"
+  },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
@@ -43,6 +48,7 @@
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "logform": "^2.7.0",
+    "module-alias": "^2.2.3",
     "mongoose": "^8.8.4",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
@@ -50,6 +56,7 @@
     "socket.io": "^4.8.1",
     "stripe": "^17.6.0",
     "tsconfig-paths": "^4.2.0",
+    "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
     "zod": "^3.24.1"

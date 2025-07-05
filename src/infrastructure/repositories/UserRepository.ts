@@ -5,6 +5,7 @@ import { AppError } from "@/domain/errors/AppError";
 import { PaginatedResponse, QueryParams } from "@/domain/types/types";
 import { StatusCodes } from "http-status-codes";
 import { BaseRepository } from "./BaseRepository";
+import { ERROR_MESSAGES } from "@/utils/constants";
 
 export class UserRepository extends BaseRepository<IUser> implements IUserRepository{
     constructor() {
@@ -24,14 +25,7 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
         }  
         
     }
-    // async findById(id: string): Promise<IUser | null> {
-    //     try {
-    //         return await User.findById(id)
-    //     } catch (error) {
-    //         console.error('Error fetching User by Id:', error);
-    //         throw new AppError('Failed to fetch user', StatusCodes.INTERNAL_SERVER_ERROR);
-    //     }    
-    // }
+
     async findByUsername(username: string): Promise<IUser | null>{
         try {
             return await User.findOne({username})
@@ -41,22 +35,14 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
         }
         
     }
-    async deleteById(id: string): Promise<void> {  
-        try {
-            await User.deleteOne({_id: id})
-        } catch (error) {
-            console.error('Error deleting user:', error);
-            throw new AppError('Failed to remove user', StatusCodes.INTERNAL_SERVER_ERROR);
-        }
-        
-    }
+
 
     async update(id: string, updateData: Partial<IUser>): Promise<IUser>{
         try {
             const objectId = new Types.ObjectId(id);
             const updatedUser = await User.findByIdAndUpdate(objectId, updateData, { new: true });
             if (!updatedUser) {
-                throw new AppError('User not found', StatusCodes.NOT_FOUND)
+                throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND)
             }
             return updatedUser;
         } catch (error) {
@@ -71,16 +57,6 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
             return await User.find({role})
         } catch (error) {
             console.error('Error fetching user by role:', error);
-            throw new AppError('Failed to fetch user', StatusCodes.INTERNAL_SERVER_ERROR);
-        }
-        
-    }
-
-    async findByLinkedIn(linkedinId: string): Promise<IUser | null>{
-        try {
-            return await User.findOne({ linkedinId });
-        } catch (error) {
-            console.error('Error fetching user by LinkedIn id :', error);
             throw new AppError('Failed to fetch user', StatusCodes.INTERNAL_SERVER_ERROR);
         }
         
@@ -151,7 +127,7 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
           const user = await User.findById(userId).select('email username profilePicture');
           
           if (!user) {
-            throw new AppError('User not found', StatusCodes.NOT_FOUND);
+            throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
           }
           return user;
         } catch (error) {

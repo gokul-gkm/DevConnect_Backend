@@ -3,6 +3,7 @@ import { Request, Response, NextFunction,  } from "express";
 import { User } from "@/domain/entities/User";
 import { StatusCodes } from "http-status-codes";
 import { AppError } from "@/domain/errors/AppError";
+import { ERROR_MESSAGES } from "@/utils/constants";
 
 export const autherization = async (
   req: Request,
@@ -15,7 +16,7 @@ export const autherization = async (
     const currentUser = await User.findById(userId);
 
     if (!currentUser) {
-      throw new AppError("User not found", StatusCodes.NOT_FOUND);
+      throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
     }
 
     if (currentUser?.status == "active") next();

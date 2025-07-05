@@ -14,6 +14,7 @@ export interface IDeveloper extends Document {
       startTime: string | null;
     }[];
   }[];
+  defaultUnavailableSlots: string[];
   totalSessions: number | null;
   availability: Record<string, any>;
   portfolio: ObjectId[] | null;
@@ -59,6 +60,7 @@ const DeveloperSchema: Schema = new Schema(
         ],
       },
     ],
+    defaultUnavailableSlots: [{ type: String }],
     totalSessions: { type: Number },
     availability: { type: Schema.Types.Mixed },
     portfolio: [{ type: Schema.Types.ObjectId, ref: 'Project' }],

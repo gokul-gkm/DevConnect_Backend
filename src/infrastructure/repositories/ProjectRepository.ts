@@ -4,8 +4,13 @@ import { AppError } from "@/domain/errors/AppError";
 import Developer from "@/domain/entities/Developer";
 import { ProjectsResponse } from "@/domain/types/project";
 import { StatusCodes } from "http-status-codes";
+import { ERROR_MESSAGES } from "@/utils/constants";
+import { BaseRepository } from "./BaseRepository";
 
-export class ProjectRepository implements IProjectRepository {
+export class ProjectRepository extends BaseRepository<IProject> implements IProjectRepository {
+    constructor() {
+        super(Project)
+    }
     async addProject(project: Partial<IProject>) {
         try {
             const newProject = new Project({
@@ -28,7 +33,7 @@ export class ProjectRepository implements IProjectRepository {
             const developer = await Developer.findOne({ userId });
             
             if (!developer) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             const projectIds = developer.portfolio;
@@ -81,7 +86,7 @@ export class ProjectRepository implements IProjectRepository {
         }
     }
 
-    async getProjectById(projectId: string) {
+    async getProjectById(projectId: string):Promise<any> {
         try {
             const project = await Project.findById(projectId);
             if (!project) {
@@ -94,7 +99,7 @@ export class ProjectRepository implements IProjectRepository {
         }
     }
 
-    async updateProject(projectId: string, updateData: Partial<IProject>) {
+    async updateProject(projectId: string, updateData: Partial<IProject>):Promise<any> {
         try {
             const project = await Project.findByIdAndUpdate(
                 projectId,

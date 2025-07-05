@@ -1,6 +1,6 @@
-import mongoose, { Types, Schema, model } from 'mongoose';
+import mongoose, { Types, Schema, model, Document } from 'mongoose';
 
-export interface IWallet {
+export interface IWallet extends Document {
   _id: Types.ObjectId;
   userId?: Types.ObjectId;
   adminId?: String

@@ -15,6 +15,14 @@ const s3Service = new S3Service()
 
 const userController = new UserController(userRepository,developerRepository, s3Service);
 
+userRouter.get('/developers/search', (req, res) => {
+    userController.searchDevelopers(req, res)
+})
+
+userRouter.get('/dev-profile/:developerId', (req, res) => {
+    userController.getPublicProfile(req, res)
+});
+
 userRouter
     .use(authMiddleware, autherization)
     .get('/profile', (req, res, next) => {
@@ -28,12 +36,5 @@ userRouter.put('/change-password', authMiddleware, autherization, (req, res, nex
     userController.changePassword(req, res).catch(next)
 })
 
-userRouter.get('/developers/search', (req, res) => {
-    userController.searchDevelopers(req, res)
-})
-
-userRouter.get('/dev-profile/:developerId', (req, res) => {
-    userController.getPublicProfile(req, res)
-})
 
 export default userRouter

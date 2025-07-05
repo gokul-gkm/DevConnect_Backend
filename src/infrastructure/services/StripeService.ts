@@ -3,7 +3,7 @@ import { IPaymentService, CreateCheckoutSessionParams } from '@/domain/interface
 import { AppError } from '@/domain/errors/AppError';
 import { IPaymentRepository } from '@/domain/interfaces/IPaymentRepository';
 import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
-import { ObjectId, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { StatusCodes } from 'http-status-codes';
 
@@ -11,9 +11,9 @@ export class StripeService implements IPaymentService {
   private stripe: Stripe;
   
   constructor(
-    private paymentRepository: IPaymentRepository,
-    private walletRepository: IWalletRepository,
-    private sessionRepository: ISessionRepository,
+    private _paymentRepository: IPaymentRepository,
+    private _walletRepository: IWalletRepository,
+    private _sessionRepository: ISessionRepository,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
       apiVersion: '2025-01-27.acacia',
@@ -44,7 +44,7 @@ export class StripeService implements IPaymentService {
       });
 
 
-      await this.paymentRepository.create({
+      await this._paymentRepository.create({
         sessionId: params.sessionId,
         amount: params.amount,
         currency: params.currency,
@@ -74,20 +74,20 @@ export class StripeService implements IPaymentService {
           const sessionId = new Types.ObjectId(session.metadata?.sessionId);
           const amount = session.amount_total! / 100;
 
-          const payment = await this.paymentRepository.findByStripeSessionId(session.id);
+          const payment = await this._paymentRepository.findByStripeSessionId(session.id);
           if (!payment) {
             throw new AppError('Payment record not found', StatusCodes.NOT_FOUND);
           }
 
-          await this.paymentRepository.updateStatus(payment._id, 'completed');
+          await this._paymentRepository.updateStatus(payment._id, 'completed');
 
-          const adminWallet = await this.walletRepository.findByAdminId(process.env.ADMIN_ID!);
+          const adminWallet = await this._walletRepository.findByAdminId(process.env.ADMIN_ID!);
 
           if (!adminWallet) {
             throw new AppError('Admin wallet not found', StatusCodes.NOT_FOUND);
           }
 
-          await this.walletRepository.addTransaction(adminWallet._id, {
+          await this._walletRepository.addTransaction(adminWallet._id, {
             amount,
             type: 'credit',
             status: 'completed',
@@ -96,28 +96,28 @@ export class StripeService implements IPaymentService {
             metadata: { stripeSessionId: session.id }
           });
 
-          await this.sessionRepository.updatePaymentStatus(sessionId, 'completed');
-          await this.sessionRepository.updateSessionStatus(sessionId, 'scheduled')
+          await this._sessionRepository.updatePaymentStatus(sessionId, 'completed');
+          await this._sessionRepository.updateSessionStatus(sessionId, 'scheduled')
 
           break;
         }
 
         case 'charge.refunded': {
           const charge = event.data.object as Stripe.Charge;
-          const payment = await this.paymentRepository.findByStripeSessionId(charge.payment_intent as string);
+          const payment = await this._paymentRepository.findByStripeSessionId(charge.payment_intent as string);
           
           if (payment) {
-            await this.paymentRepository.updateStatus(payment._id, 'refunded');
+            await this._paymentRepository.updateStatus(payment._id, 'refunded');
           }
           break;
         }
 
         case 'payment_intent.payment_failed': {
           const paymentIntent = event.data.object as Stripe.PaymentIntent;
-          const payment = await this.paymentRepository.findByStripeSessionId(paymentIntent.id);
+          const payment = await this._paymentRepository.findByStripeSessionId(paymentIntent.id);
           
           if (payment) {
-            await this.paymentRepository.updateStatus(payment._id, 'failed');
+            await this._paymentRepository.updateStatus(payment._id, 'failed');
           }
           break;
         }
@@ -143,7 +143,7 @@ export class StripeService implements IPaymentService {
 
   async refundPayment(paymentId: string, amount?: number): Promise<void> {
     try {
-      const payment = await this.paymentRepository.findById(new Types.ObjectId(paymentId));
+      const payment = await this._paymentRepository.findByPaymentId(new Types.ObjectId(paymentId));
       if (!payment || !payment.stripePaymentId) {
         throw new AppError('Payment not found', StatusCodes.NOT_FOUND);
       }
@@ -153,7 +153,7 @@ export class StripeService implements IPaymentService {
         amount: amount ? Math.round(amount * 100) : undefined
       });
 
-      await this.paymentRepository.updateStatus(payment._id, 'refunded');
+      await this._paymentRepository.updateStatus(payment._id, 'refunded');
     } catch (error) {
       console.error('Refund error:', error);
       throw new AppError('Failed to process refund', StatusCodes.INTERNAL_SERVER_ERROR);

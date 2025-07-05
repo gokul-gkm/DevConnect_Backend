@@ -10,6 +10,10 @@ import { autherization } from "@/presentation/middleware/autherization";
 import { NotificationRepository } from "@/infrastructure/repositories/NotificationRepositoty";
 import { SocketService } from "@/infrastructure/services/SocketService";
 import { NotificationService } from "@/infrastructure/services/NotificationService";
+import { DeveloperSlotRepository } from "@/infrastructure/repositories/DeveloperSlotRepository";
+import mongoose from "mongoose";
+import { RatingRepository } from "@/infrastructure/repositories/RatingRepository";
+import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 
 export const createSessionRouter = () => {
   const sessionRouter = Router();
@@ -20,7 +24,10 @@ export const createSessionRouter = () => {
   const s3Service = new S3Service();
   const notificationRepository = new NotificationRepository();
   const socketService = SocketService.getInstance();
-  const notificationService = new NotificationService(notificationRepository, socketService)
+  const notificationService = new NotificationService(notificationRepository, socketService);
+  const developerSlotRepository = new DeveloperSlotRepository();
+  const ratingRepository = new RatingRepository();
+  const walletRepository = new WalletRepository()
 
   const sessionController = new SessionController(
     sessionRepository, 
@@ -30,7 +37,10 @@ export const createSessionRouter = () => {
     s3Service,
     notificationRepository,
     socketService,
-    notificationService
+    notificationService,
+    developerSlotRepository,
+    ratingRepository,
+    walletRepository
   );
 
   sessionRouter.get('/booked-slots', authMiddleware, autherization, (req, res, next) => {
@@ -49,6 +59,10 @@ export const createSessionRouter = () => {
     sessionController.getUpcomingSessions(req, res).catch(next);
   });
 
+  sessionRouter.get('/history', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getSessionHistory(req, res).catch(next);
+  });
+
   sessionRouter.get('/developer/requests', authMiddleware, autherization, (req, res, next) => {
     sessionController.getSessionRequests(req, res).catch(next);
   });
@@ -65,9 +79,11 @@ export const createSessionRouter = () => {
     sessionController.rejectSessionRequest(req, res).catch(next);
   });
 
-  sessionRouter.get('/:sessionId', authMiddleware, autherization, (req, res, next) => {
-    sessionController.getSessionDetails(req, res).catch(next);
+  sessionRouter.get('/unavailable-slots', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getUnavailableSlots(req, res).catch(next);
   });
+
+ 
 
   sessionRouter.get('/developer/scheduled', authMiddleware, autherization, (req, res, next) => {
     sessionController.getScheduledSessions(req, res).catch(next);
@@ -76,7 +92,35 @@ export const createSessionRouter = () => {
   sessionRouter.get('/developer/scheduled/:sessionId', authMiddleware, autherization, (req, res, next) => {
     sessionController.getScheduledSessionDetails(req, res).catch(next);
   });
-  
+
+  sessionRouter.post('/:sessionId/start', authMiddleware, autherization, (req, res, next) => {
+    sessionController.startSession(req, res).catch(next);
+  });
+
+
+  sessionRouter.get('/:sessionId', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getSessionDetails(req, res).catch(next);
+  });
+
+  sessionRouter.post('/:sessionId/rate', authMiddleware, autherization, (req, res, next) => {
+    sessionController.rateSession(req, res).catch(next);
+  });
+
+sessionRouter.put('/:sessionId/rate', authMiddleware, autherization, (req, res, next) => {
+  sessionController.updateRating(req, res).catch(next);
+});
+
+  sessionRouter.get('/developer/history', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getDeveloperSessionHistory(req, res).catch(next);
+  });
+
+  sessionRouter.get('/developer/history/:sessionId', authMiddleware, autherization, (req, res, next) => {
+    sessionController.getDeveloperSessionHistoryDetails(req, res).catch(next);
+  });
+
+  sessionRouter.patch('/:sessionId/cancel', authMiddleware, autherization, (req, res, next) => {
+    sessionController.cancelSession(req, res).catch(next);
+  });
 
   return sessionRouter;
 };

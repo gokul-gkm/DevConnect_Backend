@@ -3,8 +3,14 @@ import { AppError } from "@/domain/errors/AppError";
 import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
+import { BaseRepository } from "./BaseRepository";
 
-export class MessageRepository implements IMessageRepository{
+export class MessageRepository extends BaseRepository<IMessage> implements IMessageRepository{
+
+    constructor() {
+        super(Message)
+    }
+
     async createMessage(message: Partial<IMessage>): Promise<IMessage> {
         try {
             const newMessage = await Message.create({

@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { MulterError } from 'multer';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import { ZodError } from 'zod';
+import { HTTP_STATUS_MESSAGES } from './constants';
 
 export const errorHandler: ErrorRequestHandler = (
   err: Error,
@@ -81,7 +82,7 @@ export const errorHandler: ErrorRequestHandler = (
 
   res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
     success: false,
-    message: 'Internal server error',
+    message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR,
     code: 'INTERNAL_SERVER_ERROR'
   });
   return;

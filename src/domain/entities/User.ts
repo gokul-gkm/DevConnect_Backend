@@ -16,7 +16,6 @@ export interface IUser extends Document {
   };
   location: string | null;
   googleId: string | null;
-  linkedinId: string | null;
   status: string;
   createdAt: Date;
   updatedAt: Date;
@@ -31,7 +30,7 @@ const UserSchema: Schema = new Schema({
   password: { 
     type: String, 
     required: function(this: IUser) { 
-      return !this.googleId && !this.linkedinId; 
+      return !this.googleId; 
     },
   },
   
@@ -47,7 +46,6 @@ const UserSchema: Schema = new Schema({
   },
   location: { type: String },
   googleId: { type: String },
-  linkedinId: { type: String },
   status: { type: String, required: true, enum: [ 'active', 'blocked' ], default:'active' },
   isVerified: { type: Boolean, default: false, required: true },
   verificationExpires:{type: Date, default: ()=> new Date(Date.now() + 24 * 60 * 60 * 1000)},

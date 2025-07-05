@@ -6,7 +6,7 @@ export interface ISession extends Document {
     description: string;
     duration: number;
     price: number;
-    status: "pending" | "approved" | "rejected" | "scheduled" | "completed";
+    status: "pending" | "approved" | "rejected" | "scheduled" | "completed" | "active" | "cancelled";
     paymentStatus: "pending" | "completed";
     paymentTransferStatus?: "pending" | "transferred";
     rejectionReason: string;
@@ -50,7 +50,7 @@ const SessionSchema: Schema = new Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected', 'completed', 'scheduled','awaiting_payment'],
+    enum: ['pending', 'approved', 'rejected', 'completed', 'scheduled', 'awaiting_payment','active', 'cancelled'],
     default: 'pending'
   },
   paymentStatus: {

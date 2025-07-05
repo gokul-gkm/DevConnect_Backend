@@ -1,61 +1,68 @@
 import { Request, Response } from 'express';
-import { CreatePaymentSessionUseCase } from '@/application/useCases/user/payment/CreatePaymentSessionUseCase';
-import { ProcessPaymentWebhookUseCase } from '@/application/useCases/user/payment/ProcessPaymentWebhookUseCase';
-import { TransferToDevWalletUseCase } from '@/application/useCases/user/payment/TransferToDevWalletUseCase';
-import { GetWalletDetailsUseCase } from '@/application/useCases/user/payment/GetWalletDetailsUseCase';
-import { SessionRepository } from '@/infrastructure/repositories/SessionRepository';
-import { WalletRepository } from '@/infrastructure/repositories/WalletRepository';
-import { PaymentRepository } from '@/infrastructure/repositories/PaymentRepository';
-import { StripeService } from '@/infrastructure/services/StripeService';
-import { Types } from 'mongoose';
 import { AppError } from '@/domain/errors/AppError';
-import { GetAdminWalletDetailsUseCase } from '@/application/useCases/user/payment/GetAdminWalletDetailsUseCase';
 import { StatusCodes } from 'http-status-codes';
+import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from '@/utils/constants';
+
+import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
+import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { IPaymentRepository } from '@/domain/interfaces/IPaymentRepository';
+import { StripeService } from '@/infrastructure/services/StripeService';
+
+import { CreatePaymentSessionUseCase } from '@/application/useCases/implements/user/payment/CreatePaymentSessionUseCase';
+import { ProcessPaymentWebhookUseCase } from '@/application/useCases/implements/user/payment/ProcessPaymentWebhookUseCase';
+import { TransferToDevWalletUseCase } from '@/application/useCases/implements/user/payment/TransferToDevWalletUseCase';
+import { GetWalletDetailsUseCase } from '@/application/useCases/implements/user/payment/GetWalletDetailsUseCase';
+import { GetAdminWalletDetailsUseCase } from '@/application/useCases/implements/user/payment/GetAdminWalletDetailsUseCase';
+
+import { ICreatePaymentSessionUseCase } from '@/application/useCases/interfaces/user/payment/ICreatePaymentSessionUseCase';
+import { IProcessPaymentWebhookUseCase } from '@/application/useCases/interfaces/user/payment/IProcessPaymentWebhookUseCase';
+import { ITransferToDevWalletUseCase } from '@/application/useCases/interfaces/user/payment/ITransferToDevWalletUseCase';
+import { IGetWalletDetailsUseCase } from '@/application/useCases/interfaces/user/payment/IGetWalletDetailsUseCase';
+import { IGetAdminWalletDetailsUseCase } from '@/application/useCases/interfaces/user/payment/IGetAdminWalletDetailsUseCase';
 
 export class PaymentController {
-  private createPaymentSessionUseCase: CreatePaymentSessionUseCase;
-  private processPaymentWebhookUseCase: ProcessPaymentWebhookUseCase;
-  private transferToDevWalletUseCase: TransferToDevWalletUseCase;
-  private getWalletDetailsUseCase: GetWalletDetailsUseCase;
-  private getAdminWalletDetailsUseCase: GetAdminWalletDetailsUseCase;
+  private _createPaymentSessionUseCase: ICreatePaymentSessionUseCase;
+  private _processPaymentWebhookUseCase: IProcessPaymentWebhookUseCase;
+  private _transferToDevWalletUseCase: ITransferToDevWalletUseCase;
+  private _getWalletDetailsUseCase: IGetWalletDetailsUseCase;
+  private _getAdminWalletDetailsUseCase: IGetAdminWalletDetailsUseCase;
 
   constructor(
-    private sessionRepository: SessionRepository,
-    private walletRepository: WalletRepository,
-    private paymentRepository: PaymentRepository
+    private _sessionRepository: ISessionRepository,
+    private _walletRepository: IWalletRepository,
+    private _paymentRepository: IPaymentRepository
   ) {
     const stripeService = new StripeService(
-      paymentRepository,
-      walletRepository,
-      sessionRepository
+      _paymentRepository,
+      _walletRepository,
+      _sessionRepository
     );
 
-    this.createPaymentSessionUseCase = new CreatePaymentSessionUseCase(
+    this._createPaymentSessionUseCase = new CreatePaymentSessionUseCase(
       stripeService,
-      sessionRepository
+      _sessionRepository
     );
 
-    this.processPaymentWebhookUseCase = new ProcessPaymentWebhookUseCase(
+    this._processPaymentWebhookUseCase = new ProcessPaymentWebhookUseCase(
       stripeService
     );
 
-    this.transferToDevWalletUseCase = new TransferToDevWalletUseCase(
-      sessionRepository,
-      walletRepository,
+    this._transferToDevWalletUseCase = new TransferToDevWalletUseCase(
+      _sessionRepository,
+      _walletRepository,
     );
 
-    this.getWalletDetailsUseCase = new GetWalletDetailsUseCase(
-      walletRepository
+    this._getWalletDetailsUseCase = new GetWalletDetailsUseCase(
+      _walletRepository
     );
-    this.getAdminWalletDetailsUseCase = new GetAdminWalletDetailsUseCase(walletRepository)
+    this._getAdminWalletDetailsUseCase = new GetAdminWalletDetailsUseCase(_walletRepository)
   }
 
   async createPaymentSession(req: Request, res: Response): Promise<void> {
     try {
       const { sessionId } = req.params;
      
-      
-      const checkoutUrl = await this.createPaymentSessionUseCase.execute({
+      const checkoutUrl = await this._createPaymentSessionUseCase.execute({
         sessionId,
         successUrl: `${process.env.FRONTEND_URL}/payment/success?session_id=${sessionId}`,
         cancelUrl: `${process.env.FRONTEND_URL}/payment/cancel?session_id=${sessionId}`
@@ -64,7 +71,7 @@ export class PaymentController {
       res.json({ url: checkoutUrl });
     } catch (error: any) {
       res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: error.message || 'Internal server error'
+        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
       });
     }
   }
@@ -77,7 +84,7 @@ export class PaymentController {
       }
       console.log('Received webhook with signature:', signature);
       console.log('Webhook body:', req.body);
-      await this.processPaymentWebhookUseCase.execute(
+      await this._processPaymentWebhookUseCase.execute(
         req.body,
         signature
       );
@@ -95,7 +102,7 @@ export class PaymentController {
     try {
       const { sessionId } = req.params;
       
-      await this.transferToDevWalletUseCase.execute(sessionId);
+      await this._transferToDevWalletUseCase.execute(sessionId);
 
       res.json({ message: 'Payment transferred successfully' });
     } catch (error: any) {
@@ -109,10 +116,10 @@ export class PaymentController {
     try {
       const userId = req.userId;
       if (!userId) {
-        throw new AppError('User ID is required', StatusCodes.BAD_REQUEST);
+        throw new AppError(ERROR_MESSAGES.USER_REQUIRED, StatusCodes.BAD_REQUEST);
       }
       
-      const wallet = await this.getWalletDetailsUseCase.execute(userId);
+      const wallet = await this._getWalletDetailsUseCase.execute(userId);
       res.json(wallet);
     } catch (error: any) {
       res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -128,7 +135,7 @@ export class PaymentController {
         throw new AppError('Admin ID is required', StatusCodes.BAD_REQUEST);
       }
       
-      const wallet = await this.getAdminWalletDetailsUseCase.execute(adminId);
+      const wallet = await this._getAdminWalletDetailsUseCase.execute(adminId);
       res.json(wallet);
     } catch (error: any) {
       res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({

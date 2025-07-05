@@ -8,6 +8,7 @@ import { DevPaginatedResponse, DevQueryParams} from '@/domain/types/types';
 import { StatusCodes } from 'http-status-codes';
 import mongoose, { FilterQuery, SortOrder } from 'mongoose';
 import { BaseRepository } from './BaseRepository';
+import { ERROR_MESSAGES } from '@/utils/constants';
 
 
 export class DeveloperRepository extends BaseRepository<IDeveloper> implements IDeveloperRepository {
@@ -69,7 +70,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             );
 
             if (!developer) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
             return developer;
         } catch (error) {
@@ -102,7 +103,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             });
                 
             if (!developer) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             return developer;
@@ -263,7 +264,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             );
 
             if (!updatedDeveloper) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
             return updatedDeveloper;
@@ -300,7 +301,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             );
 
             if (!result) {
-                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
         } catch (error) {
             console.error('Error removing project from portfolio:', error);
@@ -635,6 +636,147 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
         } catch (error) {
             console.error('Error fetching top developers:', error);
             throw new AppError('Failed to fetch top developers', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async getDefaultUnavailableSlots(developerId: string): Promise<string[]> {
+        try {
+            const developer = await Developer.findOne({userId: developerId});
+            if (!developer) {
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
+            }
+            return developer.defaultUnavailableSlots || [];
+        } catch (error) {
+            console.error('Get default unavailable slots error:', error);
+            throw new AppError('Failed to get default unavailable slots', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async updateDefaultUnavailableSlots(developerId: string, slots: string[]): Promise<IDeveloper> {
+        try {
+            const developer = await Developer.findOneAndUpdate(
+                {userId: developerId},
+                { $set: { defaultUnavailableSlots: slots } },
+                { new: true }
+            );
+            
+            if (!developer) {
+                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
+            }
+            
+            return developer;
+        } catch (error) {
+            console.error('Update default unavailable slots error:', error);
+            throw new AppError('Failed to update default unavailable slots', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async getLeaderboard(page = 1, limit = 10, sortBy = 'combined'): Promise<any> {
+        try {
+            const skip = (page - 1) * limit;
+            
+            const matchStage = { status: 'approved' };
+            
+            const lookupSessionsStage = {
+                $lookup: {
+                    from: 'sessions',
+                    let: { userId: '$userId' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ['$developerId', '$$userId'] },
+                                        { $eq: ['$status', 'completed'] },
+                                        { $eq: ['$paymentStatus', 'completed'] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: 'completedSessions'
+                }
+            };
+            
+            const lookupUserStage = {
+                $lookup: {
+                    from: 'users',
+                    localField: 'userId',
+                    foreignField: '_id',
+                    as: 'userDetails'
+                }
+            };
+            
+            const unwindUserStage = {
+                $unwind: {
+                    path: '$userDetails',
+                    preserveNullAndEmptyArrays: true
+                }
+            };
+            
+            const projectStage = {
+                $project: {
+                    _id: 1,
+                    userId: 1,
+                    rating: { $ifNull: ['$rating', 0] },
+                    username: '$userDetails.username',
+                    profilePicture: '$userDetails.profilePicture',
+                    bio: '$userDetails.bio',
+                    expertise: 1,
+                    totalSessions: { $size: '$completedSessions' },
+                    totalEarnings: { $sum: '$completedSessions.price' },
+              
+                    maxPossibleRating: 5,
+                    combinedScore: {
+                        $add: [
+
+                            { $multiply: [{ $ifNull: ['$rating', 0] }, 12] },
+                            { $multiply: [{ $sum: '$completedSessions.price' }, 0.001] }
+                        ]
+                    }
+                }
+            };
+        
+            let sortStage;
+            switch (sortBy) {
+                case 'rating':
+                    sortStage = { $sort: { rating: -1, totalSessions: -1 } };
+                    break;
+                case 'earnings':
+                    sortStage = { $sort: { totalEarnings: -1 } };
+                    break;
+                case 'sessions':
+                    sortStage = { $sort: { totalSessions: -1 } };
+                    break;
+                case 'combined':
+                default:
+                    sortStage = { $sort: { combinedScore: -1 } };
+            }
+
+            const totalItems = await Developer.countDocuments(matchStage);
+            const totalPages = Math.ceil(totalItems / limit);
+            
+            const developers = await Developer.aggregate([
+                { $match: matchStage },
+                lookupSessionsStage,
+                lookupUserStage,
+                unwindUserStage,
+                projectStage,
+                sortStage as any,
+                { $skip: skip },
+                { $limit: limit }
+            ]);
+            return {
+                developers,
+                pagination: {
+                    currentPage: page,
+                    totalPages,
+                    totalItems
+                }
+            };
+        } catch (error) {
+            console.error('Error getting developer leaderboard:', error);
+            throw new AppError('Failed to fetch developer leaderboard', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -7,8 +7,7 @@ import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepo
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 import { SessionRepository } from "@/infrastructure/repositories/SessionRepository";
-
-
+import { MailService } from "@/infrastructure/mail/MailService";
 
 const adminRouter = Router();
 const adminRepository = new AdminRepository();
@@ -17,7 +16,17 @@ const developerRepository = new DeveloperRepository()
 const walletRepository = new WalletRepository();
 const sessionRepository = new SessionRepository();
 const s3Service = new S3Service()
-const adminController = new AdminController(adminRepository, userRepository, developerRepository,s3Service, walletRepository, sessionRepository);
+const mailService = new MailService()
+
+const adminController = new AdminController(
+    adminRepository,
+    userRepository,
+    developerRepository,
+    s3Service,
+    walletRepository,
+    sessionRepository,
+    mailService
+);
 
 
 
@@ -45,6 +54,10 @@ adminRouter.get('/developers', adminAuthMiddleware, async (req, res) => {
     await adminController.getAllDeveloper(req, res)
 });
 
+adminRouter.get('/developers/leaderboard', adminAuthMiddleware, async (req, res, next) => {
+    adminController.getDeveloperLeaderboard(req, res).catch(next);
+  });
+
 adminRouter.get('/developer-requests', adminAuthMiddleware, async (req, res) => {
     await adminController.listRequests(req, res)
 });
@@ -69,6 +82,18 @@ adminRouter.get('/dashboard/stats', adminAuthMiddleware,
     async (req, res) => {
         await adminController.getDashboardStats(req, res)
     }
+);
+
+adminRouter.get('/revenue/stats', adminAuthMiddleware,
+  async (req, res) => {
+    await adminController.getRevenueStats(req, res)
+  }
+);
+
+adminRouter.get('/sessions', adminAuthMiddleware,
+  async (req, res) => {
+    await adminController.getAdminSessions(req, res)
+  }
 );
 
 export default adminRouter;
