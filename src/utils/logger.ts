@@ -1,5 +1,8 @@
 import { createLogger, format, transports, Logger } from "winston";
+import 'winston-daily-rotate-file'
 import { TransformableInfo } from "logform";
+import fs from 'fs';
+import path from 'path';
 const { combine, timestamp, json, colorize, printf } = format;
 
 const consoleLogFormat = printf((info: TransformableInfo) => {
@@ -11,16 +14,42 @@ const consoleLogFormat = printf((info: TransformableInfo) => {
   return `${timestamp ? `[${timestamp}] ` : ""}${level}: ${message}`;
 });
 
+const fileRotateTransport = new transports.DailyRotateFile({
+  filename: 'logs/app-%DATE%.log',
+  datePattern: 'YYYY-MM-DD',
+  maxFiles: '14d',
+  maxSize: '20m',
+  zippedArchive: true,
+  auditFile: 'logs/audit.json',
+  level: 'info'
+})
+
 const logger: Logger = createLogger({
   level: "info",
-  format: combine(colorize(), timestamp(), json()),
+  format: combine(timestamp(), json()),
   transports: [
     new transports.Console({
-      format: consoleLogFormat,
+      format: combine(
+        colorize(),
+        consoleLogFormat
+      ),
     }),
-    new transports.File({ filename: "app.log" }),
+    fileRotateTransport
   ],
 });
+
+fileRotateTransport.on('rotate', function (oldFilename, newFilename) {
+  console.log('Log file rotated:', oldFilename, newFilename)
+})
+
+fileRotateTransport.on('error', function(error) {
+  console.error('Error in log rotation:', error);
+});
+
+const logsDir = path.join(process.cwd(), 'logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir);
+}
 
 export default logger;
 

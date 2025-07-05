@@ -4,6 +4,7 @@ import { MailService } from "@/infrastructure/mail/MailService";
 import { OTPRepository } from "@/infrastructure/repositories/OTPRepository";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { generateOTP } from "@/shared/utils/OTPGenerator";
+import { StatusCodes } from "http-status-codes";
 
 export class ResendOTPUseCase{
 
@@ -14,10 +15,10 @@ export class ResendOTPUseCase{
         const user = await this.userRepository.findByEmail(email)
 
         if (!user) {
-            throw new AppError('If a user with this email exists, a new OTP will be sent', 400)
+            throw new AppError('If a user with this email exists, a new OTP will be sent', StatusCodes.BAD_REQUEST)
         }
         if (user.isVerified) {
-            throw new AppError('Email is already verified', 400)
+            throw new AppError('Email is already verified', StatusCodes.BAD_REQUEST)
         }
 
         const existingOTP = await this.otpRepository.findByEmail(email);
@@ -47,7 +48,7 @@ export class ResendOTPUseCase{
             await this.mailService.sendOTP(email, newOTP);
         } catch (error) {
             await this.otpRepository.deleteByEmail(email);
-            throw new AppError('Failed to send OTP email', 500)
+            throw new AppError('Failed to send OTP email', StatusCodes.INTERNAL_SERVER_ERROR)
         }
         
     }

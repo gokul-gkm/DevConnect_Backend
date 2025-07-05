@@ -7,9 +7,14 @@ import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
 import { DevPaginatedResponse, DevQueryParams} from '@/domain/types/types';
 import { StatusCodes } from 'http-status-codes';
 import mongoose, { FilterQuery, SortOrder } from 'mongoose';
+import { BaseRepository } from './BaseRepository';
 
 
-export class DeveloperRepository implements IDeveloperRepository {
+export class DeveloperRepository extends BaseRepository<IDeveloper> implements IDeveloperRepository {
+
+    constructor() {
+        super(Developer);
+    }
 
     async createDeveloper(data: CreateDeveloperDTO): Promise<IDeveloper> {
         try {
@@ -33,7 +38,7 @@ export class DeveloperRepository implements IDeveloperRepository {
             return developer;
         } catch (error) {
             console.error('Error creating developer:', error);
-            throw new AppError('Failed to create developer profile', 500);
+            throw new AppError('Failed to create developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -42,18 +47,18 @@ export class DeveloperRepository implements IDeveloperRepository {
             return await Developer.findOne({ userId: new mongoose.Types.ObjectId(userId) });
         } catch (error) {
             console.error('Error finding developer:', error);
-            throw new AppError('Failed to fetch developer profile', 500);
+            throw new AppError('Failed to fetch developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
-    async findById(id: string): Promise<IDeveloper | null>{
-        try {
-            return await Developer.findById(id);
-        } catch (error) {
-            console.error('Error finding developer:', error);
-            throw new AppError('Failed to fetch developer profile', 500);
-        }
-    }
+    // async findById(id: string): Promise<IDeveloper | null>{
+    //     try {
+    //         return await Developer.findById(id);
+    //     } catch (error) {
+    //         console.error('Error finding developer:', error);
+    //         throw new AppError('Failed to fetch developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
+    //     }
+    // }
 
     async updateDeveloper(developerId: string, updateData: Partial<IDeveloper>): Promise<IDeveloper | null> {
         try {
@@ -64,13 +69,13 @@ export class DeveloperRepository implements IDeveloperRepository {
             );
 
             if (!developer) {
-                throw new AppError('Developer not found', 404);
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
             }
             return developer;
         } catch (error) {
             if (error instanceof AppError) throw error;
             console.error('Error updating developer:', error);
-            throw new AppError('Failed to update developer profile', 500);
+            throw new AppError('Failed to update developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -97,14 +102,14 @@ export class DeveloperRepository implements IDeveloperRepository {
             });
                 
             if (!developer) {
-                throw new AppError('Developer not found', 404);
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
             }
 
             return developer;
         } catch (error) {
             if (error instanceof AppError) throw error;
             console.error('Error updating developer status:', error);
-            throw new AppError('Failed to update developer status', 500);
+            throw new AppError('Failed to update developer status', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -154,10 +159,10 @@ export class DeveloperRepository implements IDeveloperRepository {
 
             const [developers, total] = await Promise.all([
                 Developer.find(developerFilter)
+                    .populate('userId', 'username email profilePicture isVerified status socialLinks')
                     .sort(sort)
                     .skip(skip)
                     .limit(limit)
-                    .populate('userId', 'username email contact profilePicture isVerified status socialLinks')
                     .exec(),
                 Developer.countDocuments(developerFilter)
             ]);
@@ -282,7 +287,7 @@ export class DeveloperRepository implements IDeveloperRepository {
             );
         } catch (error) {
             console.error('Error adding project to portfolio:', error);
-            throw new AppError('Failed to update developer portfolio', 500);
+            throw new AppError('Failed to update developer portfolio', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -295,13 +300,11 @@ export class DeveloperRepository implements IDeveloperRepository {
             );
 
             if (!result) {
-                throw new AppError('Developer not found', 404);
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
             }
-
-            console.log('Project removed from portfolio successfully');
         } catch (error) {
             console.error('Error removing project from portfolio:', error);
-            throw new AppError('Failed to remove project from portfolio', 500);
+            throw new AppError('Failed to remove project from portfolio', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -309,17 +312,16 @@ export class DeveloperRepository implements IDeveloperRepository {
         const {
             search = '',
             skills = [],
-            experience,
-            availability,
-            location,
+            languages = [],
+            priceRange,
+            location = '',
             sort = 'newest',
             page,
             limit
         } = params;
-
+    
         try {
             const aggregationPipeline: any[] = [
-            
                 {
                     $match: {
                         status: 'active',
@@ -327,8 +329,6 @@ export class DeveloperRepository implements IDeveloperRepository {
                         isVerified: true
                     }
                 },
-
-              
                 {
                     $lookup: {
                         from: 'developers',
@@ -344,15 +344,11 @@ export class DeveloperRepository implements IDeveloperRepository {
                         as: 'developerProfile'
                     }
                 },
-
-             
                 {
                     $match: {
                         'developerProfile.0': { $exists: true }
                     }
                 },
-
-                
                 {
                     $unwind: '$developerProfile'
                 }
@@ -364,30 +360,54 @@ export class DeveloperRepository implements IDeveloperRepository {
                         $or: [
                             { username: { $regex: search, $options: 'i' } },
                             { email: { $regex: search, $options: 'i' } },
-                            { skills: { $regex: search, $options: 'i' } },
-                            { 'developerProfile.expertise': { $regex: search, $options: 'i' } }
+                            { 'developerProfile.expertise': { $regex: search, $options: 'i' } },
+                            { 'developerProfile.languages': { $regex: search, $options: 'i' } }
                         ]
                     }
                 });
             }
 
-           
             if (skills.length > 0) {
                 aggregationPipeline.push({
                     $match: {
-                        $or: [
-                            { skills: { $all: skills } },
-                            { 'developerProfile.expertise': { $all: skills } }
-                        ]
+                        'developerProfile.expertise': { $in: skills }
+                    }
+                });
+            }
+    
+            if (languages.length > 0) {
+                aggregationPipeline.push({
+                    $match: {
+                        'developerProfile.languages': { $in: languages }
                     }
                 });
             }
 
-           
-            if (experience) {
+            if (priceRange) {
+                const priceMatch: any = {};
+                if (priceRange.min !== undefined) {
+                    priceMatch['developerProfile.hourlyRate'] = { 
+                        ...priceMatch['developerProfile.hourlyRate'],
+                        $gte: priceRange.min 
+                    };
+                }
+                if (priceRange.max !== undefined) {
+                    priceMatch['developerProfile.hourlyRate'] = { 
+                        ...priceMatch['developerProfile.hourlyRate'],
+                        $lte: priceRange.max 
+                    };
+                }
+                if (Object.keys(priceMatch).length > 0) {
+                    aggregationPipeline.push({ $match: priceMatch });
+                }
+            }
+
+            if (location) {
                 aggregationPipeline.push({
                     $match: {
-                        'developerProfile.workingExperience.experience': parseInt(experience)
+                        location: { 
+                            $regex: new RegExp(location, 'i')
+                        }
                     }
                 });
             }
@@ -403,18 +423,17 @@ export class DeveloperRepository implements IDeveloperRepository {
                 case 'name_desc':
                     sortStage.$sort = { username: -1 };
                     break;
-                case 'experience_high':
-                    sortStage.$sort = { 'developerProfile.workingExperience.experience': -1 };
+                case 'price_low':
+                    sortStage.$sort = { 'developerProfile.hourlyRate': 1 };
                     break;
-                case 'experience_low':
-                    sortStage.$sort = { 'developerProfile.workingExperience.experience': 1 };
+                case 'price_high':
+                    sortStage.$sort = { 'developerProfile.hourlyRate': -1 };
                     break;
                 default:
                     sortStage.$sort = { createdAt: -1 };
             }
             aggregationPipeline.push(sortStage);
-
-        
+    
             aggregationPipeline.push({
                 $project: {
                     _id: 1,
@@ -423,16 +442,13 @@ export class DeveloperRepository implements IDeveloperRepository {
                     profilePicture: 1,
                     socialLinks: 1,
                     location: 1,
-                    title:  '$developerProfile.workingExperience.jobTitle',
+                    title: '$developerProfile.workingExperience.jobTitle',
                     developerProfile: {
                         title: '$developerProfile.workingExperience.jobTitle',
-                        skills: '$developerProfile.expertise', 
-                        experience: {
-                            $toString: '$developerProfile.workingExperience.experience'
-                        },
-                        availability: { $literal: 'available' },
-                        bio: '$bio',
-                        yearsOfExperience: '$developerProfile.workingExperience.experience'
+                        skills: '$developerProfile.expertise',
+                        languages: '$developerProfile.languages',
+                        hourlyRate: '$developerProfile.hourlyRate',
+                        bio: '$bio'
                     }
                 }
             });
@@ -442,40 +458,18 @@ export class DeveloperRepository implements IDeveloperRepository {
                 ...countPipeline,
                 { $count: 'total' }
             ]);
-
+    
             const total = countResult[0]?.total || 0;
 
             aggregationPipeline.push(
                 { $skip: (page - 1) * limit },
                 { $limit: limit }
             );
-
+    
             const developers = await User.aggregate(aggregationPipeline);
-
-            const transformedDevelopers = developers.map(dev => ({
-                _id: dev._id.toString(),
-                username: dev.username,
-                email: dev.email,
-                profilePicture: dev.profilePicture,
-                title: dev.developerProfile.title, 
-                socialLinks: {
-                    github: dev.socialLinks?.github,
-                    linkedin: dev.socialLinks?.linkedIn,
-                    twitter: dev.socialLinks?.twitter
-                },
-                developerProfile: {
-                    title: dev.developerProfile.title, 
-                    skills: dev.developerProfile.skills,
-                    experience: dev.developerProfile.experience,
-                    availability: dev.developerProfile.availability,
-                    location: dev.developerProfile.location,
-                    bio: dev.developerProfile.bio,
-                    yearsOfExperience: dev.developerProfile.yearsOfExperience
-                }
-            }));
-
+    
             return {
-                developers: transformedDevelopers,
+                developers: developers.map(this.transformDeveloperResponse),
                 total,
                 page,
                 totalPages: Math.ceil(total / limit)
@@ -524,7 +518,8 @@ export class DeveloperRepository implements IDeveloperRepository {
                     workingExperience: developer.workingExperience,
                     hourlyRate: developer.hourlyRate,
                     rating: developer.rating,
-                    totalSessions: developer.totalSessions
+                    totalSessions: developer.totalSessions,
+                    portfolio: developer.portfolio
                 }
             };
         } catch (error) {
@@ -532,5 +527,115 @@ export class DeveloperRepository implements IDeveloperRepository {
             throw error;
         }
     }
+
+    private transformDeveloperResponse(dev: any) {
+        return {
+            _id: dev._id.toString(),
+            username: dev.username,
+            email: dev.email,
+            profilePicture: dev.profilePicture,
+            title: dev.developerProfile.title,
+            location: dev.location,
+            socialLinks: {
+                github: dev.socialLinks?.github,
+                linkedin: dev.socialLinks?.linkedIn,
+                twitter: dev.socialLinks?.twitter
+            },
+            developerProfile: {
+                title: dev.developerProfile.title,
+                skills: dev.developerProfile.skills,
+                languages: dev.developerProfile.languages,
+                hourlyRate: dev.developerProfile.hourlyRate,
+                bio: dev.developerProfile.bio
+            }
+        };
+    }
     
+    async countApproved(): Promise<number> {
+        try {
+            return await Developer.countDocuments({ status: 'approved' });
+        } catch (error) {
+            console.error('Error counting approved developers:', error);
+            throw new AppError('Failed to count developers', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async getTopPerformingDevelopers(limit: number = 5): Promise<any[]> {
+        try {
+            return await Developer.aggregate([
+                {
+                    $match: { status: 'approved' }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'user'
+                    }
+                },
+                {
+                    $unwind: '$user'
+                },
+                {
+                    $lookup: {
+                        from: 'sessions',
+                        localField: 'userId',
+                        foreignField: 'developerId',
+                        as: 'sessions'
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        user: { 
+                            username: 1, 
+                            profilePicture: 1 
+                        },
+                        expertise: 1,
+                        rating: 1,
+                        completedSessions: {
+                            $size: {
+                                $filter: {
+                                    input: '$sessions',
+                                    as: 'session',
+                                    cond: { $eq: ['$$session.status', 'completed'] }
+                                }
+                            }
+                        },
+                        revenue: {
+                            $sum: {
+                                $map: {
+                                    input: {
+                                        $filter: {
+                                            input: '$sessions',
+                                            as: 'session',
+                                            cond: { 
+                                                $and: [
+                                                    { $eq: ['$$session.status', 'completed'] },
+                                                    { $eq: ['$$session.paymentStatus', 'completed'] }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    as: 'completedSession',
+                                    in: '$$completedSession.price'
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    $sort: { revenue: -1 }
+                },
+                {
+                    $limit: limit
+                }
+            ]);
+        } catch (error) {
+            console.error('Error fetching top developers:', error);
+            throw new AppError('Failed to fetch top developers', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
 }
+

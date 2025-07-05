@@ -5,11 +5,16 @@ import { User } from "@/domain/entities/User";
 import jwt from 'jsonwebtoken';
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
+import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
+import { Types } from "mongoose";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class GoogleAuthController {
-    constructor(private userRepository: UserRepository) { }
+    constructor(
+        private userRepository: UserRepository,
+        private walletRepository: WalletRepository
+    ) { }
 
     async googleLogin(req: Request, res: Response) { 
         const { token } = req.body;
@@ -47,10 +52,25 @@ export class GoogleAuthController {
                 user = await this.userRepository.save(newUser);
             }
 
+            const existingWallet = await this.walletRepository.findByUserId(new Types.ObjectId(user._id));
+            
+            if (!existingWallet) {
+                try {
+                    console.log(`Creating wallet for user: ${user._id}`);
+                    await this.walletRepository.create(new Types.ObjectId(user._id));
+                } catch (error) {
+                    console.error('Wallet creation error:', error);
+                    if (!user.createdAt) {
+                        await this.userRepository.deleteById(user._id);
+                    }
+                    throw new AppError('Failed to create user wallet', StatusCodes.INTERNAL_SERVER_ERROR);
+                }
+            }
+
             const accessToken = jwt.sign(
                 { userId: user._id },
                 process.env.JWT_ACCESS_SECRET as string,
-                { expiresIn: "15m" }
+                { expiresIn: "24h" }
             );
 
             const refreshToken = jwt.sign(

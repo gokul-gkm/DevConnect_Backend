@@ -12,6 +12,14 @@ import { AcceptSessionRequestUseCase } from '@/application/useCases/developer/se
 import { RejectSessionRequestUseCase } from '@/application/useCases/developer/sessions/RejectSessionRequestUseCase';
 import { StatusCodes } from 'http-status-codes';
 import { GetSessionDetailsUseCase } from '@/application/useCases/user/session/GetSessionDetailsUseCase';
+import { S3Service } from '@/infrastructure/services/S3_Service';
+import { NotificationRepository } from '@/infrastructure/repositories/NotificationRepositoty';
+import { SocketService } from '@/infrastructure/services/SocketService';
+import { NotificationService } from '@/infrastructure/services/NotificationService';
+import { GetSessionRequestDetailsUseCase } from '@/application/useCases/developer/sessions/GetSessionRequestDetailsUseCase';
+import { GetScheduledSessionsUseCase } from '@/application/useCases/developer/sessions/GetScheduledSessionsUseCase';
+import { GetScheduledSessionDetailsUseCase } from '@/application/useCases/developer/sessions/GetScheduledSessionDetailsUseCase';
+
 export class SessionController {
   private createSessionUseCase: CreateSessionUseCase;
   private getUserSessionsUseCase: GetUserSessionsUseCase;
@@ -20,21 +28,33 @@ export class SessionController {
   private acceptSessionRequestUseCase: AcceptSessionRequestUseCase;
   private rejectSessionRequestUseCase: RejectSessionRequestUseCase;
   private getSessionDetailsUseCase: GetSessionDetailsUseCase;
+  private getSessionRequestDetailsUseCase: GetSessionRequestDetailsUseCase;
+  private getScheduledSessionsUseCase: GetScheduledSessionsUseCase;
+  private getScheduledSessionDetailsUseCase: GetScheduledSessionDetailsUseCase;
 
   constructor(
     private sessionRepository: SessionRepository,
     private mailService: MailService,
     private userRepository: UserRepository,
-    private developerRepository: DeveloperRepository
-
+    private developerRepository: DeveloperRepository,
+    private s3Service: S3Service,
+    private notificationRepository: NotificationRepository,
+    private socketService: SocketService,
+    private notificationService: NotificationService
     ) {
-    this.createSessionUseCase = new CreateSessionUseCase(sessionRepository, userRepository, developerRepository, mailService);
+    this.createSessionUseCase = new CreateSessionUseCase(sessionRepository, userRepository, developerRepository, notificationService);
     this.getUserSessionsUseCase = new GetUserSessionsUseCase(sessionRepository);
-    this.getUpcomingSessionsUseCase = new GetUpcomingSessionsUseCase(sessionRepository);
-    this.getSessionRequestsUseCase = new GetSessionRequestsUseCase(sessionRepository);
-    this.acceptSessionRequestUseCase = new AcceptSessionRequestUseCase(sessionRepository)
-    this.rejectSessionRequestUseCase = new RejectSessionRequestUseCase(sessionRepository)
-    this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository)
+    this.getUpcomingSessionsUseCase = new GetUpcomingSessionsUseCase(sessionRepository,s3Service);
+    this.getSessionRequestsUseCase = new GetSessionRequestsUseCase(sessionRepository,s3Service);
+    this.acceptSessionRequestUseCase = new AcceptSessionRequestUseCase(
+      sessionRepository,
+      notificationService
+    );
+    this.rejectSessionRequestUseCase = new RejectSessionRequestUseCase(sessionRepository, notificationService)
+    this.getSessionDetailsUseCase = new GetSessionDetailsUseCase(sessionRepository, s3Service);
+    this.getSessionRequestDetailsUseCase = new GetSessionRequestDetailsUseCase(sessionRepository, s3Service)
+    this.getScheduledSessionsUseCase = new GetScheduledSessionsUseCase(sessionRepository, s3Service);
+    this.getScheduledSessionDetailsUseCase = new GetScheduledSessionDetailsUseCase(sessionRepository, s3Service);
   }
 
 
@@ -50,7 +70,13 @@ export class SessionController {
         data: session
       });
     } catch (error: any) {
-      console.log("error message : ",error.message)
+      console.log("error message : ", error.message)
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
       return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
         success: false,
         message: error.message
@@ -63,7 +89,7 @@ export class SessionController {
       const { developerId, date } = req.query;
       
       if (!developerId || !date) {
-        throw new AppError('Developer ID and date are required', 400);
+        throw new AppError('Developer ID and date are required', StatusCodes.BAD_REQUEST);
       }
   
       const bookedSlots = await this.sessionRepository.getBookedSlots(
@@ -81,7 +107,17 @@ export class SessionController {
         data: formattedSlots
       });
     } catch (error: any) {
-      throw new AppError(error.message || 'Failed to get booked slots', error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR);
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
     }
   }
 
@@ -150,11 +186,17 @@ export class SessionController {
       if (!developerId) {
         throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
       }
-      const sessions = await this.getSessionRequestsUseCase.execute(developerId);
+      
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5; 
+
+      const result = await this.getSessionRequestsUseCase.execute(developerId, page, limit);
 
       res.status(StatusCodes.OK).json({
         status: 'success',
-        data: sessions
+        data: result.sessions,
+        pagination: result.pagination,
+        stats: result.stats
       });
     } catch (error) {
       if (error instanceof AppError) {
@@ -250,6 +292,91 @@ export class SessionController {
         message: 'Internal server error'
       }); 
     }  
+  }
+
+  async getSessionRequestDetails (req: Request, res: Response) {
+    try {
+      const { sessionId } = req.params;
+      const session = await this.getSessionRequestDetailsUseCase.execute(sessionId);
+      res.json(session);
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      }); 
+    }  
+  }
+
+  getScheduledSessions = async (req: Request, res: Response) => {
+    try {
+      const developerId = req.userId;
+      
+      if (!developerId) {
+        throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
+      }
+      
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 5; 
+
+      const result = await this.getScheduledSessionsUseCase.execute(developerId, page, limit);
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: result.sessions,
+        pagination: result.pagination,
+        stats: result.stats
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+
+  getScheduledSessionDetails = async (req: Request, res: Response) => {
+    try {
+      const developerId = req.userId;
+      const { sessionId } = req.params;
+      
+      if (!developerId) {
+        throw new AppError('Developer ID is required', StatusCodes.BAD_REQUEST);
+      }
+      
+      if (!sessionId) {
+        throw new AppError('Session ID is required', StatusCodes.BAD_REQUEST);
+      }
+
+      const session = await this.getScheduledSessionDetailsUseCase.execute(sessionId, developerId);
+
+      res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: session
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
   }
 
 }

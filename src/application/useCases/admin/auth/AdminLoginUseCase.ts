@@ -1,12 +1,12 @@
 import { LoginAdminDTO } from "@/application/dto/LoginAdminDTO";
-import { AdminRepository } from "@/infrastructure/repositories/AdminRepository";
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { IAdmin } from "@/domain/entities/Admin";
+import { IAdminRepository } from "@/domain/interfaces/IAdminRepository";
 
 export class AdminLoginUseCase{
-    private adminRepository: AdminRepository;
-    constructor(adminRepository: AdminRepository) {
+    private adminRepository: IAdminRepository;
+    constructor(adminRepository: IAdminRepository) {
         this.adminRepository = adminRepository;
     }
 
@@ -24,13 +24,20 @@ export class AdminLoginUseCase{
         const accessToken = jwt.sign(
             { adminId: admin._id },
             process.env.JWT_ADMIN_ACCESS_SECRET as string,
-            { expiresIn: "15m" }
+            { expiresIn: "24h" }
         );
         const refreshToken = jwt.sign(
             { adminId: admin._id },
             process.env.JWT_ADMIN_REFRESH_SECRET as string,
             { expiresIn: '7d' }
         )
-        return { accessToken, refreshToken, admin };
+        return {
+            accessToken,
+            refreshToken,
+            admin: {
+                _id: admin._id,
+                email: admin.email
+            }
+        };
     }
 }

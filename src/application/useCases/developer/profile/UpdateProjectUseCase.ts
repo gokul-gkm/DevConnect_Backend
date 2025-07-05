@@ -1,6 +1,7 @@
 import { ProjectRepository } from "@/infrastructure/repositories/ProjectRepository";
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { AppError } from "@/domain/errors/AppError";
+import { StatusCodes } from "http-status-codes";
 
 interface UpdateProjectDTO {
     projectId: string;
@@ -25,7 +26,7 @@ export class UpdateProjectUseCase {
             const existingProject = await this.projectRepository.getProjectById(data.projectId);
 
             if (!existingProject) {
-                throw new AppError('Project not found', 404);
+                throw new AppError('Project not found', StatusCodes.NOT_FOUND);
             }
 
             const updateData: any = {
@@ -65,7 +66,7 @@ export class UpdateProjectUseCase {
                 await this.s3Service.deleteFile(coverImageKey);
             }
             if (error instanceof AppError) throw error;
-            throw new AppError('Failed to update project', 500);
+            throw new AppError('Failed to update project', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -17,6 +17,10 @@ export interface IDeveloperRepository {
     findDeveloperDetails(developerId: string): Promise<IDeveloper | null>
     findDeveloperWithDetails(developerId: string): Promise<IDeveloper | null>
     update(userId: string, updateData: Partial<IDeveloper>): Promise<IDeveloper | null>
+    addProjectToPortfolio(developerId: string, projectId: string): Promise<void>
+    removeProjectFromPortfolio(developerId: string, projectId: string): Promise<void>
     searchDevelopers(params: ValidatedSearchParams): Promise<DeveloperSearchResponse>;
     getPublicProfile(developerId: string): Promise<any>;
+    countApproved(): Promise<number>
+    getTopPerformingDevelopers(limit: number): Promise<any[]>
 }

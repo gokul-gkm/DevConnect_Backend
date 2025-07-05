@@ -10,6 +10,7 @@ import { LoginUserUseCase } from "@/application/useCases/user/auth/LoginUserUseC
 import { ForgotPasswordUseCase } from "@/application/useCases/user/auth/ForgotPasswordUseCase";
 import { ResetPasswordUseCase } from "@/application/useCases/user/auth/ResetPasswordUseCase";
 import { StatusCodes } from "http-status-codes";
+import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
 
 export class AuthController {
     private registerUserUseCase: RegisterUserUseCase;
@@ -23,8 +24,9 @@ export class AuthController {
         private userRepository: UserRepository,
         private otpRepository: OTPRepository,
         private mailService: MailService,
+        private walletRepository: WalletRepository,
     ) {
-        this.registerUserUseCase = new RegisterUserUseCase(userRepository,otpRepository, mailService);
+        this.registerUserUseCase = new RegisterUserUseCase(userRepository,otpRepository, mailService, walletRepository);
         this.verifyOTPUseCase = new VerifyOTPUseCase(otpRepository, userRepository);
         this.resendOTPUseCase = new ResendOTPUseCase(otpRepository, mailService, userRepository);
         this.loginUserUseCase = new LoginUserUseCase(userRepository);

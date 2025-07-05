@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 
 interface DecodedJwt {
@@ -16,7 +17,7 @@ export const authMiddleware = (
     const refreshToken = req.cookies.refreshToken;
 
     if (!accessToken && !refreshToken) {
-        res.status(401).json({ message: 'Unauthorized', success: false });
+        res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized', success: false });
         return;
     }
 
@@ -27,7 +28,7 @@ export const authMiddleware = (
         return;
     } catch (accessTokenError) {
         if (!refreshToken) {
-            res.status(401).json({ message: 'Unauthorized', success: false });
+            res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized', success: false });
             return;
         }
 
@@ -37,7 +38,7 @@ export const authMiddleware = (
             const newAccessToken = jwt.sign(
                 { userId: decodedRefreshToken.userId }, 
                 process.env.JWT_ACCESS_SECRET as string, 
-                { expiresIn: '15m' }
+                { expiresIn: '24h' }
             );
 
             res.cookie('accessToken', newAccessToken, {
@@ -51,7 +52,7 @@ export const authMiddleware = (
         } catch (refreshTokenError) {
             res.clearCookie('accessToken');
             res.clearCookie('refreshToken');
-            res.status(403).json({ message: 'Unauthorized', success: false });
+            res.status(StatusCodes.FORBIDDEN).json({ message: 'Unauthorized', success: false });
             return;
         }
     }

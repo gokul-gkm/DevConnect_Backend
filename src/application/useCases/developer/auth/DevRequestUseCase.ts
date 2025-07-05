@@ -3,6 +3,7 @@ import { AppError } from "@/domain/errors/AppError";
 import { S3Service } from "@/infrastructure/services/S3_Service";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
+import { StatusCodes } from "http-status-codes";
 
 export class DevRequestUseCase {
     constructor(
@@ -23,12 +24,12 @@ export class DevRequestUseCase {
         try {
             const existingUser = await this.userRepository.findByEmail(data.email);
             if (!existingUser) {
-                throw new AppError('User not found', 404);
+                throw new AppError('User not found', StatusCodes.NOT_FOUND);
             }
 
             const existingDeveloper = await this.developerRepository.findByUserId(existingUser.id);
             if (existingDeveloper) {
-                throw new AppError('Developer profile already exists', 400);
+                throw new AppError('Developer profile already exists', StatusCodes.BAD_REQUEST);
             }
 
             if (files.profilePicture && files.profilePicture[0]) {
@@ -71,7 +72,7 @@ export class DevRequestUseCase {
                     experience: parseInt(data.experience),
                     jobTitle: data.jobTitle,
                 },
-                resume: resumeKey, // Store only the key in DB
+                resume: resumeKey,
             });
         } catch (error) {
             if (profilePictureKey) {

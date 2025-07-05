@@ -1,5 +1,6 @@
 import { GetPublicProfileUseCase } from "@/application/useCases/user/developers/GetPublicProfileUseCase";
 import { SearchDevelopersUseCase } from "@/application/useCases/user/developers/SearchDevelopersUseCase";
+import { ChangeUserPasswordUseCase } from "@/application/useCases/user/profile/ChangeUserPasswordUseCase";
 import { GetUserProfileUseCase } from "@/application/useCases/user/profile/GetUserProfileUseCase";
 import { UpdateUserProfileUseCase } from "@/application/useCases/user/profile/UpdateUserProfileUseCase";
 import { AppError } from "@/domain/errors/AppError";
@@ -14,6 +15,7 @@ export class UserController {
     private updateUserProfileUseCase: UpdateUserProfileUseCase;
     private searchDevelopersUseCase: SearchDevelopersUseCase;
     private getPublicProfileUseCase: GetPublicProfileUseCase;
+    private changeUserPasswordUseCase: ChangeUserPasswordUseCase;
     constructor(
         private userRepository: UserRepository,
         private developerRepository: DeveloperRepository,
@@ -22,18 +24,19 @@ export class UserController {
         this.getUserProfileUseCase = new GetUserProfileUseCase(userRepository,s3Service)
         this.updateUserProfileUseCase = new UpdateUserProfileUseCase(userRepository, s3Service);
         this.searchDevelopersUseCase = new SearchDevelopersUseCase(developerRepository, s3Service)
-        this.getPublicProfileUseCase = new GetPublicProfileUseCase(developerRepository,s3Service)
+        this.getPublicProfileUseCase = new GetPublicProfileUseCase(developerRepository, s3Service);
+        this.changeUserPasswordUseCase = new ChangeUserPasswordUseCase(userRepository)
      }
     
     async getProfile(req: Request, res: Response) {
         try {
             const userId = req.userId;
             if (!userId) {
-                throw new AppError("User ID is required",400);
+                throw new AppError("User ID is required",);
             }
             const user = await this.getUserProfileUseCase.execute(userId);
             if(!user) {
-                throw new AppError("User not found",404);
+                throw new AppError("User not found",StatusCodes.NOT_FOUND);
             }
             return res.status(StatusCodes.OK).json({data: user, success: true});
             
@@ -80,6 +83,27 @@ export class UserController {
                 status: true,
                 message: 'Internal server error'
             });
+        }
+    }
+
+    async changePassword (req: Request, res: Response) {
+        try {
+            const userId = req.userId;
+            if (!userId) {
+                throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
+            }
+            const { currentPassword, newPassword, confirmPassword } = req.body;
+            await this.changeUserPasswordUseCase.execute(userId,{ currentPassword, newPassword, confirmPassword });
+
+            return res.status(StatusCodes.OK).json({message: "Password has been updated successfully", success: true})
+        } catch (error) {
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({
+                    success: false,
+                    message: error.message
+                })
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Failde to update password' });
         }
     }
 

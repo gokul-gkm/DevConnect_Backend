@@ -74,7 +74,6 @@ export class UpdateDeveloperProfileUseCase {
                 location: profileData.location
             };
 
-            console.log("skills : ", profileData.skills);
 
             const developerUpdateData = {
                 hourlyRate: Number(profileData.hourlyRate),
@@ -93,7 +92,6 @@ export class UpdateDeveloperProfileUseCase {
                 resume: resumeKey 
             };
 
-            console.log("dev up data : ", developerUpdateData)
 
             const [updatedUser, updatedDeveloper] = await Promise.all([
                 this.userRepository.update(userId, userUpdateData),

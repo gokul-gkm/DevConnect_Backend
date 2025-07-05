@@ -4,10 +4,9 @@ const storage = multer.memoryStorage();
 export const upload = multer({
   storage: storage,
   limits: {
-      fileSize: 5 * 1024 * 1024,
+      fileSize: 10 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
-      console.log("Processing file:", file.fieldname);
       
       if (file.fieldname === 'profilePicture') {
           if (!file.mimetype.startsWith('image/')) {
@@ -34,6 +33,27 @@ export const upload = multer({
         }
         return cb(null, true);
     } 
+
+      if (file.fieldname === 'mediaFile') {
+        const allowedMimeTypes = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/ogg',
+            'video/mp4', 'video/webm', 'video/quicktime',
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+        
+        if (!allowedMimeTypes.includes(file.mimetype) && 
+            !file.mimetype.startsWith('image/') && 
+            !file.mimetype.startsWith('audio/') && 
+            !file.mimetype.startsWith('video/')) {
+            return cb(new Error('Unsupported file type for chat media'));
+        }
+        return cb(null, true);
+      }
 
       return cb(null, false);
   }

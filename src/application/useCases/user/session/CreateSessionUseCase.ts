@@ -5,6 +5,8 @@ import { DeveloperRepository } from '@/infrastructure/repositories/DeveloperRepo
 import { MailService } from '@/infrastructure/mail/MailService';
 import { AppError } from '@/domain/errors/AppError';
 import { ISession } from '@/domain/entities/Session';
+import { StatusCodes } from 'http-status-codes';
+import { NotificationService } from '@/infrastructure/services/NotificationService';
 
 interface CreateSessionDTO {
   title: string;
@@ -23,7 +25,7 @@ export class CreateSessionUseCase {
     private sessionRepository: SessionRepository,
     private userRepository: UserRepository,
     private developerRepository: DeveloperRepository,
-    private mailService: MailService
+    private notificationService: NotificationService
   ) {}
 
   async execute(data: CreateSessionDTO): Promise<ISession> {
@@ -32,12 +34,12 @@ export class CreateSessionUseCase {
       const developer = await this.developerRepository.findByUserId(data.developerId);
       
       if (!developer) {
-        throw new AppError('Developer not found', 404);
+        throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
       }
 
       const user = await this.userRepository.findById(data.userId);
       if (!user) {
-        throw new AppError('User not found', 404);
+        throw new AppError('User not found', StatusCodes.NOT_FOUND);
       }
 
       const isAvailable = await this.sessionRepository.checkSlotAvailability(
@@ -48,8 +50,7 @@ export class CreateSessionUseCase {
       );
 
       if (!isAvailable) {
-        console.log("selected time slot is not available");
-        throw new AppError('Selected time slot is not available', 400);
+        throw new AppError('Selected time slot is not available', StatusCodes.BAD_REQUEST);
       }
 
       const sessionData: Partial<ISession> = {
@@ -67,26 +68,25 @@ export class CreateSessionUseCase {
       };
       
       const session = await this.sessionRepository.createSession(sessionData);
-      console.log("session :", session);
 
-      // Send email notifications
-      // await this.mailService.sendSessionRequestEmail(
-      //   developer.userId.email,
-      //   {
-      //     title: session.title,
-      //     sessionDate: session.sessionDate,
-      //     startTime: session.startTime,
-      //     duration: session.duration,
-      //     price: session.price,
-      //     username: user.username
-      //   }
-      // );
+      try {
+        await this.notificationService.notify(
+          data.developerId,
+          'New Session Request',
+          `${user.username} has requested a new session: "${data.title}"`,
+          'session',
+          data.userId,
+          session._id.toString()
+        )
+      } catch (notificationError) {
+        console.log('Failed to create notification :', notificationError)
+      }
 
       return session;
-    } catch (error) {
+    } catch (error : any) {
       console.error("Create session error:", error);
       if (error instanceof AppError) throw error;
-      throw new AppError('Failed to create session', 500);
+      throw new AppError('Failed to create session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }

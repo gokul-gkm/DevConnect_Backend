@@ -3,23 +3,23 @@ import { IUser } from "@/domain/entities/User";
 import { AppError } from "@/domain/errors/AppError";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import bcrypt from 'bcryptjs'
+import { StatusCodes } from "http-status-codes";
 import jwt from 'jsonwebtoken'
 
 export class LoginUserUseCase{
-    constructor(private userRepository: UserRepository) {
-        
-    }
+    constructor(private userRepository: UserRepository) {}
 
     async execute(loginData: LoginUserDTO): Promise<{ accessToken: string; refreshToken: string; user: Omit<IUser, "password">}> {
-        const { email, password } = loginData;
+        try {
+            const { email, password } = loginData;
 
         const user = await this.userRepository.findByEmail(email);
         
         if (!user) {
-            throw new AppError('Invalid credentials', 400)
+            throw new AppError('Invalid credentials', StatusCodes.BAD_REQUEST)
         }
         if (user.status === 'blocked') {
-            throw new AppError('User account is blocked',400);
+            throw new AppError('User account is blocked',StatusCodes.BAD_REQUEST);
         }
         if (user.status === 'suspended') {
             throw new AppError("User account is already suspended")
@@ -33,7 +33,7 @@ export class LoginUserUseCase{
         const accessToken = jwt.sign(
             { userId: user._id },
             process.env.JWT_ACCESS_SECRET as string,
-            {expiresIn : "15m"}
+            {expiresIn : "24h"}
         );
         const refreshToken = jwt.sign(
             { userId: user._id },
@@ -43,5 +43,9 @@ export class LoginUserUseCase{
         
         console.log(jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string));
         return { accessToken, refreshToken, user }
+        } catch (error) {
+            if (error instanceof AppError) throw error;
+            throw new AppError('Failed to Login', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
     }
 }

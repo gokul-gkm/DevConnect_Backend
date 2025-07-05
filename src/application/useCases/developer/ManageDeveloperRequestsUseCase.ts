@@ -3,19 +3,56 @@ import { DevPaginatedResponse, DevQueryParams } from "@/domain/types/types";
 import { IDeveloper } from "@/domain/entities/Developer";
 import { AppError } from "@/domain/errors/AppError";
 import { MailService } from "@/infrastructure/mail/MailService";
+import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
+import { Schema, Types } from "mongoose";
+import { StatusCodes } from "http-status-codes";
+import { S3Service } from "@/infrastructure/services/S3_Service";
 
 export class ManageDeveloperRequestsUseCase {
     private mailService: MailService;
-    constructor(private developerRepository: DeveloperRepository) {
-        this.mailService = new MailService()
+    constructor(
+        private developerRepository: DeveloperRepository,
+        private walletRepository: WalletRepository,
+        private s3Service: S3Service
+    ) {
+        this.mailService = new MailService();
+        this.walletRepository = walletRepository;
     }
-
     async listRequests(queryParams: DevQueryParams): Promise<DevPaginatedResponse<IDeveloper>> {
         try {
-            return await this.developerRepository.findDevelopers({
+            const developers = await this.developerRepository.findDevelopers({
                 ...queryParams,
                 status: 'pending'
             });
+
+            const transformedData = await Promise.all(developers.data.map(async (developer) => {
+                let signedProfilePictureUrl = null;
+                let signedResumeUrl = null;
+
+                if (developer.userId && (developer.userId as any).profilePicture) {
+                    signedProfilePictureUrl = await this.s3Service.generateSignedUrl(
+                        (developer.userId as any).profilePicture
+                    );
+                }
+
+                if (developer.resume) {
+                    signedResumeUrl = await this.s3Service.generateSignedUrl(developer.resume);
+                }
+
+                return {
+                    ...developer.toObject(),
+                    userId: {
+                        ...(developer.userId as any).toObject(),
+                        profilePicture: signedProfilePictureUrl
+                    },
+                    resume: signedResumeUrl
+                };
+            }));
+
+            return {
+                data: transformedData,
+                pagination: developers.pagination
+            };
         } catch (error) {
             console.error('Error in ListDeveloperRequestsUseCase:', error);
             throw error;
@@ -28,10 +65,42 @@ export class ManageDeveloperRequestsUseCase {
                 developerId,
                 'approved'
             );
-            console.log(developer)
+
             if (!developer) {
-                throw new AppError('Developer not found', 404);
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
             }
+         
+            try {        
+                let userObjectId: Types.ObjectId;
+
+                if (developer.userId && typeof developer.userId === 'object' && '_id' in developer.userId) {
+                    userObjectId = developer.userId._id as Types.ObjectId;
+
+                } else if (developer.userId instanceof Types.ObjectId) {
+                    userObjectId = developer.userId;
+                } else if (typeof developer.userId === 'string') {
+                    userObjectId = new Types.ObjectId(developer.userId);
+                } else {
+                    throw new AppError('Invalid userId format', StatusCodes.BAD_REQUEST);
+                }
+
+                const existingWallet = await this.walletRepository.findByUserId(userObjectId);
+                
+                if (!existingWallet) {
+                    await this.walletRepository.create(userObjectId);
+                } else {
+                    console.log(`Wallet already exists for developer: ${userObjectId}`);
+                }
+
+            } catch (error) {
+                console.error('Detailed wallet creation error:', error);
+                await this.developerRepository.updateDeveloperStatus(
+                    developerId,
+                    'pending'
+                );
+                throw new AppError('Failed to create developer wallet', StatusCodes.INTERNAL_SERVER_ERROR);
+            }
+            
             try {
                 if (developer.userId && developer.userId instanceof Object && 'email' in developer.userId && 'username' in developer.userId) {
                     await this.mailService.sendDeveloperApprovalMail(
@@ -55,7 +124,7 @@ export class ManageDeveloperRequestsUseCase {
     async rejectRequest(developerId: string, reason: string): Promise<IDeveloper> {
         try {
             if (!reason) {
-                throw new AppError('Rejection reason is required', 400);
+                throw new AppError('Rejection reason is required', StatusCodes.BAD_REQUEST);
             }
             const developer = await this.developerRepository.updateDeveloperStatus(
                 developerId,
@@ -63,7 +132,7 @@ export class ManageDeveloperRequestsUseCase {
                 reason
             );
             if (!developer) {
-                throw new AppError('Developer not found', 404);
+                throw new AppError('Developer not found', StatusCodes.NOT_FOUND);
             }
 
             try {

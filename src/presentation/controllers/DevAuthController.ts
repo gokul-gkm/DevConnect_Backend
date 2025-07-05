@@ -110,7 +110,7 @@ export class DevAuthController {
            
             res.cookie('accessToken', accessToken, { httpOnly: true, maxAge: 15 * 60 * 1000 });
             res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 });
-            return res.status(StatusCodes.OK).json({message: "Login successful", user, success: true})
+            return res.status(StatusCodes.OK).json({message: "Login successful", user, success: true, token: accessToken})
         } catch (error) {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({message: error.message, success: false})

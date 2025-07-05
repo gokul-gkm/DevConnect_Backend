@@ -1,12 +1,10 @@
 import { AppError } from "@/domain/errors/AppError";
 import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import bcrypt from 'bcryptjs'
+import { StatusCodes } from "http-status-codes";
 import jwt from 'jsonwebtoken'
+import { ResetPasswordDTO } from "@/application/dto/users/ResetPasswordDTO";
 
-interface ResetPasswordDTO{
-    token: string,
-    newPassword: string
-}
 
 export class ResetPasswordUseCase{
     constructor(private userRepository: UserRepository) { }
@@ -20,7 +18,7 @@ export class ResetPasswordUseCase{
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             await this.userRepository.update(decoded.userId,{password: hashedPassword})
         } catch (error) {
-            throw new AppError('Invalid or expired reset token',400)
+            throw new AppError('Invalid or expired reset token',StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }
 }

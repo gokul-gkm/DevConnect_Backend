@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import {AdminLoginUseCase} from '@/application/useCases/admin/auth/AdminLoginUseCase';
-import { AdminRepository } from '@/infrastructure/repositories/AdminRepository';
 import { GetUsersUseCase } from '@/application/useCases/admin/users/GetUsersUseCase';
-import { UserRepository } from '@/infrastructure/repositories/UserRepository';
 import { ToggleUserStatusUseCase } from '@/application/useCases/admin/users/ToggleUserStatusUseCase';
 import { GetUserDetailsUseCase } from '@/application/useCases/admin/users/GetUserDetailsUseCase';
 import { DevQueryParams, QueryParams } from '@/domain/types/types';
@@ -13,6 +11,16 @@ import { ManageDeveloperRequestsUseCase } from '@/application/useCases/developer
 import { GetDeveloperDetailsUseCase } from '@/application/useCases/admin/developers/GetDeveloperDetailsUseCase';
 import { GetDeveloperRequestDetailsUseCase } from '@/application/useCases/developer/GetDeveloperRequestDetails';
 import { StatusCodes } from 'http-status-codes';
+import { S3Service } from '@/infrastructure/services/S3_Service';
+import { IAdminRepository } from '@/domain/interfaces/IAdminRepository';
+import { IUserRepository } from '@/domain/interfaces/IUserRepository';
+import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { GetDashboardStatsUseCase } from '@/application/useCases/admin/dashboard/GetDashboardStatsUseCase';
+import { SessionRepository } from '@/infrastructure/repositories/SessionRepository';
+import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
+import { UserRepository } from '@/infrastructure/repositories/UserRepository';
+import { WalletRepository } from '@/infrastructure/repositories/WalletRepository';
+import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
 
 
 export class AdminController{
@@ -24,19 +32,24 @@ export class AdminController{
     private manageDeveloperRequestsUseCase: ManageDeveloperRequestsUseCase;
     private getDeveloperDetailsUseCase: GetDeveloperDetailsUseCase;
     private getDeveloperRequestDetailsUseCase: GetDeveloperRequestDetailsUseCase;
+    private getDashboardStatsUseCase: GetDashboardStatsUseCase;
     constructor(
-        private adminRepository: AdminRepository,
-        private userRepository: UserRepository,
-        private developerRepository: DeveloperRepository
+        private adminRepository: IAdminRepository,
+        private userRepository: IUserRepository,
+        private developerRepository: DeveloperRepository,
+        private s3Service: S3Service,
+        private walletRepository: IWalletRepository,
+        private sessionRepository: ISessionRepository
     ) {
         this.adminLoginUseCase = new AdminLoginUseCase(adminRepository);
-        this.getUsersUseCase = new GetUsersUseCase(userRepository);
+        this.getUsersUseCase = new GetUsersUseCase(userRepository,s3Service);
         this.toggleUserStatusUseCase = new ToggleUserStatusUseCase(userRepository);
-        this.getUserDetailsUseCase = new GetUserDetailsUseCase(userRepository);
-        this.getDeveloperUseCase = new GetDevelopersUseCase(developerRepository)
-        this.manageDeveloperRequestsUseCase = new ManageDeveloperRequestsUseCase(developerRepository)
-        this.getDeveloperDetailsUseCase = new GetDeveloperDetailsUseCase(developerRepository)
-        this.getDeveloperRequestDetailsUseCase = new GetDeveloperRequestDetailsUseCase(developerRepository)
+        this.getUserDetailsUseCase = new GetUserDetailsUseCase(userRepository,s3Service);
+        this.getDeveloperUseCase = new GetDevelopersUseCase(developerRepository,s3Service)
+        this.manageDeveloperRequestsUseCase = new ManageDeveloperRequestsUseCase(developerRepository, walletRepository,s3Service)
+        this.getDeveloperDetailsUseCase = new GetDeveloperDetailsUseCase(developerRepository,s3Service)
+        this.getDeveloperRequestDetailsUseCase = new GetDeveloperRequestDetailsUseCase(developerRepository, s3Service);
+        this.getDashboardStatsUseCase = new GetDashboardStatsUseCase(userRepository, developerRepository, sessionRepository, walletRepository, s3Service)
     }
 
     async login(req: Request, res: Response) {
@@ -78,6 +91,7 @@ export class AdminController{
 
     async getUsers(req: Request, res: Response) {
         try {
+
             const queryParams: QueryParams = {
                 page: Math.max(1, parseInt(req.query.page as string) || 1),
                 limit: Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10)),
@@ -136,7 +150,6 @@ export class AdminController{
 
             
         } catch (error: any) {
-            console.error('Error in listDevelopers controller:', error);
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({
                     success: false,
@@ -275,6 +288,17 @@ export class AdminController{
             });
         }
     }
+
+    async getDashboardStats(req: Request, res: Response): Promise<void> {
+        try {
+          const stats = await this.getDashboardStatsUseCase.execute();
+          res.json(stats);
+        } catch (error: any) {
+          res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+            message: error.message || 'Failed to fetch dashboard stats'
+          });
+        }
+      }
 
 
 }

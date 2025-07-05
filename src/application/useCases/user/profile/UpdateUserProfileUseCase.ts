@@ -20,12 +20,9 @@ export class UpdateUserProfileUseCase {
                 throw new AppError('User not found', StatusCodes.NOT_FOUND);
             }
 
-            console.log("exist user : ", existingUser);
-
             let profilePictureKey = existingUser.profilePicture;
 
             if (files.profilePicture && files.profilePicture[0]) {
-                console.log("files.profilePicture : ", files.profilePicture);
                 if (existingUser.profilePicture) {
                     try {
                         await this.s3Service.deleteFile(existingUser.profilePicture);
@@ -38,16 +35,13 @@ export class UpdateUserProfileUseCase {
                     files.profilePicture[0],
                     'profile-images'
                 );
-                console.log("profile picture result : ", profilePictureResult);
                 profilePictureKey = profilePictureResult.Key;
-                console.log("profile picture key : ", profilePictureKey);
             }
 
             const updatedUser = await this.userRepository.update(userId, {
                 ...profileData,
                 profilePicture: profilePictureKey
             });
-            console.log("updateUser: ", updatedUser);
 
             if (!updatedUser) {
                 throw new AppError('Failed to update profile', StatusCodes.INTERNAL_SERVER_ERROR);
@@ -57,7 +51,6 @@ export class UpdateUserProfileUseCase {
                 ? await this.s3Service.generateSignedUrl(updatedUser.profilePicture)
                 : null;
             
-            console.log("signed : ", signedProfilePictureUrl)
 
             return {
                 id: updatedUser._id,

@@ -1,6 +1,7 @@
 import { UserRepository } from '@/infrastructure/repositories/UserRepository';
 import { S3Service } from '@/infrastructure/services/S3_Service';
 import { AppError } from '@/domain/errors/AppError';
+import { StatusCodes } from 'http-status-codes';
 
 export class GetUserProfileUseCase {
     constructor(
@@ -13,7 +14,7 @@ export class GetUserProfileUseCase {
             const user = await this.userRepository.findById(userId);
             
             if (!user) {
-                throw new AppError('User not found', 404);
+                throw new AppError('User not found', StatusCodes.NOT_FOUND);
             }
 
             let signedProfilePictureUrl = null;
@@ -36,7 +37,7 @@ export class GetUserProfileUseCase {
         } catch (error: any) {
             throw new AppError(
                 error.message || 'Error fetching profile',
-                error.statusCode || 501
+                error.statusCode || StatusCodes.NOT_IMPLEMENTED
             );
         }
     }

@@ -3,6 +3,7 @@ import { AppError } from '@/domain/errors/AppError';
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dotenv from 'dotenv';
+import { StatusCodes } from 'http-status-codes';
 
 dotenv.config();
 
@@ -47,8 +48,9 @@ export class S3Service {
         await this.S3Client.send(command);
     }
 
-    async generateSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+    async generateSignedUrl(key: string): Promise<string> {
         try {
+            const expiresIn = Number(process.env.S3_SIGNED_URL_EXPIRY) || 3600;
             const command = new GetObjectCommand({
                 Bucket: this.bucket,
                 Key: key,
@@ -57,7 +59,7 @@ export class S3Service {
             return await getSignedUrl(this.S3Client, command, { expiresIn });
         } catch (error) {
             console.error('Error generating signed URL:', error);
-            throw new AppError('Error generating signed URL', 500);
+            throw new AppError('Error generating signed URL', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
 }

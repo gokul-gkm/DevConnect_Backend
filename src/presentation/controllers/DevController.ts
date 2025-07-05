@@ -189,6 +189,14 @@ export class DevController {
             const projectId = req.params.projectId;
             const project = await this.projectRepository.getProjectById(projectId);
 
+            let signedCoverImageUrl = null;
+            
+            if (project.coverImage) {
+                signedCoverImageUrl = await this.s3Service.generateSignedUrl(project.coverImage);
+                project.coverImage = signedCoverImageUrl
+            }
+
+
             return res.status(StatusCodes.OK).json({
                 success: true,
                 message: 'Project fetched successfully',
