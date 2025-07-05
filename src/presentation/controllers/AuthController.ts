@@ -35,13 +35,13 @@ export class AuthController {
         try {
             const userData = req.body;
             await this.registerUserUseCase.execute(userData)
-            return res.status(201).json({ message: 'User registered and OTP send' });
+            return res.status(201).json({ message: 'User registered and OTP send' , success: true});
             
         } catch (error) {
             if (error instanceof AppError) {
-                return res.status(error.statusCode).json({ message: error.message });
+                return res.status(error.statusCode).json({ message: error.message , success: false});
             }
-            return res.status(500).json({ message: 'Internal server error', error });
+            return res.status(500).json({ message: 'Internal server error', error , success: false});
         }
     }
 
@@ -52,12 +52,12 @@ export class AuthController {
             if (!isValidOTP) {
                 return res.status(400).json({ message: 'Invalid OTP' });
             }
-            return res.status(200).json({message: 'OTP Verified'})
+            return res.status(200).json({message: 'OTP Verified', success: true})
         } catch (error) {
             if (error instanceof AppError) {
-                return res.status(error.statusCode).json({ message: error.message });
+                return res.status(error.statusCode).json({ message: error.message , success: false});
             }
-            return res.status(500).json({message: "Internal Server Error"})
+            return res.status(500).json({message: "Internal Server Error", success: false})
         }
     }
 
@@ -65,7 +65,7 @@ export class AuthController {
         try {
             const { email } = req.body;
             await this.resendOTPUseCase.execute(email);
-            return res.status(200).json({message: "New OTP send successfully."})
+            return res.status(200).json({message: "New OTP send successfully.", success: true})
         } catch (error) {
             if (error instanceof AppError) {
                 if (error.statusCode === 429) {
@@ -74,9 +74,9 @@ export class AuthController {
                         retryAfter: '60'
                     })
                 }
-                return res.status(error.statusCode).json({message: error.message})
+                return res.status(error.statusCode).json({message: error.message, success: false})
             }
-            return res.status(500).json({message: 'Internal server error'})
+            return res.status(500).json({message: 'Internal server error', success: false})
         }
     }
 
@@ -88,19 +88,21 @@ export class AuthController {
            
             res.cookie('accessToken', accessToken, { httpOnly: true, maxAge: 15 * 60 * 1000 });
             res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 });
-            return res.status(200).json({message: "Login successful", user})
+            return res.status(200).json({message: "Login successful", user, success: true})
         } catch (error) {
             if (error instanceof AppError) {
-                return res.status(error.statusCode).json({message: error.message})
+                return res.status(error.statusCode).json({message: error.message, success: false})
             }
-            return res.status(500).json('Internal server error')
+            return res.status(500).json({message: 'Internal server error', success: false})
         }
     }
 
     async logout(req: Request, res: Response) {
         try {
-            res.clearCookie('accessToken');
-            res.clearCookie('refreshToken');
+            
+            res.clearCookie('accessToken',{httpOnly: true});
+            res.clearCookie('refreshToken',{ httpOnly: true });
+           
             return res.status(200).json({ message: 'Logout successfully' });
         } catch (error) {
             console.error('Logout error: ', error);
@@ -112,12 +114,12 @@ export class AuthController {
         try {
             const { email } = req.body;
             const resetToken = await this.forgotPasswordUseCase.execute(email);
-            return res.status(200).json({"message": 'Password reset link has been sent to your email', resetToken})
+            return res.status(200).json({ "message": 'Password reset link has been sent to your email', resetToken, success: true });
         } catch (error) {
             if (error instanceof AppError) {
-                return res.status(error.statusCode).json({message: error.message})
+                return res.status(error.statusCode).json({message: error.message, success: false})
             }
-            return res.status(500).json({ message: "Internal server error" });
+            return res.status(500).json({ message: "Internal server error", success: false });
         }
     }
 
@@ -125,12 +127,14 @@ export class AuthController {
         try {
             const { token, newPassword } = req.body;
             await this.resetPasswordUseCase.execute({ token, newPassword });
-            return res.status(200).json({message: "Password has been reset successfully"})
+            return res.status(200).json({message: "Password has been reset successfully", success: true})
         } catch (error) {
             if (error instanceof AppError) {
-                return res.status(error.statusCode).json({message: error.message})
+                return res.status(error.statusCode).json({ message: error.message, success: false})
             }
-            return res.status(500).json('Internal server error')
+            return res.status(500).json({ message: 'Internal server error', success: false });
         }
     }
+
+    
 }

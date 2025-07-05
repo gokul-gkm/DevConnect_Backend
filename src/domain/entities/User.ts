@@ -15,6 +15,8 @@ export interface IUser extends Document {
      twitter: string | null;
   };
   location: string | null;
+  googleId: string | null;
+  linkedinId: string | null;
   status: string;
   createdAt: Date;
   updatedAt: Date;
@@ -26,7 +28,13 @@ export interface IUser extends Document {
 
 const UserSchema: Schema = new Schema({
   email: { type: String, required: true },
-  password: { type: String, required: true },
+  password: { 
+    type: String, 
+    required: function(this: IUser) { 
+      return !this.googleId && !this.linkedinId; 
+    },
+  },
+  
   username: { type: String, required: true },
   role: { type: String, required: true, enum: [ 'user', 'developer' ] },
   bio: { type: String },
@@ -38,7 +46,9 @@ const UserSchema: Schema = new Schema({
      twitter: { type: String },
   },
   location: { type: String },
-  status: { type: String, required: true, enum: [ 'active', 'suspended', ' blocked' ], default:'active' },
+  googleId: { type: String },
+  linkedinId: { type: String },
+  status: { type: String, required: true, enum: [ 'active', 'blocked' ], default:'active' },
   isVerified: { type: Boolean, default: false, required: true },
   verificationExpires:{type: Date, default: ()=> new Date(Date.now() + 24 * 60 * 60 * 1000)},
   contact: { type: Number, required: true },

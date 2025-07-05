@@ -260,4 +260,267 @@ export class MailService {
             throw new Error('Failed to send email');
         }
     }
+
+    async sendDeveloperApprovalMail(email: string, username: string): Promise<void> {
+        if (!process.env.EMAIL || !process.env.EMAIL_PASSWORD) {
+            throw new Error('Email credentials are not set');
+        }
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
+        const mailOptions = {
+            from: `DevConnect <${process.env.EMAIL}>`,
+            to: email,
+            subject: 'Welcome to DevConnect - Developer Application Approved!',
+            html: `
+            <!DOCTYPE html>
+            <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width,initial-scale=1">
+                <meta name="x-apple-disable-message-reformatting">
+                <title>Developer Application Approved</title>
+                <style>
+                    body { margin: 0; padding: 0; width: 100% !important; }
+                    table { border-collapse: collapse; }
+                    a { color: #0068A5; text-decoration: none; }
+                    img { border: 0; }
+                    
+                    @media screen and (max-width: 600px) {
+                        .responsive-table { width: 100% !important; }
+                        .mobile-center { text-align: center !important; }
+                    }
+                </style>
+            </head>
+            <body style="margin:0; padding:0; background-color:#f4f4f4;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f4f4f4;">
+                    <tr>
+                        <td align="center" style="padding:20px 0;">
+                            <table 
+                                border="0" 
+                                cellpadding="0" 
+                                cellspacing="0" 
+                                width="600" 
+                                class="responsive-table" 
+                                style="width:600px; max-width:600px; background-color:#ffffff; box-shadow:0 2px 4px rgba(0,0,0,0.1);"
+                            >
+                                <!-- Header -->
+                                <tr>
+                                    <td style="background-color:#f8f9fa; padding:20px; text-align:center; border-bottom:1px solid #e0e0e0; border-radius: 50%">
+                                        <img 
+                                            src="https://i.imghippo.com/files/dhlN2945uw.png" 
+                                            alt="DevConnect Logo" 
+                                            width="50" 
+                                            style="max-height:50px; margin:0 auto;border-radius: 50%"
+                                        >
+                                    </td>
+                                </tr>
+                                
+                                <!-- Content -->
+                                <tr>
+                                    <td style="padding:20px 20px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;">
+                                        <h1 style="color:#1A1A1A; font-size:24px; margin-bottom:20px; text-align:center;">
+                                            Congratulations! 🎉
+                                        </h1>
+                                        
+                                        <div style="background-color:#f1f3f4; border-left:4px solid #4285F4; padding:15px; margin-bottom:25px; color:#5f6368;">
+                                            <strong>Welcome to DevConnect!</strong> Your developer application has been approved.
+                                        </div>
+                                        
+                                        <p style="color:#333333; line-height:1.6; margin-bottom:20px;">
+                                            Dear ${username},
+                                        </p>
+
+                                        <p style="color:#333333; line-height:1.6; margin-bottom:20px;">
+                                            We're excited to inform you that your application to join DevConnect as a developer has been approved! 
+                                            You can now access all developer features and start accepting student session requests.
+                                        </p>
+
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom:30px;">
+                                            <tr>
+                                                <td align="center">
+                                                    <a 
+                                                        href="${process.env.FRONTEND_URL}/login" 
+                                                        style="background-color:#4285F4; color:white; padding:12px 24px; border-radius:4px; display:inline-block; font-weight:bold; text-decoration:none;"
+                                                    >
+                                                        Access Your Dashboard
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <div style="background-color:#f8f9fa; border-radius:4px; padding:15px; margin-bottom:25px;">
+                                            <p style="color:#333333; line-height:1.6; margin:0 0 10px 0;">
+                                                <strong>Next Steps:</strong>
+                                            </p>
+                                            <ul style="color:#333333; line-height:1.6; margin:0; padding-left:20px;">
+                                                <li>Complete your developer profile</li>
+                                                <li>Set up your portfolio</li>
+                                                <li>Browse available projects</li>
+                                                <li>Start connecting with developers</li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Footer -->
+                                <tr>
+                                    <td style="background-color:#f8f9fa; padding:20px; text-align:center; border-top:1px solid #e0e0e0; color:#666666; font-size:12px;">
+                                        © ${new Date().getFullYear()} DevConnect, Inc. All rights reserved.<br>
+                                        <a href="#" style="color:#666666; margin:0 10px;">Privacy Policy</a> | 
+                                        <a href="#" style="color:#666666; margin:0 10px;">Terms of Service</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            `,
+        };
+
+        try {
+            console.log('Verifying SMTP connection...');
+            await transporter.verify();
+            console.log('SMTP connection verified. Sending mail...');
+            const info = await transporter.sendMail(mailOptions);
+            console.log(`Email sent: ${info.response}`);
+        } catch (error) {
+            console.error('Error sending email:', error);
+            throw new Error('Failed to send email');
+        }
+    }
+
+    async sendDeveloperRejectionMail(email: string, username: string, reason: string): Promise<void> {
+        if (!process.env.EMAIL || !process.env.EMAIL_PASSWORD) {
+            throw new Error('Email credentials are not set');
+        }
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
+        const mailOptions = {
+            from: `DevConnect <${process.env.EMAIL}>`,
+            to: email,
+            subject: 'Update on Your DevConnect Developer Application',
+            html: `
+            <!DOCTYPE html>
+            <html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width,initial-scale=1">
+                <meta name="x-apple-disable-message-reformatting">
+                <title>Application Status Update</title>
+                <style>
+                    body { margin: 0; padding: 0; width: 100% !important; }
+                    table { border-collapse: collapse; }
+                    a { color: #0068A5; text-decoration: none; }
+                    img { border: 0; }
+                    
+                    @media screen and (max-width: 600px) {
+                        .responsive-table { width: 100% !important; }
+                        .mobile-center { text-align: center !important; }
+                    }
+                </style>
+            </head>
+            <body style="margin:0; padding:0; background-color:#f4f4f4;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f4f4f4;">
+                    <tr>
+                        <td align="center" style="padding:20px 0;">
+                            <table 
+                                border="0" 
+                                cellpadding="0" 
+                                cellspacing="0" 
+                                width="600" 
+                                class="responsive-table" 
+                                style="width:600px; max-width:600px; background-color:#ffffff; box-shadow:0 2px 4px rgba(0,0,0,0.1);"
+                            >
+                                <!-- Header -->
+                                <tr>
+                                    <td style="background-color:#f8f9fa; padding:20px; text-align:center; border-bottom:1px solid #e0e0e0; border-radius: 50%">
+                                        <img 
+                                            src="https://i.imghippo.com/files/dhlN2945uw.png" 
+                                            alt="DevConnect Logo" 
+                                            width="50" 
+                                            style="max-height:50px; margin:0 auto;border-radius: 50%"
+                                        >
+                                    </td>
+                                </tr>
+                                
+                                <!-- Content -->
+                                <tr>
+                                    <td style="padding:20px 20px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Open Sans','Helvetica Neue',sans-serif;">
+                                        <h1 style="color:#1A1A1A; font-size:24px; margin-bottom:20px; text-align:center;">
+                                            Application Status Update
+                                        </h1>
+                                        
+                                        <div style="background-color:#f1f3f4; border-left:4px solid #ea4335; padding:15px; margin-bottom:25px; color:#5f6368;">
+                                            <strong>Important Notice:</strong> Update regarding your developer application.
+                                        </div>
+                                        
+                                        <p style="color:#333333; line-height:1.6; margin-bottom:20px;">
+                                            Dear ${username},
+                                        </p>
+
+                                        <p style="color:#333333; line-height:1.6; margin-bottom:20px;">
+                                            Thank you for your interest in joining DevConnect as a developer. After careful review of your application, 
+                                            we regret to inform you that we are unable to approve your request at this time.
+                                        </p>
+
+                                        <div style="background-color:#f8f9fa; border-radius:4px; padding:15px; margin-bottom:25px;">
+                                            <p style="color:#333333; line-height:1.6; margin:0 0 10px 0;">
+                                                <strong>Reason for this decision:</strong>
+                                            </p>
+                                            <p style="color:#333333; line-height:1.6; margin:0; padding:10px; background-color:#ffffff; border-radius:4px;">
+                                                ${reason}
+                                            </p>
+                                        </div>
+
+                                        <p style="color:#333333; line-height:1.6; margin-bottom:20px;">
+                                            You are welcome to apply again in the future with updated qualifications or additional information. 
+                                            If you have any questions, please don't hesitate to contact our support team.
+                                        </p>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Footer -->
+                                <tr>
+                                    <td style="background-color:#f8f9fa; padding:20px; text-align:center; border-top:1px solid #e0e0e0; color:#666666; font-size:12px;">
+                                        © ${new Date().getFullYear()} DevConnect, Inc. All rights reserved.<br>
+                                        <a href="#" style="color:#666666; margin:0 10px;">Privacy Policy</a> | 
+                                        <a href="#" style="color:#666666; margin:0 10px;">Terms of Service</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            `,
+        };
+
+        try {
+            console.log('Verifying SMTP connection...');
+            await transporter.verify();
+            console.log('SMTP connection verified. Sending mail...');
+            const info = await transporter.sendMail(mailOptions);
+            console.log(`Email sent: ${info.response}`);
+        } catch (error) {
+            console.error('Error sending email:', error);
+            throw new Error('Failed to send email');
+        }
+    }
 }

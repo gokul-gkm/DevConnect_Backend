@@ -9,7 +9,7 @@ import { OTPRepository } from '@/infrastructure/repositories/OTPRepository';
 import { AppError } from '@/domain/errors/AppError';
 
 
-export class RegisterUserUseCase{
+export class RegisterDevUseCase{
     private userRepository: UserRepository;
     private otpRepository: OTPRepository;
     private mailService: MailService;
@@ -71,7 +71,7 @@ export class RegisterUserUseCase{
             email,
             password: hashedPassword,
             contact,
-            role: 'user',
+            role: 'developer',
             isVerified: false,
             verificationExpires: new Date(Date.now()+ 24 * 60 * 60 * 1000)
         });
