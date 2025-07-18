@@ -257,9 +257,9 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       const match = {
         userId: new Types.ObjectId(userId),
         $or: [
-          { sessionDate: { $gt: today } },
+          // { sessionDate: { $gt: today } },
           {
-            sessionDate: { $gte: today, $lt: tomorrow },
+            // sessionDate: { $gte: today, $lt: tomorrow },
             startTime: { $gte: currentDate }
           }
         ],
