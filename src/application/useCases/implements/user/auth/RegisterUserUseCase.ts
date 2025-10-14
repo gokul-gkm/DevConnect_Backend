@@ -11,15 +11,17 @@ import { IOTPRepository } from '@/domain/interfaces/IOTPRepository';
 import { IMailService } from '@/domain/interfaces/IMailService';
 import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 import { IRegisterUserUseCase } from '@/application/useCases/interfaces/user/auth/IRegisterUserUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
-
+@injectable()
 export class RegisterUserUseCase implements IRegisterUserUseCase{
 
     constructor(
-        private _userRepository: IUserRepository,
-        private _otpRepository: IOTPRepository,
-        private _mailService: IMailService,
-        private _walletRepository: IWalletRepository
+        @inject(TYPES.IUserRepository) private _userRepository: IUserRepository,
+        @inject(TYPES.IOTPRepository) private _otpRepository: IOTPRepository,
+        @inject(TYPES.IMailService) private _mailService: IMailService,
+        @inject(TYPES.IWalletRepository) private _walletRepository: IWalletRepository
     ) { }
 
     async execute(userData: RegisterUserDTO): Promise<void> {

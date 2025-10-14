@@ -6,7 +6,9 @@ import { PaginatedResponse, QueryParams } from "@/domain/types/types";
 import { StatusCodes } from "http-status-codes";
 import { BaseRepository } from "./BaseRepository";
 import { ERROR_MESSAGES } from "@/utils/constants";
+import { injectable } from "inversify";
 
+@injectable()
 export class UserRepository extends BaseRepository<IUser> implements IUserRepository{
     constructor() {
         super(User);

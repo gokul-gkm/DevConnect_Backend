@@ -1,7 +1,6 @@
 import { DevPaginatedResponse, DevQueryParams } from "@/domain/types/types";
 import { IDeveloper } from "@/domain/entities/Developer";
 import { AppError } from "@/domain/errors/AppError";
-import { MailService } from "@/infrastructure/mail/MailService";
 import { Types } from "mongoose";
 import { StatusCodes } from "http-status-codes";
 import { ERROR_MESSAGES } from "@/utils/constants";
@@ -10,13 +9,20 @@ import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { IManageDeveloperRequestsUseCase } from "@/application/useCases/interfaces/admin/developers/IManageDeveloperRequestsUseCase";
 import { IMailService } from "@/domain/interfaces/IMailService";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class ManageDeveloperRequestsUseCase implements IManageDeveloperRequestsUseCase {
 
     constructor(
+        @inject(TYPES.IDeveloperRepository)
         private _developerRepository: IDeveloperRepository,
+        @inject(TYPES.IWalletRepository)
         private _walletRepository: IWalletRepository,
+        @inject(TYPES.IS3Service)
         private _s3Service: IS3Service,
+        @inject(TYPES.IMailService)
         private _mailService: IMailService
     ) {
       

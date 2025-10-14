@@ -1,8 +1,10 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { IMailService } from '../../domain/interfaces/IMailService';
+import { injectable } from 'inversify';
 dotenv.config();
 
+@injectable()
 export class MailService implements IMailService {
     private transporter: nodemailer.Transporter;
 

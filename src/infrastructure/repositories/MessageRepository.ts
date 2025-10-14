@@ -4,7 +4,9 @@ import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { BaseRepository } from "./BaseRepository";
+import { injectable } from "inversify";
 
+@injectable()
 export class MessageRepository extends BaseRepository<IMessage> implements IMessageRepository{
 
     constructor() {

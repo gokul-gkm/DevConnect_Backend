@@ -4,10 +4,15 @@ import { StatusCodes } from 'http-status-codes';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { IRejectSessionRequestUseCase } from '@/application/useCases/interfaces/developer/sessions/IRejectSessionRequestUseCase';
 import { INotificationService } from '@/domain/interfaces/INotificationService';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class RejectSessionRequestUseCase implements IRejectSessionRequestUseCase {
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.INotificationService)
     private _notificationService: INotificationService
   ) { }
 

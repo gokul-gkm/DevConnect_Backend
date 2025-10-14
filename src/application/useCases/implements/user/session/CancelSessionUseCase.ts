@@ -5,11 +5,17 @@ import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
 import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class CancelSessionUseCase implements ICancelSessionUseCase {
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.INotificationService)
     private _notificationService: INotificationService,
+    @inject(TYPES.IWalletRepository)
     private _walletRepository: IWalletRepository
   ) {}
 

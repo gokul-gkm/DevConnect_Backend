@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 
+const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
+
 interface DecodedJwt {
     adminId: string;
     iat: number;
@@ -32,11 +34,11 @@ export const adminAuthMiddleware = async (
         try {
             const decodedRefreshToken = jwt.verify(adminRefreshToken, process.env.JWT_ADMIN_REFRESH_SECRET as string) as DecodedJwt;
 
-            const newAdminAccessToken = jwt.sign({ adminId: decodedRefreshToken.adminId }, process.env.JWT_ADMIN_ACCESS_SECRET as string, { expiresIn: '24h' });
+            const newAdminAccessToken = jwt.sign({ adminId: decodedRefreshToken.adminId }, process.env.JWT_ADMIN_ACCESS_SECRET as string, { expiresIn: process.env.ACCESS_EXPIRES_IN });
 
             res.cookie('adminAccessToken', newAdminAccessToken, {
                 httpOnly: true,
-                maxAge: 15 * 60 * 1000
+                maxAge: ACCESS_COOKIE_MAX_AGE
             });
 
             req.adminId = decodedRefreshToken.adminId;

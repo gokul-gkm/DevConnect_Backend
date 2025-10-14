@@ -5,12 +5,15 @@ import { IProjectRepository } from "@/domain/interfaces/IProjectRepository";
 import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { IAddProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IAddProjectUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class AddProjectUseCase implements IAddProjectUseCase {
     constructor(
-        private _projectRepository: IProjectRepository,
-        private _developerRepository: IDeveloperRepository,
-        private _s3Service: IS3Service
+        @inject(TYPES.IProjectRepository) private _projectRepository: IProjectRepository,
+        @inject(TYPES.IDeveloperRepository) private _developerRepository: IDeveloperRepository,
+        @inject(TYPES.IS3Service) private _s3Service: IS3Service
     ) {}
 
     async execute(developerId: string, data: AddProjectDTO): Promise<any> {

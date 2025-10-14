@@ -3,6 +3,8 @@ import { StatusCodes } from "http-status-codes";
 import { IProjectRepository } from "@/domain/interfaces/IProjectRepository";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { IUpdateProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IUpdateProjectUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
 export interface UpdateProjectDTO {
     projectId: string;
@@ -13,10 +15,11 @@ export interface UpdateProjectDTO {
     coverImage?: Express.Multer.File;
 }
 
+@injectable()
 export class UpdateProjectUseCase implements IUpdateProjectUseCase{
     constructor(
-        private _projectRepository: IProjectRepository,
-        private _s3Service: IS3Service
+        @inject(TYPES.IProjectRepository) private _projectRepository: IProjectRepository,
+        @inject(TYPES.IS3Service) private _s3Service: IS3Service
     ) {}
 
     async execute(data: UpdateProjectDTO): Promise<{ [key: string]: any }> {

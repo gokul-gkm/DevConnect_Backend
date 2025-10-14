@@ -1,13 +1,15 @@
-
 import { AppError } from '@/domain/errors/AppError';
+import { IS3Service } from '@/domain/interfaces/IS3Service';
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dotenv from 'dotenv';
 import { StatusCodes } from 'http-status-codes';
+import { injectable } from 'inversify';
 
 dotenv.config();
 
-export class S3Service {
+@injectable()
+export class S3Service implements IS3Service {
     private S3Client: S3Client;
     private bucket: string;
 

@@ -4,7 +4,9 @@ import { IPayment, PaymentModel } from '@/domain/entities/Payment';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { BaseRepository } from './BaseRepository';
+import { injectable } from 'inversify';
 
+@injectable()
 export class PaymentRepository extends BaseRepository<IPayment> implements IPaymentRepository {
   constructor() {
     super(PaymentModel)

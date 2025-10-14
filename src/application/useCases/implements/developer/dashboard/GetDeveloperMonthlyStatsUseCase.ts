@@ -1,9 +1,12 @@
 import { IGetDeveloperMonthlyStatsUseCase } from "@/application/useCases/interfaces/developer/dashboard/IGetDeveloperMonthlyStatsUseCase";
 import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
+import { TYPES } from "@/types/types";
+import { inject, injectable } from "inversify";
 
+@injectable()
 export class GetDeveloperMonthlyStatsUseCase implements IGetDeveloperMonthlyStatsUseCase {
   constructor(
-    private _sessionRepository: ISessionRepository
+    @inject(TYPES.ISessionRepository) private _sessionRepository: ISessionRepository
   ) { }
 
   async execute(developerId: string, year: number) {

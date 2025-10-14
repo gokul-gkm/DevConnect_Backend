@@ -4,17 +4,18 @@ import { IUser } from "@/domain/entities/User";
 import { AppError } from "@/domain/errors/AppError";
 import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
 import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { TYPES } from "@/types/types";
 import bcrypt from 'bcryptjs'
 import { StatusCodes } from "http-status-codes";
+import { inject, injectable } from "inversify";
 import jwt from 'jsonwebtoken'
 
+@injectable()
 export class DevLoginUseCase implements IDevLoginUseCase{
     constructor(
-        private _userRepository: IUserRepository,
-        private _developerRepository: IDeveloperRepository
-    ) {
-        
-    }
+        @inject(TYPES.IUserRepository) private _userRepository: IUserRepository,
+        @inject(TYPES.IDeveloperRepository) private _developerRepository: IDeveloperRepository
+    ) { }
 
     async execute(loginData: LoginUserDTO): Promise<{ accessToken: string; refreshToken: string; user: Omit<IUser, "password">}> {
         const { email, password } = loginData;
@@ -61,7 +62,7 @@ export class DevLoginUseCase implements IDevLoginUseCase{
         const accessToken = jwt.sign(
             { userId: user._id, role: 'developer', developerId: developer._id },
             process.env.JWT_ACCESS_SECRET as string,
-            {expiresIn : "24h"}
+            {expiresIn : process.env.ACCESS_EXPIRES_IN}
         );
         const refreshToken = jwt.sign(
             {
@@ -70,7 +71,7 @@ export class DevLoginUseCase implements IDevLoginUseCase{
                 developerId: developer._id
             },
             process.env.JWT_REFRESH_SECRET as string,
-            {expiresIn: '7d'}
+            {expiresIn: process.env.REFRESH_EXPIRES_IN}
         )
         
         console.log(jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string));

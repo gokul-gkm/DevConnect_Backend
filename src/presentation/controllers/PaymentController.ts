@@ -2,17 +2,8 @@ import { Request, Response } from 'express';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from '@/utils/constants';
-
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
-import { IPaymentRepository } from '@/domain/interfaces/IPaymentRepository';
-import { StripeService } from '@/infrastructure/services/StripeService';
-
-import { CreatePaymentSessionUseCase } from '@/application/useCases/implements/user/payment/CreatePaymentSessionUseCase';
-import { ProcessPaymentWebhookUseCase } from '@/application/useCases/implements/user/payment/ProcessPaymentWebhookUseCase';
-import { TransferToDevWalletUseCase } from '@/application/useCases/implements/user/payment/TransferToDevWalletUseCase';
-import { GetWalletDetailsUseCase } from '@/application/useCases/implements/user/payment/GetWalletDetailsUseCase';
-import { GetAdminWalletDetailsUseCase } from '@/application/useCases/implements/user/payment/GetAdminWalletDetailsUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
 import { ICreatePaymentSessionUseCase } from '@/application/useCases/interfaces/user/payment/ICreatePaymentSessionUseCase';
 import { IProcessPaymentWebhookUseCase } from '@/application/useCases/interfaces/user/payment/IProcessPaymentWebhookUseCase';
@@ -20,43 +11,25 @@ import { ITransferToDevWalletUseCase } from '@/application/useCases/interfaces/u
 import { IGetWalletDetailsUseCase } from '@/application/useCases/interfaces/user/payment/IGetWalletDetailsUseCase';
 import { IGetAdminWalletDetailsUseCase } from '@/application/useCases/interfaces/user/payment/IGetAdminWalletDetailsUseCase';
 
+@injectable()
 export class PaymentController {
-  private _createPaymentSessionUseCase: ICreatePaymentSessionUseCase;
-  private _processPaymentWebhookUseCase: IProcessPaymentWebhookUseCase;
-  private _transferToDevWalletUseCase: ITransferToDevWalletUseCase;
-  private _getWalletDetailsUseCase: IGetWalletDetailsUseCase;
-  private _getAdminWalletDetailsUseCase: IGetAdminWalletDetailsUseCase;
 
   constructor(
-    private _sessionRepository: ISessionRepository,
-    private _walletRepository: IWalletRepository,
-    private _paymentRepository: IPaymentRepository
-  ) {
-    const stripeService = new StripeService(
-      _paymentRepository,
-      _walletRepository,
-      _sessionRepository
-    );
+    @inject(TYPES.ICreatePaymentSessionUseCase)
+    private _createPaymentSessionUseCase: ICreatePaymentSessionUseCase,
 
-    this._createPaymentSessionUseCase = new CreatePaymentSessionUseCase(
-      stripeService,
-      _sessionRepository
-    );
+    @inject(TYPES.IProcessPaymentWebhookUseCase)
+    private _processPaymentWebhookUseCase: IProcessPaymentWebhookUseCase,
 
-    this._processPaymentWebhookUseCase = new ProcessPaymentWebhookUseCase(
-      stripeService
-    );
+    @inject(TYPES.ITransferToDevWalletUseCase)
+    private _transferToDevWalletUseCase: ITransferToDevWalletUseCase,
 
-    this._transferToDevWalletUseCase = new TransferToDevWalletUseCase(
-      _sessionRepository,
-      _walletRepository,
-    );
+    @inject(TYPES.IGetWalletDetailsUseCase)
+    private _getWalletDetailsUseCase: IGetWalletDetailsUseCase,
 
-    this._getWalletDetailsUseCase = new GetWalletDetailsUseCase(
-      _walletRepository
-    );
-    this._getAdminWalletDetailsUseCase = new GetAdminWalletDetailsUseCase(_walletRepository)
-  }
+    @inject(TYPES.IGetAdminWalletDetailsUseCase)
+    private _getAdminWalletDetailsUseCase: IGetAdminWalletDetailsUseCase
+  ) {}
 
   async createPaymentSession(req: Request, res: Response): Promise<void> {
     try {

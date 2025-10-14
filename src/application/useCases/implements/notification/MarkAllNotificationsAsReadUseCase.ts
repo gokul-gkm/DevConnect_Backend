@@ -3,10 +3,15 @@ import { INotificationRepository } from '@/domain/interfaces/INotificationReposi
 import { ISocketService } from '@/domain/interfaces/ISocketService';
 import { StatusCodes } from 'http-status-codes';
 import { IMarkAllNotificationsAsReadUseCase } from '../../interfaces/notification/IMarkAllNotificationsAsReadUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class MarkAllNotificationsAsReadUseCase implements IMarkAllNotificationsAsReadUseCase {
   constructor(
+    @inject(TYPES.INotificationRepository)
     private _notificationRepository: INotificationRepository,
+    @inject(TYPES.ISocketService)
     private _socketService: ISocketService
   ) {}
 

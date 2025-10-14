@@ -4,10 +4,15 @@ import { StatusCodes } from "http-status-codes";
 import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { ISearchDevelopersUseCase } from "@/application/useCases/interfaces/user/developers/ISearchDevelopersUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class SearchDevelopersUseCase implements ISearchDevelopersUseCase {
     constructor(
+        @inject(TYPES.IDeveloperRepository)
         private _developerRepository: IDeveloperRepository,
+        @inject(TYPES.IS3Service)
         private _s3Service: IS3Service
     ) {}
 

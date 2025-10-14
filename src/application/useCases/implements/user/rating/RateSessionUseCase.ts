@@ -5,6 +5,8 @@ import { StatusCodes } from 'http-status-codes';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { INotificationService } from '@/domain/interfaces/INotificationService';
 import { IRateSessionUseCase } from '@/application/useCases/interfaces/user/rating/IRateSessionUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
 export interface RateSessionParams {
   userId: string;
@@ -14,10 +16,14 @@ export interface RateSessionParams {
   isUpdate?: boolean;
 }
 
+@injectable()
 export class RateSessionUseCase implements IRateSessionUseCase {
   constructor(
+    @inject(TYPES.IRatingRepository)
     private _ratingRepository: IRatingRepository,
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.INotificationService)
     private _notificationService: INotificationService
   ) {}
 

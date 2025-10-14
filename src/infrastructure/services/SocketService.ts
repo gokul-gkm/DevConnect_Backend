@@ -1,36 +1,40 @@
 import { Server as SocketServer } from 'socket.io';
+import { Server as HttpServer } from "http";
 import { Server } from 'http';
 import jwt from 'jsonwebtoken';
 import logger from '@/utils/logger';
 import { ISocketService } from '@/domain/interfaces/ISocketService';
+import { inject, injectable } from 'inversify';
 
-const DEBUG = true;
-
-function debugLog(component: string, message: string, data?: any) {
-  if (DEBUG) {
-    console.log(`[Backend:${component}] ${message}`, data || '');
-  }
-}
-
-interface SocketData {
-  userId?: string;
-  role?: string;
-  developerId?: string;
-}
-
+@injectable()
 export class SocketService implements ISocketService {
-  private static instance: SocketService | null = null; 
+//   private static instance: SocketService | null = null; 
+//   private io: SocketServer;
+//   private userSockets: Map<string, Set<string>> = new Map();
+//   private developerSockets: Map<string, Set<string>> = new Map();
+//   private webRTCRooms: Map<string, Set<string>> = new Map();
+//   private connectionStates: Map<string, string> = new Map();
+
+//   private constructor(server: Server, io: SocketServer) {
+//     this.io = io;
+//     this.setupMiddleware();
+//     this.setupEventHandlers();
+  // }
+  private static instance: SocketService; 
   private io: SocketServer;
   private userSockets: Map<string, Set<string>> = new Map();
   private developerSockets: Map<string, Set<string>> = new Map();
   private webRTCRooms: Map<string, Set<string>> = new Map();
   private connectionStates: Map<string, string> = new Map();
 
-  private constructor(server: Server, io: SocketServer) {
-    this.io = io;
+  constructor(
+    @inject('HttpServer') private server: HttpServer,
+    @inject('SocketServer') io?: SocketServer 
+  ) {
+    this.io = io || new SocketServer(this.server, { /* options */ });
     this.setupMiddleware();
     this.setupEventHandlers();
-}
+  }
 
   public static getInstance(server?: Server, io?: SocketServer): SocketService {
     if (!SocketService.instance && server && io) {

@@ -1,22 +1,13 @@
 import { Router } from "express";
 import { AuthController } from "@/presentation/controllers/AuthController";
-import { UserRepository } from "@/infrastructure/repositories/UserRepository";
-import { MailService } from "@/infrastructure/mail/MailService";
-import { OTPRepository } from "@/infrastructure/repositories/OTPRepository";
 import { GoogleAuthController } from "../controllers/GoogleAuthController";
-import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
+import { TYPES } from "@/types/types";
+import { container } from "@/infrastructure/config/inversify.config";
 
 const authRouter = Router();
 
-const userRepository = new UserRepository();
-const otpRepository = new OTPRepository();
-const mailService = new MailService();
-const walletRepository = new WalletRepository();
-
-
-const authController = new AuthController(userRepository, otpRepository, mailService, walletRepository);
-
-const googleAuthController = new GoogleAuthController(userRepository, walletRepository);
+const authController = container.get<AuthController>(TYPES.AuthController);
+const googleAuthController = container.get<GoogleAuthController>(TYPES.GoogleAuthController);
 
 authRouter.post('/register', async (req, res) => {
     await authController.register(req, res);

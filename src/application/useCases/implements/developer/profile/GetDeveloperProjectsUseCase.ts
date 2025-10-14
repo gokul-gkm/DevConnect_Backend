@@ -4,16 +4,19 @@ import { ERROR_MESSAGES } from "@/utils/constants";
 import { IProjectRepository } from "@/domain/interfaces/IProjectRepository";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { IGetDeveloperProjectsUseCase } from "@/application/useCases/interfaces/developer/profile/IGetDeveloperProjectsUseCase";
+import { TYPES } from "@/types/types";
+import { inject, injectable } from "inversify";
 
 export interface PaginationParams {
     page?: number;
     limit?: number;
 }
 
+@injectable()
 export class GetDeveloperProjectsUseCase implements IGetDeveloperProjectsUseCase {
     constructor(
-        private _projectRepository: IProjectRepository,
-        private _s3Service: IS3Service
+        @inject(TYPES.IProjectRepository) private _projectRepository: IProjectRepository,
+        @inject(TYPES.IS3Service) private _s3Service: IS3Service
     ) { }
 
     async execute(userId: string, { page = 1, limit = 5 }: PaginationParams = {}) {

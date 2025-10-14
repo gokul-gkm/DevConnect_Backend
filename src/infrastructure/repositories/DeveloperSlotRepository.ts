@@ -6,7 +6,9 @@ import { StatusCodes } from "http-status-codes";
 import { startOfDay, endOfDay } from "date-fns";
 import Developer from "@/domain/entities/Developer";
 import { BaseRepository } from "./BaseRepository";
+import { injectable } from "inversify";
 
+@injectable()
 export class DeveloperSlotRepository extends BaseRepository<IDeveloperSlot> implements IDeveloperSlotRepository {
   constructor() {
     super(DeveloperSlot)

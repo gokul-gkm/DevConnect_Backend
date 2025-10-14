@@ -3,13 +3,16 @@ import { ILoginUserUseCase } from "@/application/useCases/interfaces/user/auth/I
 import { IUser } from "@/domain/entities/User";
 import { AppError } from "@/domain/errors/AppError";
 import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { TYPES } from "@/types/types";
 import bcrypt from 'bcryptjs'
 import { StatusCodes } from "http-status-codes";
+import { inject, injectable } from "inversify";
 import jwt from 'jsonwebtoken'
 
+@injectable()
 export class LoginUserUseCase implements ILoginUserUseCase{
     constructor(
-        private _userRepository: IUserRepository
+        @inject(TYPES.IUserRepository) private _userRepository: IUserRepository
     ) { }
 
     async execute(loginData: LoginUserDTO): Promise<{ accessToken: string; refreshToken: string; user: Omit<IUser, "password">}> {
@@ -36,12 +39,12 @@ export class LoginUserUseCase implements ILoginUserUseCase{
         const accessToken = jwt.sign(
             { userId: user._id, role: user.role },
             process.env.JWT_ACCESS_SECRET as string,
-            {expiresIn : "24h"}
+            {expiresIn : process.env.ACCESS_EXPIRES_IN}
         );
         const refreshToken = jwt.sign(
             { userId: user._id, role: 'user' },
             process.env.JWT_REFRESH_SECRET as string,
-            {expiresIn: '7d'}
+            {expiresIn: process.env.REFRESH_EXPIRES_IN}
         )
         
         console.log(jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string));

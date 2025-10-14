@@ -1,4 +1,3 @@
-
 import { SessionDetails } from '@/domain/types/session';
 import { AppError } from '@/domain/errors/AppError';
 import { Types } from 'mongoose';
@@ -7,11 +6,17 @@ import { IRatingRepository } from '@/domain/interfaces/IRatingRepository';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { IS3Service } from '@/domain/interfaces/IS3Service';
 import { IGetSessionDetailsUseCase } from '@/application/useCases/interfaces/user/session/IGetSessionDetailsUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class GetSessionDetailsUseCase implements IGetSessionDetailsUseCase {
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.IS3Service)
     private _s3Service: IS3Service,
+    @inject(TYPES.IRatingRepository)
     private _ratingRepository: IRatingRepository
   ) { }
 

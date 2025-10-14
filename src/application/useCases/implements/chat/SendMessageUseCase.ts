@@ -7,12 +7,19 @@ import mongoose from "mongoose";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { ISocketService } from "@/domain/interfaces/ISocketService";
 import { ISendMessageUseCase } from "../../interfaces/chat/ISendMessageUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class SendMessageUseCase implements ISendMessageUseCase {
     constructor(
+        @inject(TYPES.IMessageRepository)
         private _messageRepository: IMessageRepository,
+        @inject(TYPES.IChatRepository)
         private _chatRepository: IChatRepository,
+        @inject(TYPES.ISocketService)
         private _socketService: ISocketService,
+        @inject(TYPES.IS3Service)
         private _s3Service: IS3Service
     ) { }
     

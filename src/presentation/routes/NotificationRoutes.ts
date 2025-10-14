@@ -1,16 +1,13 @@
 import { Router } from 'express';
 import { NotificationController } from '../controllers/NotificationController';
-import { NotificationRepository } from '@/infrastructure/repositories/NotificationRepositoty';
-import { SocketService } from '@/infrastructure/services/SocketService';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { autherization } from '../middleware/autherization';
+import { container } from '@/infrastructure/config/inversify.config';
+import { TYPES } from '@/types/types';
 
 export const createNotificationRouter = () => {
   const notificationRouter = Router();
-  const notificationRepository = new NotificationRepository();
-  const socketService = SocketService.getInstance();
-  
-  const notificationController = new NotificationController(notificationRepository, socketService);
+  const notificationController = container.get<NotificationController>(TYPES.NotificationController);
 
   notificationRouter.use(authMiddleware, autherization);
 

@@ -1,19 +1,20 @@
-import { OTPRepository } from "@/infrastructure/repositories/OTPRepository";
 import { VerifyOTPDTO } from "@/application/dto/VerifyOTPDTO";
 import { AppError } from "@/domain/errors/AppError";
-import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { StatusCodes } from "http-status-codes";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { IOTPRepository } from "@/domain/interfaces/IOTPRepository";
 import { IUserRepository } from "@/domain/interfaces/IUserRepository";
 import { IVerifyOTPUseCase } from "@/application/useCases/interfaces/user/auth/IVerifyOTPUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class VerifyOTPUseCase implements IVerifyOTPUseCase {
 
     constructor(
-        private _otpRepository: IOTPRepository,
-        private _userRepository: IUserRepository) {
-    }
+        @inject(TYPES.IOTPRepository) private _otpRepository: IOTPRepository,
+        @inject(TYPES.IUserRepository) private _userRepository: IUserRepository
+    ) { }
 
     async execute({ email, otp } : VerifyOTPDTO){
         const otpRecord = await this._otpRepository.findByEmail(email);

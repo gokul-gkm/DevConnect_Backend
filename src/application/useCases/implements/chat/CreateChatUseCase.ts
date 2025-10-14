@@ -3,9 +3,13 @@ import { AppError } from "@/domain/errors/AppError";
 import { IChatRepository } from "@/domain/interfaces/IChatRepository";
 import { StatusCodes } from "http-status-codes";
 import { ICreateChatUseCase } from "../../interfaces/chat/ICreateChatUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class CreateChatUseCase implements ICreateChatUseCase {
     constructor(
+        @inject(TYPES.IChatRepository)
         private _chatRepository: IChatRepository
     ) { }
     

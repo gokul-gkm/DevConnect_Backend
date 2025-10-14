@@ -2,16 +2,8 @@ import { Request, Response } from "express";
 import { StatusCodes } from 'http-status-codes';
 import { AppError } from "@/domain/errors/AppError";
 import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from "@/utils/constants";
-
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-
-import { GetPublicProfileUseCase } from "@/application/useCases/implements/user/developers/GetPublicProfileUseCase";
-import { SearchDevelopersUseCase } from "@/application/useCases/implements/user/developers/SearchDevelopersUseCase";
-import { ChangeUserPasswordUseCase } from "@/application/useCases/implements/user/profile/ChangeUserPasswordUseCase";
-import { GetUserProfileUseCase } from "@/application/useCases/implements/user/profile/GetUserProfileUseCase";
-import { UpdateUserProfileUseCase } from "@/application/useCases/implements/user/profile/UpdateUserProfileUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
 import { IGetPublicProfileUseCase } from "@/application/useCases/interfaces/user/developers/IGetPublicProfileUseCase";
 import { ISearchDevelopersUseCase } from "@/application/useCases/interfaces/user/developers/ISearchDevelopersUseCase";
@@ -20,23 +12,23 @@ import { IGetUserProfileUseCase } from "@/application/useCases/interfaces/user/p
 import { IUpdateUserProfileUseCase } from "@/application/useCases/interfaces/user/profile/IUpdateUserProfileUseCase";
 
 
+@injectable()
 export class UserController {
-    private _getUserProfileUseCase: IGetUserProfileUseCase;
-    private _updateUserProfileUseCase: IUpdateUserProfileUseCase;
-    private _searchDevelopersUseCase: ISearchDevelopersUseCase;
-    private _getPublicProfileUseCase: IGetPublicProfileUseCase;
-    private _changeUserPasswordUseCase: IChangeUserPasswordUseCase;
-    constructor(
-        private _userRepository: IUserRepository,
-        private _developerRepository: IDeveloperRepository,
-        private _s3Service: IS3Service,
-    ) {
-        this._getUserProfileUseCase = new GetUserProfileUseCase(_userRepository,_s3Service)
-        this._updateUserProfileUseCase = new UpdateUserProfileUseCase(_userRepository, _s3Service);
-        this._searchDevelopersUseCase = new SearchDevelopersUseCase(_developerRepository, _s3Service)
-        this._getPublicProfileUseCase = new GetPublicProfileUseCase(_developerRepository, _s3Service);
-        this._changeUserPasswordUseCase = new ChangeUserPasswordUseCase(_userRepository)
-     }
+
+     constructor(
+        @inject(TYPES.IGetUserProfileUseCase)
+        private _getUserProfileUseCase: IGetUserProfileUseCase,
+        @inject(TYPES.IUpdateUserProfileUseCase)
+        private _updateUserProfileUseCase: IUpdateUserProfileUseCase,
+        @inject(TYPES.ISearchDevelopersUseCase)
+        private _searchDevelopersUseCase: ISearchDevelopersUseCase,
+        @inject(TYPES.IGetPublicProfileUseCase)
+        private _getPublicProfileUseCase: IGetPublicProfileUseCase,
+        @inject(TYPES.IChangeUserPasswordUseCase)
+        private _changeUserPasswordUseCase: IChangeUserPasswordUseCase,
+      ) {}
+    
+
     
     async getProfile(req: Request, res: Response) {
         try {

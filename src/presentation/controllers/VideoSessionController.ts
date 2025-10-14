@@ -1,56 +1,35 @@
 import { Request, Response } from 'express';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
-import { Types } from 'mongoose';
 import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from '@/utils/constants';
-
-import { IVideoSessionRepository } from '@/domain/interfaces/IVideoSessionRepository';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { ISocketService } from '@/domain/interfaces/ISocketService';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
-
-import { InitVideoSessionUseCase } from '@/application/useCases/implements/video/InitVideoSessionUseCase';
-import { JoinVideoSessionUseCase } from '@/application/useCases/implements/video/JoinVideoSessionUseCase';
-import { EndVideoSessionUseCase } from '@/application/useCases/implements/video/EndVideoSessionUseCase'; 
-import { LeaveVideoSessionUseCase } from '@/application/useCases/implements/video/LeaveVideoSessionUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
 import { IInitVideoSessionUseCase } from '@/application/useCases/interfaces/video/IInitVideoSessionUseCase';
 import { IJoinVideoSessionUseCase } from '@/application/useCases/interfaces/video/IJoinVideoSessionUseCase';
 import { IEndVideoSessionUseCase } from '@/application/useCases/interfaces/video/IEndVideoSessionUseCase';
 import { ILeaveVideoSessionUseCase } from '@/application/useCases/interfaces/video/ILeaveVideoSessionUseCase';
+import { IGetVideoSessionUseCase } from '@/application/useCases/interfaces/video/IGetVideoSessionUseCase';
 
+@injectable()
 export class VideoSessionController {
-    private _initVideoSessionUseCase: IInitVideoSessionUseCase;
-    private _joinVideoSessionUseCase: IJoinVideoSessionUseCase;
-    private _endVideoSessionUseCase: IEndVideoSessionUseCase;
-    private _leaveVideoSessionUseCase: ILeaveVideoSessionUseCase;
 
     constructor(
-        private _videoSessionRepository: IVideoSessionRepository,
-        private _sessionRepository: ISessionRepository,
-        private _socketService: ISocketService,
-        private _walletRepository: IWalletRepository
-    ) {
-        this._initVideoSessionUseCase = new InitVideoSessionUseCase(
-            _videoSessionRepository,
-            _sessionRepository,
-            _socketService
-        );
-        this._joinVideoSessionUseCase = new JoinVideoSessionUseCase(
-            _videoSessionRepository,
-            _socketService
-        );
-        this._endVideoSessionUseCase = new EndVideoSessionUseCase(
-            _videoSessionRepository,
-            _sessionRepository,
-            _socketService,
-            _walletRepository
-        );
-        this._leaveVideoSessionUseCase = new LeaveVideoSessionUseCase(
-            _videoSessionRepository,
-            _socketService
-        );
-    }
+        @inject(TYPES.IInitVideoSessionUseCase)
+        private _initVideoSessionUseCase: IInitVideoSessionUseCase,
+
+        @inject(TYPES.IJoinVideoSessionUseCase)
+        private _joinVideoSessionUseCase: IJoinVideoSessionUseCase,
+
+        @inject(TYPES.IEndVideoSessionUseCase)
+        private _endVideoSessionUseCase: IEndVideoSessionUseCase,
+
+        @inject(TYPES.ILeaveVideoSessionUseCase)
+        private _leaveVideoSessionUseCase: ILeaveVideoSessionUseCase,
+
+        @inject(TYPES.IGetVideoSessionUseCase)
+        private _getVideoSessionUseCase: IGetVideoSessionUseCase
+    ) {}
 
     async initVideoSession(req: Request, res: Response) {
         try {
@@ -122,9 +101,8 @@ export class VideoSessionController {
     async getVideoSessionDetails(req: Request, res: Response) {
         try {
             const { sessionId } = req.params;
-            const videoSession = await this._videoSessionRepository.getVideoSessionBySessionId(
-                new Types.ObjectId(sessionId)
-            );
+
+            const videoSession = await this._getVideoSessionUseCase.execute(sessionId);
 
             if (!videoSession) {
                 throw new AppError("Video session not found", StatusCodes.NOT_FOUND);
@@ -145,9 +123,8 @@ export class VideoSessionController {
     async getVideoSessionStatus(req: Request, res: Response) {
         try {
             const { sessionId } = req.params;
-            const videoSession = await this._videoSessionRepository.getVideoSessionBySessionId(
-                new Types.ObjectId(sessionId)
-            );
+
+            const videoSession = await this._getVideoSessionUseCase.execute(sessionId);
 
             if (!videoSession) {
                 return res.status(StatusCodes.OK).json({ 

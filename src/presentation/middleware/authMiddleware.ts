@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 
+const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
+
 interface DecodedJwt {
     userId: string;
     role: string;
@@ -37,14 +39,17 @@ export const authMiddleware = (
             const decodedRefreshToken = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as DecodedJwt;
 
             const newAccessToken = jwt.sign(
-                { userId: decodedRefreshToken.userId, role: decodedRefreshToken.role }, 
+                {
+                    userId: decodedRefreshToken.userId,
+                    role: decodedRefreshToken.role
+                }, 
                 process.env.JWT_ACCESS_SECRET as string, 
-                { expiresIn: '24h' }
+                { expiresIn: process.env.ACCESS_EXPIRES_IN }
             );
 
             res.cookie('accessToken', newAccessToken, {
                 httpOnly: true,
-                maxAge: 24 * 60 * 60 * 1000
+                maxAge: ACCESS_COOKIE_MAX_AGE
             });
 
             req.userId = decodedRefreshToken.userId;

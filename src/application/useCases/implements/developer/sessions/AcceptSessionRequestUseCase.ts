@@ -5,11 +5,17 @@ import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { ISocketService } from '@/domain/interfaces/ISocketService';
 import { IAcceptSessionRequestUseCase } from '@/application/useCases/interfaces/developer/sessions/IAcceptSessionRequestUseCase';
 import { INotificationService } from '@/domain/interfaces/INotificationService';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class AcceptSessionRequestUseCase implements IAcceptSessionRequestUseCase {
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.INotificationService)
     private _notificationService: INotificationService,
+    @inject(TYPES.ISocketService)
     private _socketService: ISocketService
   ) {}
 

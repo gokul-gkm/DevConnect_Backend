@@ -8,6 +8,7 @@ import { StatusCodes } from 'http-status-codes';
 import mongoose, { Types } from 'mongoose';
 import DeveloperSlot from '@/domain/entities/Slot';
 import { BaseRepository } from './BaseRepository';
+import { injectable } from 'inversify';
 
 interface PopulatedUser {
   _id: Types.ObjectId;
@@ -28,7 +29,7 @@ interface PopulatedDeveloper {
 }
 
 
-
+@injectable()
 export class SessionRepository extends BaseRepository<ISession> implements ISessionRepository  {
 
   constructor() {
@@ -257,9 +258,9 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       const match = {
         userId: new Types.ObjectId(userId),
         $or: [
-          { sessionDate: { $gt: today } },
+          // { sessionDate: { $gt: today } },
           {
-            sessionDate: { $gte: today, $lt: tomorrow },
+            // sessionDate: { $gte: today, $lt: tomorrow },
             startTime: { $gte: currentDate }
           }
         ],

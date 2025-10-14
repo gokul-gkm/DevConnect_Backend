@@ -4,10 +4,15 @@ import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 import { ISocketService } from "@/domain/interfaces/ISocketService";
 import { IJoinVideoSessionUseCase } from "../../interfaces/video/IJoinVideoSessionUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class JoinVideoSessionUseCase implements IJoinVideoSessionUseCase {
     constructor(
+        @inject(TYPES.IVideoSessionRepository)
         private _videoSessionRepository: IVideoSessionRepository,
+        @inject(TYPES.ISocketService)
         private _socketService: ISocketService
     ) {}
 

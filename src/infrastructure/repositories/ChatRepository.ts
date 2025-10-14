@@ -4,8 +4,10 @@ import { IChatRepository } from "@/domain/interfaces/IChatRepository";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { BaseRepository } from "./BaseRepository";
+import { injectable } from "inversify";
+import { IPopulatedChat } from "@/domain/interfaces/IUserRefs";
 
-
+@injectable()
 export class ChatRepository extends BaseRepository<IChat> implements IChatRepository {
 
     constructor() {
@@ -44,23 +46,25 @@ export class ChatRepository extends BaseRepository<IChat> implements IChatReposi
         }
     }
 
-    async getUserChats(userId: string): Promise<IChat[]> {
+    async getUserChats(userId: string): Promise<IPopulatedChat[]> {
         try {
-            return await Chat.find({ userId })
+            const chats =  await Chat.find({ userId })
                 .populate('userId', 'username profilePicture')
                 .populate('developerId', 'username profilePicture')
-                .sort({lastMessageTime: -1})
+                .sort({ lastMessageTime: -1 })
+            return chats.map(chat => chat as unknown as IPopulatedChat);
         } catch (error) {
             throw new AppError('Failed to get user chats', StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }
 
-    async getDeveloperChats(developerId: string): Promise<IChat[]> {
+    async getDeveloperChats(developerId: string): Promise<IPopulatedChat[]> {
         try {
-            return await Chat.find({ developerId })
+            const chats =  await Chat.find({ developerId })
                 .populate('userId', 'username profilePicture')
                 .populate('developerId', 'username profilePicture')
                 .sort({ lastMessageTime: -1 })
+            return chats.map(chat => chat as unknown as IPopulatedChat);
         } catch (error) {
             throw new AppError('Failed to get developer chats', StatusCodes.INTERNAL_SERVER_ERROR)
         }

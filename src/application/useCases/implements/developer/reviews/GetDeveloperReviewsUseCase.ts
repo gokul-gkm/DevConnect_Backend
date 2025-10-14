@@ -1,10 +1,14 @@
 import { IGetDeveloperReviewsUseCase } from '@/application/useCases/interfaces/developer/reviews/IGetDeveloperReviewsUseCase';
 import { IRatingRepository } from '@/domain/interfaces/IRatingRepository';
 import { IS3Service } from '@/domain/interfaces/IS3Service';
+import { TYPES } from '@/types/types';
+import { inject, injectable } from 'inversify';
+
+@injectable()
 export class GetDeveloperReviewsUseCase implements IGetDeveloperReviewsUseCase {
   constructor(
-    private _ratingRepository: IRatingRepository,
-    private _s3Service: IS3Service
+    @inject(TYPES.IRatingRepository) private _ratingRepository: IRatingRepository,
+    @inject(TYPES.IS3Service) private _s3Service: IS3Service
   ) {}
   
   async execute(

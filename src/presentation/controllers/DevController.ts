@@ -2,26 +2,8 @@ import { Request, Response } from "express";
 import { StatusCodes } from 'http-status-codes';
 import { AppError } from "@/domain/errors/AppError";
 import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from "@/utils/constants";
-
-import { IDeveloperSlotRepository } from "@/domain/interfaces/IDeveloperSlotRepository";
-import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
-import { IRatingRepository } from "@/domain/interfaces/IRatingRepository";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IProjectRepository } from "@/domain/interfaces/IProjectRepository";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-
-import { AddProjectUseCase } from "@/application/useCases/implements/developer/profile/AddProjectUseCase";
-import { DeleteProjectUseCase } from "@/application/useCases/implements/developer/profile/DeleteProjectUseCase";
-import { GetDeveloperProfileUseCase } from "@/application/useCases/implements/developer/profile/GetDeveloperProfileUseCase";
-import { GetDeveloperProjectsUseCase } from "@/application/useCases/implements/developer/profile/GetDeveloperProjectsUseCase";
-import { UpdateDeveloperProfileUseCase } from "@/application/useCases/implements/developer/profile/UpdateDeveloperProfileUseCase";
-import { UpdateProjectUseCase } from "@/application/useCases/implements/developer/profile/UpdateProjectUseCase";
-import { ManageDeveloperUnavailabilityUseCase } from "@/application/useCases/implements/developer/availability/ManageDeveloperUnavailabilityUseCase";
-import { ManageDefaultSlotsUseCase } from "@/application/useCases/implements/developer/availability/ManageDefaultSlotsUseCase";
-import { GetDeveloperReviewsUseCase } from "@/application/useCases/implements/developer/reviews/GetDeveloperReviewsUseCase";
-import { GetDeveloperMonthlyStatsUseCase } from "@/application/useCases/implements/developer/dashboard/GetDeveloperMonthlyStatsUseCase";
-import { GetDeveloperUpcomingSessionsUseCase } from "@/application/useCases/implements/developer/dashboard/GetDeveloperUpcomingSessionsUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
 import { IGetDeveloperProfileUseCase } from "@/application/useCases/interfaces/developer/profile/IGetDeveloperProfileUseCase";
 import { IUpdateDeveloperProfileUseCase } from "@/application/useCases/interfaces/developer/profile/IUpdateDeveloperProfileUseCase";
@@ -34,48 +16,42 @@ import { IManageDefaultSlotsUseCase } from "@/application/useCases/interfaces/de
 import { IGetDeveloperReviewsUseCase } from "@/application/useCases/interfaces/developer/reviews/IGetDeveloperReviewsUseCase";
 import { IGetDeveloperMonthlyStatsUseCase } from "@/application/useCases/interfaces/developer/dashboard/IGetDeveloperMonthlyStatsUseCase";
 import { IGetDeveloperUpcomingSessionsUseCase } from "@/application/useCases/interfaces/developer/dashboard/IGetDeveloperUpcomingSessionsUseCase";
+import { IGetDeveloperProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IGetDeveloperProjectUseCase";
 
 interface MulterFiles {
     profilePicture?: Express.Multer.File[];
     resume?: Express.Multer.File[];
 }
   
-
+@injectable()
 export class DevController {
-    private _getDeveloperProfileUseCase: IGetDeveloperProfileUseCase;
-    private _updateDeveloperProfileUseCase: IUpdateDeveloperProfileUseCase;
-    private _addProjectUseCase: IAddProjectUseCase;
-    private _getDeveloperProjectsUseCase: IGetDeveloperProjectsUseCase;
-    private _updateProjectUseCase: IUpdateProjectUseCase;
-    private _deleteProjectUseCase: IDeleteProjectUseCase;
-    private _manageDeveloperUnavailabilityUseCase: IManageDeveloperUnavailabilityUseCase;
-    private _manageDefaultSlotsUseCase: IManageDefaultSlotsUseCase;
-    private _getDeveloperReviewsUseCase: IGetDeveloperReviewsUseCase;
-    private _getDeveloperMonthlyStatsUseCase: IGetDeveloperMonthlyStatsUseCase;
-    private _getDeveloperUpcomingSessionsUseCase: IGetDeveloperUpcomingSessionsUseCase;
     
-
-    constructor(
-        private _userRepository: IUserRepository,
-        private _developerRepository: IDeveloperRepository,
-        private _projectRepository: IProjectRepository,
-        private _s3Service: IS3Service,
-        private _developerSlotRepository: IDeveloperSlotRepository,
-        private _sessionRepository: ISessionRepository,
-        private _ratingRepository: IRatingRepository
-    ) {
-        this._getDeveloperProfileUseCase = new GetDeveloperProfileUseCase(_userRepository, _developerRepository,_s3Service),
-        this._updateDeveloperProfileUseCase = new UpdateDeveloperProfileUseCase(_userRepository, _developerRepository, _s3Service),
-        this._addProjectUseCase = new AddProjectUseCase(_projectRepository, _developerRepository, _s3Service),
-        this._getDeveloperProjectsUseCase = new GetDeveloperProjectsUseCase(_projectRepository,_s3Service)
-        this._updateProjectUseCase = new UpdateProjectUseCase(_projectRepository, _s3Service);
-        this._deleteProjectUseCase = new DeleteProjectUseCase( _projectRepository, _developerRepository, _s3Service);
-        this._manageDeveloperUnavailabilityUseCase = new  ManageDeveloperUnavailabilityUseCase(_developerSlotRepository, _sessionRepository)
-        this._manageDefaultSlotsUseCase = new ManageDefaultSlotsUseCase(_developerRepository);
-        this._getDeveloperReviewsUseCase = new GetDeveloperReviewsUseCase(_ratingRepository, _s3Service)
-        this._getDeveloperMonthlyStatsUseCase = new GetDeveloperMonthlyStatsUseCase(_sessionRepository);
-        this._getDeveloperUpcomingSessionsUseCase = new GetDeveloperUpcomingSessionsUseCase(_sessionRepository,_s3Service);
-     }
+      constructor(
+          @inject(TYPES.IGetDeveloperProfileUseCase)
+          private _getDeveloperProfileUseCase: IGetDeveloperProfileUseCase,
+          @inject(TYPES.IUpdateDeveloperProfileUseCase)
+          private _updateDeveloperProfileUseCase: IUpdateDeveloperProfileUseCase,
+          @inject(TYPES.IAddProjectUseCase)
+          private _addProjectUseCase: IAddProjectUseCase,
+          @inject(TYPES.IGetDeveloperProjectsUseCase)
+          private _getDeveloperProjectsUseCase: IGetDeveloperProjectsUseCase,
+          @inject(TYPES.IGetDeveloperProjectUseCase)
+          private _getDeveloperProjectUseCase: IGetDeveloperProjectUseCase,
+          @inject(TYPES.IUpdateProjectUseCase)
+          private _updateProjectUseCase: IUpdateProjectUseCase,
+          @inject(TYPES.IDeleteProjectUseCase)
+          private _deleteProjectUseCase: IDeleteProjectUseCase,
+          @inject(TYPES.IManageDeveloperUnavailabilityUseCase)
+          private _manageDeveloperUnavailabilityUseCase: IManageDeveloperUnavailabilityUseCase,
+          @inject(TYPES.IManageDefaultSlotsUseCase)
+          private _manageDefaultSlotsUseCase: IManageDefaultSlotsUseCase,
+          @inject(TYPES.IGetDeveloperReviewsUseCase)
+          private _getDeveloperReviewsUseCase: IGetDeveloperReviewsUseCase,
+          @inject(TYPES.IGetDeveloperMonthlyStatsUseCase)
+          private _getDeveloperMonthlyStatsUseCase: IGetDeveloperMonthlyStatsUseCase,
+          @inject(TYPES.IGetDeveloperUpcomingSessionsUseCase)
+          private _getDeveloperUpcomingSessionsUseCase: IGetDeveloperUpcomingSessionsUseCase,
+        ) {}
     
     async getProfile(req: Request, res: Response) {
         try {
@@ -222,14 +198,7 @@ export class DevController {
     async getProject(req: Request, res: Response) {
         try {
             const projectId = req.params.projectId;
-            const project = await this._projectRepository.getProjectById(projectId);
-
-            let signedCoverImageUrl = null;
-            
-            if (project.coverImage) {
-                signedCoverImageUrl = await this._s3Service.generateSignedUrl(project.coverImage);
-                project.coverImage = signedCoverImageUrl
-            }
+            const project = await this._getDeveloperProjectUseCase.execute(projectId);
 
 
             return res.status(StatusCodes.OK).json({

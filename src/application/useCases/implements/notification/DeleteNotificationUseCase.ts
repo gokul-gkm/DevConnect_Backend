@@ -2,9 +2,13 @@ import { AppError } from '@/domain/errors/AppError';
 import { INotificationRepository } from '@/domain/interfaces/INotificationRepository';
 import { StatusCodes } from 'http-status-codes';
 import { IDeleteNotificationUseCase } from '../../interfaces/notification/IDeleteNotificationUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class DeleteNotificationUseCase implements IDeleteNotificationUseCase {
   constructor(
+    @inject(TYPES.INotificationRepository)
     private _notificationRepository: INotificationRepository
   ) {}
 

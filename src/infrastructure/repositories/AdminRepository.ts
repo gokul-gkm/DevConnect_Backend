@@ -3,8 +3,9 @@ import { AppError } from "@/domain/errors/AppError";
 import { IAdminRepository } from "@/domain/interfaces/IAdminRepository";
 import { StatusCodes } from "http-status-codes";
 import { BaseRepository } from "./BaseRepository";
+import { injectable } from "inversify";
 
-
+@injectable()
 export class AdminRepository extends BaseRepository<IAdmin> implements IAdminRepository {
     constructor() {
        super(Admin)

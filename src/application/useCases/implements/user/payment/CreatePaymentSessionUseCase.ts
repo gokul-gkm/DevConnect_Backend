@@ -4,6 +4,8 @@ import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { ICreatePaymentSessionUseCase } from '@/application/useCases/interfaces/user/payment/ICreatePaymentSessionUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
 export interface CreatePaymentSessionDTO {
   sessionId: string;
@@ -11,9 +13,12 @@ export interface CreatePaymentSessionDTO {
   cancelUrl: string;
 }
 
+@injectable()
 export class CreatePaymentSessionUseCase implements ICreatePaymentSessionUseCase {
   constructor(
+    @inject(TYPES.IPaymentService)
     private _paymentService: IPaymentService,
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository
   ) {}
 

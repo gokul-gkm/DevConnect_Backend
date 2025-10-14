@@ -9,14 +9,16 @@ import { IUserRepository } from '@/domain/interfaces/IUserRepository';
 import { IOTPRepository } from '@/domain/interfaces/IOTPRepository';
 import { IMailService } from '@/domain/interfaces/IMailService';
 import { IRegisterDevUseCase } from '@/application/useCases/interfaces/developer/auth/IRegisterDevUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
-
+@injectable()
 export class RegisterDevUseCase implements IRegisterDevUseCase{
     
     constructor(
-        private _userRepository: IUserRepository,
-        private _otpRepository: IOTPRepository,
-        private _mailService: IMailService
+        @inject(TYPES.IUserRepository) private _userRepository: IUserRepository,
+        @inject(TYPES.IOTPRepository) private _otpRepository: IOTPRepository,
+        @inject(TYPES.IMailService) private _mailService: IMailService
     ) { }
 
     async execute(userData: RegisterUserDTO): Promise<void> {

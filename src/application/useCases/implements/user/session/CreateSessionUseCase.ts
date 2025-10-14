@@ -8,6 +8,8 @@ import { IUserRepository } from '@/domain/interfaces/IUserRepository';
 import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
 import { INotificationService } from '@/domain/interfaces/INotificationService';
 import { ICreateSessionUseCase } from '@/application/useCases/interfaces/user/session/ICreateSessionUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
 export interface CreateSessionDTO {
   title: string;
@@ -21,11 +23,16 @@ export interface CreateSessionDTO {
   userId: string;
 }
 
+@injectable()
 export class CreateSessionUseCase implements ICreateSessionUseCase {
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.IUserRepository)
     private _userRepository: IUserRepository,
+    @inject(TYPES.IDeveloperRepository)
     private _developerRepository: IDeveloperRepository,
+    @inject(TYPES.INotificationService)
     private _notificationService: INotificationService
   ) {}
 

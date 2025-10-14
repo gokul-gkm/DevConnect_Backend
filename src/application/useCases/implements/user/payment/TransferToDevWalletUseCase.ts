@@ -4,12 +4,17 @@ import { StatusCodes } from 'http-status-codes';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 import { ITransferToDevWalletUseCase } from '@/application/useCases/interfaces/user/payment/ITransferToDevWalletUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class TransferToDevWalletUseCase implements ITransferToDevWalletUseCase {
-  private DEVELOPER_PERCENTAGE = 0.8;
+  private DEVELOPER_PERCENTAGE = Number(process.env.DEVELOPER_PERCENTAGE);
 
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.IWalletRepository)
     private _walletRepository: IWalletRepository,
   ) {}
 

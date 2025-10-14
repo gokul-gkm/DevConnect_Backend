@@ -5,9 +5,13 @@ import { StatusCodes } from "http-status-codes";
 import bcrypt from 'bcryptjs'
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { IChangeUserPasswordUseCase } from "@/application/useCases/interfaces/user/profile/IChangeUserPasswordUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class ChangeUserPasswordUseCase implements IChangeUserPasswordUseCase {
     constructor(
+        @inject(TYPES.IUserRepository)
         private _userRepository: IUserRepository
     ) { }
     

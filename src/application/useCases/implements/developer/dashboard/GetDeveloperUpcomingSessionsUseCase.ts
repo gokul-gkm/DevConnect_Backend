@@ -1,11 +1,14 @@
 import { IGetDeveloperUpcomingSessionsUseCase } from "@/application/useCases/interfaces/developer/dashboard/IGetDeveloperUpcomingSessionsUseCase";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
+import { TYPES } from "@/types/types";
+import { inject, injectable } from "inversify";
 
+@injectable()
 export class GetDeveloperUpcomingSessionsUseCase implements IGetDeveloperUpcomingSessionsUseCase{
   constructor(
-    private _sessionRepository: ISessionRepository,
-    private _s3Service: IS3Service
+    @inject(TYPES.ISessionRepository) private _sessionRepository: ISessionRepository,
+    @inject(TYPES.IS3Service) private _s3Service: IS3Service
   ) {}
 
   async execute(developerId: string, limit = 2) {

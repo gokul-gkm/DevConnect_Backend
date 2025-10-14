@@ -2,10 +2,13 @@ import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { IManageDefaultSlotsUseCase } from "@/application/useCases/interfaces/developer/availability/IManageDefaultSlotsUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class ManageDefaultSlotsUseCase implements IManageDefaultSlotsUseCase {
   constructor(
-    private _developerRepository: IDeveloperRepository
+    @inject(TYPES.IDeveloperRepository) private _developerRepository: IDeveloperRepository
   ) {}
 
   async getDefaultUnavailableSlots(developerId: string): Promise<string[]> {

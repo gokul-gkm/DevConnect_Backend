@@ -3,12 +3,17 @@ import { IDeveloper } from "@/domain/entities/Developer";
 import { AppError } from "@/domain/errors/AppError";
 import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
+import { TYPES } from "@/types/types";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { StatusCodes } from "http-status-codes";
+import { inject, injectable } from "inversify";
 
+@injectable()
 export class GetDeveloperDetailsUseCase implements IGetDeveloperDetailsUseCase {
     constructor(
+        @inject(TYPES.IDeveloperRepository)
         private _developerRepository: IDeveloperRepository,
+        @inject(TYPES.IS3Service)
         private _s3Service: IS3Service
     ) { }
 
