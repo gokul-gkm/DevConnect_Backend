@@ -6,7 +6,9 @@ import { ProjectsResponse } from "@/domain/types/project";
 import { StatusCodes } from "http-status-codes";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { BaseRepository } from "./BaseRepository";
+import { injectable } from "inversify";
 
+@injectable()
 export class ProjectRepository extends BaseRepository<IProject> implements IProjectRepository {
     constructor() {
         super(Project)

@@ -1,19 +1,14 @@
-import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { Router } from "express";
 import { UserController } from "../controllers/UserController";
 import { authMiddleware } from "../middleware/authMiddleware";
-import { S3Service } from "@/infrastructure/services/S3_Service";
 import { upload } from "@/utils/multer";
-import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
 import { autherization } from "../middleware/autherization";
+import { container } from "@/infrastructure/config/inversify.config";
+import { TYPES } from "@/types/types";
 
 const userRouter = Router()
 
-const userRepository = new UserRepository();
-const developerRepository = new DeveloperRepository();
-const s3Service = new S3Service()
-
-const userController = new UserController(userRepository,developerRepository, s3Service);
+const userController = container.get<UserController>(TYPES.UserController);
 
 userRouter.get('/developers/search', (req, res) => {
     userController.searchDevelopers(req, res)

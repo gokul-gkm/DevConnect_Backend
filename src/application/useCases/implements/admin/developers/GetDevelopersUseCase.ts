@@ -3,10 +3,15 @@ import { IDeveloper } from "@/domain/entities/Developer";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
 import { IGetDevelopersUseCase } from "@/application/useCases/interfaces/admin/developers/IGetDevelopersUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class GetDevelopersUseCase implements IGetDevelopersUseCase {
     constructor(
+        @inject(TYPES.IDeveloperRepository)
         private _developerRepository: IDeveloperRepository,
+        @inject(TYPES.IS3Service)
         private _s3Service: IS3Service
     ) { }
 

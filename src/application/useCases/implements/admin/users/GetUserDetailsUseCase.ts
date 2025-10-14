@@ -3,12 +3,17 @@ import { IUser } from "@/domain/entities/User";
 import { AppError } from "@/domain/errors/AppError";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { TYPES } from "@/types/types";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { StatusCodes } from "http-status-codes";
+import { inject, injectable } from "inversify";
 
+@injectable()
 export class GetUserDetailsUseCase implements IGetUserDetailsUseCase {
     constructor(
+        @inject(TYPES.IUserRepository)
         private _userRepository: IUserRepository,
+        @inject(TYPES.IS3Service)
         private _s3Service: IS3Service
     ) { }
 

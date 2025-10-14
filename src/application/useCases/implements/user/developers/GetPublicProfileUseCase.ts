@@ -4,10 +4,15 @@ import { Project } from "@/domain/entities/Project";
 import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { IGetPublicProfileUseCase } from "@/application/useCases/interfaces/user/developers/IGetPublicProfileUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class GetPublicProfileUseCase implements IGetPublicProfileUseCase {
     constructor(
+        @inject(TYPES.IDeveloperRepository)
         private _developerRepository: IDeveloperRepository,
+        @inject(TYPES.IS3Service)
         private _s3Service: IS3Service
     ) {}
 

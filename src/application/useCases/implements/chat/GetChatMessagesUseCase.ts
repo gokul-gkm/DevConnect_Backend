@@ -5,11 +5,17 @@ import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
 import { StatusCodes } from "http-status-codes";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { IGetChatMessagesUseCase } from "../../interfaces/chat/IGetChatMessagesUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class GetChatMessagesUseCase implements IGetChatMessagesUseCase {
     constructor( 
+        @inject(TYPES.IMessageRepository)
         private _messageRepository: IMessageRepository,
+        @inject(TYPES.IChatRepository)
         private _chatRepository: IChatRepository,
+        @inject(TYPES.IS3Service)
         private _s3Service: IS3Service
     ) { }
     

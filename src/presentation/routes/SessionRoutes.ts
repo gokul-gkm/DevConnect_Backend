@@ -1,47 +1,14 @@
-import { UserRepository } from "@/infrastructure/repositories/UserRepository";
 import { Router } from "express";
 import { authMiddleware } from "../middleware/authMiddleware";
-import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
 import { SessionController } from "../controllers/SessionController";
-import { SessionRepository } from "@/infrastructure/repositories/SessionRepository";
-import { MailService } from "@/infrastructure/mail/MailService";
-import { S3Service } from "@/infrastructure/services/S3_Service";
 import { autherization } from "@/presentation/middleware/autherization";
-import { NotificationRepository } from "@/infrastructure/repositories/NotificationRepositoty";
-import { SocketService } from "@/infrastructure/services/SocketService";
-import { NotificationService } from "@/infrastructure/services/NotificationService";
-import { DeveloperSlotRepository } from "@/infrastructure/repositories/DeveloperSlotRepository";
-import mongoose from "mongoose";
-import { RatingRepository } from "@/infrastructure/repositories/RatingRepository";
-import { WalletRepository } from "@/infrastructure/repositories/WalletRepository";
+import { container } from "@/infrastructure/config/inversify.config";
+import { TYPES } from "@/types/types";
 
 export const createSessionRouter = () => {
   const sessionRouter = Router();
-  const sessionRepository = new SessionRepository();
-  const userRepository = new UserRepository();
-  const developerRepository = new DeveloperRepository();
-  const mailService = new MailService();
-  const s3Service = new S3Service();
-  const notificationRepository = new NotificationRepository();
-  const socketService = SocketService.getInstance();
-  const notificationService = new NotificationService(notificationRepository, socketService);
-  const developerSlotRepository = new DeveloperSlotRepository();
-  const ratingRepository = new RatingRepository();
-  const walletRepository = new WalletRepository()
 
-  const sessionController = new SessionController(
-    sessionRepository, 
-    mailService, 
-    userRepository, 
-    developerRepository,
-    s3Service,
-    notificationRepository,
-    socketService,
-    notificationService,
-    developerSlotRepository,
-    ratingRepository,
-    walletRepository
-  );
+  const sessionController = container.get<SessionController>(TYPES.SessionController);
 
   sessionRouter.get('/booked-slots', authMiddleware, autherization, (req, res, next) => {
     sessionController.getBookedSlots(req, res).catch(next);

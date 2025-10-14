@@ -5,11 +5,13 @@ import jwt from 'jsonwebtoken'
 import { ResetPasswordDTO } from "@/application/dto/users/ResetPasswordDTO";
 import { IUserRepository } from "@/domain/interfaces/IUserRepository";
 import { IResetPasswordUseCase } from "@/application/useCases/interfaces/user/auth/IResetPasswordUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
-
+@injectable()
 export class ResetPasswordUseCase implements IResetPasswordUseCase{
     constructor(
-        private _userRepository: IUserRepository
+        @inject(TYPES.IUserRepository) private _userRepository: IUserRepository
     ) { }
     async execute(data: ResetPasswordDTO): Promise<void> {
         const { token, newPassword } = data;

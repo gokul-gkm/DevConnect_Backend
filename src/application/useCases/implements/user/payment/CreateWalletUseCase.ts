@@ -3,9 +3,13 @@ import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 import { ICreateWalletUseCase } from '@/application/useCases/interfaces/user/payment/ICreateWalletUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class CreateWalletUseCase implements ICreateWalletUseCase {
   constructor(
+    @inject(TYPES.IWalletRepository)
     private _walletRepository: IWalletRepository
   ) { }
 

@@ -1,20 +1,16 @@
-import { CreateNotificationUseCase } from "@/application/useCases/implements/notification/CreateNotificationUseCase";
 import { ICreateNotificationUseCase } from "@/application/useCases/interfaces/notification/ICreateNotificationUseCase";
-import { INotificationRepository } from "@/domain/interfaces/INotificationRepository";
 import { INotificationService } from "@/domain/interfaces/INotificationService";
-import { ISocketService } from "@/domain/interfaces/ISocketService";
+import { TYPES } from "@/types/types";
+import { inject, injectable } from "inversify";
 
+@injectable()
 export class NotificationService implements INotificationService {
-  private _createNotificationUseCase: ICreateNotificationUseCase;
 
   constructor(
-    private _notificationRepository: INotificationRepository,
-    private _socketService: ISocketService
+    @inject(TYPES.ICreateNotificationUseCase)
+    private _createNotificationUseCase: ICreateNotificationUseCase
   ) {
-    this._createNotificationUseCase = new CreateNotificationUseCase(
-      _notificationRepository,
-      _socketService
-    );
+   
   }
 
   async notify(

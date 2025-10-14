@@ -1,103 +1,53 @@
 import { Request, Response } from "express";
-import { OAuth2Client } from "google-auth-library";
-import { User } from "@/domain/entities/User";
-import jwt from 'jsonwebtoken';
-import { AppError } from "@/domain/errors/AppError";
+import { injectable, inject } from "inversify";
+import { TYPES } from "@/types/types";
 import { StatusCodes } from "http-status-codes";
-import { Types } from "mongoose";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
-import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
+import { AppError } from "@/domain/errors/AppError";
+import { IGoogleLoginUseCase } from "@/application/useCases/interfaces/googleAuth/IGoogleLoginUseCase";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
+const REFRESH_COOKIE_MAX_AGE = Number(process.env.REFRESH_COOKIE_MAX_AGE);
 
+@injectable()
 export class GoogleAuthController {
     constructor(
-        private _userRepository: IUserRepository,
-        private _walletRepository: IWalletRepository
-    ) { }
+        @inject(TYPES.IGoogleLoginUseCase)
+        private _googleLoginUseCase: IGoogleLoginUseCase
+    ) {}
 
-    async googleLogin(req: Request, res: Response) { 
-        const { token } = req.body;
+    async googleLogin(req: Request, res: Response) {
         try {
-            const ticket = await client.verifyIdToken({
-                idToken: token,
-                audience: process.env.GOOGLE_CLIENT_ID
-            });
+            const { token } = req.body;
+            const { user, accessToken, refreshToken } = await this._googleLoginUseCase.execute(token);
 
-            const payload = ticket.getPayload();
-            if (!payload) {
-                return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Invalid token', success: false });
-            }
-            const { email, name, picture, sub } = payload;
-            let user = await this._userRepository.findByEmail(email!);
-
-            if (user && user.status === 'blocked') {
-                throw new AppError('User account is blocked',StatusCodes.BAD_REQUEST);
-            }
-            
-
-            if (!user) {
-                const newUser = new User({
-                    email,
-                    username: name,
-                    googleId: sub,
-                    password: '',
-                    contact: Number("0000000000"),
-                    profilePicture: picture,
-                    role: 'user',
-                    isVerified: true
-                });
-               
-
-                user = await this._userRepository.save(newUser);
-            }
-
-            const existingWallet = await this._walletRepository.findByUserId(new Types.ObjectId(user._id));
-            
-            if (!existingWallet) {
-                try {
-                    console.log(`Creating wallet for user: ${user._id}`);
-                    await this._walletRepository.create(new Types.ObjectId(user._id));
-                } catch (error) {
-                    console.error('Wallet creation error:', error);
-                    if (!user.createdAt) {
-                        await this._userRepository.deleteById(user._id);
-                    }
-                    throw new AppError('Failed to create user wallet', StatusCodes.INTERNAL_SERVER_ERROR);
-                }
-            }
-
-            const accessToken = jwt.sign(
-                { userId: user._id, role: 'user' },
-                process.env.JWT_ACCESS_SECRET as string,
-                { expiresIn: "24h" }
-            );
-
-            const refreshToken = jwt.sign(
-                { userId: user._id, role: 'user' },
-                process.env.JWT_REFRESH_SECRET as string,
-                { expiresIn: '7d' }
-            );
-
-            res.cookie('accessToken', accessToken, {
+            res.cookie("accessToken", accessToken, {
                 httpOnly: true,
-                maxAge: 15 * 60 * 1000
+                maxAge: ACCESS_COOKIE_MAX_AGE,
             });
 
-            res.cookie('refreshToken', refreshToken, {
+            res.cookie("refreshToken", refreshToken, {
                 httpOnly: true,
-                maxAge: 7 * 24 * 60 * 60 * 1000
+                maxAge: REFRESH_COOKIE_MAX_AGE,
             });
 
-            return res.status(StatusCodes.OK).json({ message: 'Google login successful', user, success: true, token: accessToken });
+            return res.status(StatusCodes.OK).json({
+                message: "Google login successful",
+                user,
+                success: true,
+                token: accessToken,
+            });
         } catch (error: any) {
-            console.error('Google login error: ', error);
+            console.error("Google login error: ", error);
             if (error instanceof AppError) {
-                return res.status(error.statusCode).json({ message: error.message, success: false });
+                return res
+                    .status(error.statusCode)
+                    .json({ message: error.message, success: false });
             }
 
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                message: error.message || 'Google Login Error', success: false });
+                message: error.message || "Google Login Error",
+                success: false,
+            });
         }
     }
 }

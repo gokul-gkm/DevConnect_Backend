@@ -3,8 +3,9 @@ import { AppError } from "@/domain/errors/AppError";
 import { IOTPRepository } from "@/domain/interfaces/IOTPRepository";
 import { StatusCodes } from "http-status-codes";
 import { BaseRepository } from "./BaseRepository";
+import { injectable } from "inversify";
 
-
+@injectable()
 export class OTPRepository extends BaseRepository<IOTP> implements IOTPRepository{
     constructor() {
         super(OTP)

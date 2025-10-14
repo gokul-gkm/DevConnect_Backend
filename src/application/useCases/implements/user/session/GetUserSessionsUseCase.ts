@@ -4,9 +4,13 @@ import { StatusCodes } from 'http-status-codes';
 import { ERROR_MESSAGES } from '@/utils/constants';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { IGetUserSessionsUseCase } from '@/application/useCases/interfaces/user/session/IGetUserSessionsUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class GetUserSessionsUseCase implements IGetUserSessionsUseCase {
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
   ) {}
 

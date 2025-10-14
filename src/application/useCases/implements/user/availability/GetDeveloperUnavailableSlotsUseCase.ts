@@ -1,10 +1,14 @@
 import { IGetDeveloperUnavailableSlotsUseCase } from "@/application/useCases/interfaces/user/availability/IGetDeveloperUnavailableSlotsUseCase";
 import { AppError } from "@/domain/errors/AppError";
 import { IDeveloperSlotRepository } from "@/domain/interfaces/IDeveloperSlotRepository";
+import { TYPES } from "@/types/types";
 import { StatusCodes } from "http-status-codes";
+import { inject, injectable } from "inversify";
 
+@injectable()
 export class GetDeveloperUnavailableSlotsUseCase implements IGetDeveloperUnavailableSlotsUseCase {
   constructor(
+    @inject(TYPES.IDeveloperSlotRepository)
     private _developerSlotRepository: IDeveloperSlotRepository
   ) { }
 

@@ -1,4 +1,5 @@
-import express, { Request, Response, NextFunction } from 'express';
+import "reflect-metadata";
+import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
 import cors from 'cors';
@@ -22,10 +23,10 @@ import { createVideoSessionRouter } from './presentation/routes/videoSessionRout
 
 dotenv.config();
 
-const app = express();
-const httpServer = createServer(app);
+export const app = express();
+export const httpServer = createServer(app);
 
-const io = new SocketServer(httpServer, {
+export const io = new SocketServer(httpServer, {
     cors: {
         origin: process.env.FRONTEND_URL || 'http://localhost:3000',
         methods: ['GET', 'POST'],

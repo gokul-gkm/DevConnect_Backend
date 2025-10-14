@@ -2,6 +2,8 @@ import { IGetRevenueStatsUseCase } from "@/application/useCases/interfaces/admin
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
 import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
+import { TYPES } from "@/types/types";
+import { inject, injectable } from "inversify";
 
 interface DeveloperEarning {
   id: string;
@@ -14,10 +16,14 @@ interface DeveloperEarning {
   ratings: number[];
 }
 
+@injectable()
 export class GetRevenueStatsUseCase implements IGetRevenueStatsUseCase {
   constructor(
+    @inject(TYPES.IWalletRepository)
     private _walletRepository: IWalletRepository,
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.IS3Service)
     private _s3Service: IS3Service
   ) {}
 

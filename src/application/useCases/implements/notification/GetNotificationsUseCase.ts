@@ -3,9 +3,13 @@ import { AppError } from '@/domain/errors/AppError';
 import { INotificationRepository } from '@/domain/interfaces/INotificationRepository';
 import { StatusCodes } from 'http-status-codes';
 import { IGetNotificationsUseCase } from '../../interfaces/notification/IGetNotificationsUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class GetNotificationsUseCase implements IGetNotificationsUseCase {
   constructor(
+    @inject(TYPES.INotificationRepository)
     private _notificationRepository: INotificationRepository
   ) {}
 

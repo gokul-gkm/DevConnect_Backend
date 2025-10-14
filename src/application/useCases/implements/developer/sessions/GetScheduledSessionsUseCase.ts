@@ -6,10 +6,15 @@ import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { IS3Service } from '@/domain/interfaces/IS3Service';
 import { ISession } from '@/domain/entities/Session';
 import { IGetScheduledSessionsUseCase } from '@/application/useCases/interfaces/developer/sessions/IGetScheduledSessionsUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class GetScheduledSessionsUseCase implements IGetScheduledSessionsUseCase {
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.IS3Service)
     private _s3Service: IS3Service
   ) {}
 

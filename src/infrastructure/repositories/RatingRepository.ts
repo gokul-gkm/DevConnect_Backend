@@ -5,7 +5,9 @@ import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import Developer from '@/domain/entities/Developer';
 import { BaseRepository } from './BaseRepository';
+import { injectable } from 'inversify';
 
+@injectable()
 export class RatingRepository extends BaseRepository<IRating> implements IRatingRepository {
   constructor() {
     super(Rating)

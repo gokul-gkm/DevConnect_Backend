@@ -4,10 +4,15 @@ import { StatusCodes } from 'http-status-codes';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { IS3Service } from '@/domain/interfaces/IS3Service';
 import { IGetScheduledSessionDetailsUseCase } from '@/application/useCases/interfaces/developer/sessions/IGetScheduledSessionDetailsUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class GetScheduledSessionDetailsUseCase implements IGetScheduledSessionDetailsUseCase {
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.IS3Service)
     private _s3Service: IS3Service
   ) {}
 

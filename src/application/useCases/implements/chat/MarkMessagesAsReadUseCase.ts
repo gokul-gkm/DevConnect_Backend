@@ -4,11 +4,17 @@ import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
 import { ISocketService } from "@/domain/interfaces/ISocketService";
 import { StatusCodes } from "http-status-codes";
 import { IMarkMessagesAsReadUseCase } from "../../interfaces/chat/IMarkMessagesAsReadUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class MarkMessagesAsReadUseCase implements IMarkMessagesAsReadUseCase{
     constructor(
+        @inject(TYPES.IMessageRepository)
         private _messageRepository: IMessageRepository,
+        @inject(TYPES.IChatRepository)
         private _chatRepository: IChatRepository,
+        @inject(TYPES.ISocketService)
         private _socketService: ISocketService
     ){}
     async execute(chatId: string, recipientType: 'user' | 'developer') {

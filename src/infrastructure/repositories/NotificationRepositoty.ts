@@ -4,7 +4,9 @@ import  { Types } from 'mongoose';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { BaseRepository } from './BaseRepository';
+import { injectable } from 'inversify';
 
+@injectable()
 export class NotificationRepository extends BaseRepository<INotification> implements INotificationRepository {
   constructor() {
     super(Notification)

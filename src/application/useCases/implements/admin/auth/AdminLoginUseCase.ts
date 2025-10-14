@@ -3,10 +3,14 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { IAdminRepository } from "@/domain/interfaces/IAdminRepository";
 import { IAdminLoginUseCase } from "../../../interfaces/admin/auth/IAdminLoginUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class AdminLoginUseCase implements IAdminLoginUseCase{
     
     constructor(
+        @inject(TYPES.IAdminRepository)
         private _adminRepository: IAdminRepository
     ) {}
 
@@ -24,12 +28,12 @@ export class AdminLoginUseCase implements IAdminLoginUseCase{
         const accessToken = jwt.sign(
             { adminId: admin._id },
             process.env.JWT_ADMIN_ACCESS_SECRET as string,
-            { expiresIn: "24h" }
+            { expiresIn: process.env.ACCESS_EXPIRES_IN }
         );
         const refreshToken = jwt.sign(
             { adminId: admin._id },
             process.env.JWT_ADMIN_REFRESH_SECRET as string,
-            { expiresIn: '7d' }
+            { expiresIn: process.env.REFRESH_EXPIRES_IN}
         )
         return {
             accessToken,

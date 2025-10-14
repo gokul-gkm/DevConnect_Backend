@@ -4,9 +4,13 @@ import { IWallet } from '@/domain/entities/Wallet';
 import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 import { StatusCodes } from 'http-status-codes';
 import { IGetWalletDetailsUseCase } from '@/application/useCases/interfaces/user/payment/IGetWalletDetailsUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class GetWalletDetailsUseCase implements IGetWalletDetailsUseCase {
   constructor(
+    @inject(TYPES.IWalletRepository)
     private _walletRepository: IWalletRepository
   ) { }
 

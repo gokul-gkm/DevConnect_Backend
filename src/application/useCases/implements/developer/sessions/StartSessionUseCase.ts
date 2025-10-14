@@ -5,10 +5,15 @@ import { SocketService } from '@/infrastructure/services/SocketService';
 import mongoose from 'mongoose';
 import { ISocketService } from '@/domain/interfaces/ISocketService';
 import { IStartSessionUseCase } from '@/application/useCases/interfaces/developer/sessions/IStartSessionUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class StartSessionUseCase implements IStartSessionUseCase{
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.ISocketService)
     private _socketService: ISocketService
   ) {}
 

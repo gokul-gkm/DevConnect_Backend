@@ -6,11 +6,17 @@ import { Types } from "mongoose";
 import { v4 as uuidv4 } from 'uuid';
 import { ISocketService } from "@/domain/interfaces/ISocketService";
 import { IInitVideoSessionUseCase } from "../../interfaces/video/IInitVideoSessionUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class InitVideoSessionUseCase implements IInitVideoSessionUseCase {
     constructor(
+        @inject(TYPES.IVideoSessionRepository)
         private _videoSessionRepository: IVideoSessionRepository,
+        @inject(TYPES.ISessionRepository)
         private _sessionRepository: ISessionRepository,
+        @inject(TYPES.ISocketService)
         private _socketService: ISocketService
     ) {}
 

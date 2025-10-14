@@ -2,9 +2,13 @@ import { IPaymentService } from '@/domain/interfaces/IPaymentService';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { IProcessPaymentWebhookUseCase } from '@/application/useCases/interfaces/user/payment/IProcessPaymentWebhookUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class ProcessPaymentWebhookUseCase implements IProcessPaymentWebhookUseCase {
   constructor(
+    @inject(TYPES.IPaymentService)
     private _paymentService: IPaymentService
   ) { }
 

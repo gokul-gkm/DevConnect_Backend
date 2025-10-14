@@ -3,13 +3,16 @@ import { AppError } from "@/domain/errors/AppError";
 import { IMailService } from "@/domain/interfaces/IMailService";
 import { IUserRepository } from "@/domain/interfaces/IUserRepository";
 import { generatePasswordResetToken } from "@/shared/utils/TokenGenerator";
+import { TYPES } from "@/types/types";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { StatusCodes } from "http-status-codes";
+import { inject, injectable } from "inversify";
 
+@injectable()
 export class ForgotPasswordUseCase implements IForgotPasswordUseCase{
     constructor(
-        private _userRepository: IUserRepository,
-        private _mailService: IMailService
+        @inject(TYPES.IUserRepository) private _userRepository: IUserRepository,
+        @inject(TYPES.IMailService) private _mailService: IMailService
     ) { }
     
     async execute(email: string): Promise<string> {

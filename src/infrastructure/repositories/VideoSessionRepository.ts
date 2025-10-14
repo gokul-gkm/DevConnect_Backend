@@ -5,7 +5,9 @@ import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 import { VideoSession } from "@/domain/entities/VideoSession";
 import { BaseRepository } from "./BaseRepository";
+import { injectable } from "inversify";
 
+@injectable()
 export class VideoSessionRepository extends BaseRepository<IVideoSession> implements IVideoSessionRepository {
     constructor() {
         super(VideoSession);

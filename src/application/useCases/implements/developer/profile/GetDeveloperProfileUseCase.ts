@@ -5,13 +5,15 @@ import { IUserRepository } from '@/domain/interfaces/IUserRepository';
 import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
 import { IS3Service } from '@/domain/interfaces/IS3Service';
 import { IGetDeveloperProfileUseCase } from '@/application/useCases/interfaces/developer/profile/IGetDeveloperProfileUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
-
+@injectable()
 export class GetDeveloperProfileUseCase implements IGetDeveloperProfileUseCase {
     constructor(
-        private _userRepository: IUserRepository,
-        private _developerRepository: IDeveloperRepository,
-        private _s3Service: IS3Service
+        @inject(TYPES.IUserRepository) private _userRepository: IUserRepository,
+        @inject(TYPES.IDeveloperRepository) private _developerRepository: IDeveloperRepository,
+        @inject(TYPES.IS3Service) private _s3Service: IS3Service
     ) { }
 
     async execute(userId: string) {

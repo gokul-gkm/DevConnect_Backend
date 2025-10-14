@@ -5,10 +5,15 @@ import { ERROR_MESSAGES } from '@/utils/constants';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { IS3Service } from '@/domain/interfaces/IS3Service';
 import { IGetSessionHistoryUseCase } from '@/application/useCases/interfaces/user/session/IGetSessionHistoryUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class GetSessionHistoryUseCase implements IGetSessionHistoryUseCase {
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.IS3Service)
     private _s3Service: IS3Service
   ) {}
 

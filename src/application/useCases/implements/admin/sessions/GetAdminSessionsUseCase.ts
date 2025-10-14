@@ -1,10 +1,15 @@
 import { IGetAdminSessionsUseCase } from "@/application/useCases/interfaces/admin/sessions/IGetAdminSessionsUseCase";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
+import { TYPES } from "@/types/types";
+import { inject, injectable } from "inversify";
 
+@injectable()
 export class GetAdminSessionsUseCase implements IGetAdminSessionsUseCase {
   constructor(
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.IS3Service)
     private _s3Service: IS3Service
   ) {}
 

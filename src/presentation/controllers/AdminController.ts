@@ -3,27 +3,8 @@ import { DevQueryParams, QueryParams } from '@/domain/types/types';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { HTTP_STATUS_MESSAGES } from '@/utils/constants';
-
-import { IAdminRepository } from '@/domain/interfaces/IAdminRepository';
-import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
-import { IUserRepository } from '@/domain/interfaces/IUserRepository';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
-import { S3Service } from '@/infrastructure/services/S3_Service';
-import { IMailService } from '@/domain/interfaces/IMailService';
-
-import {AdminLoginUseCase} from '@/application/useCases/implements/admin/auth/AdminLoginUseCase';
-import { GetUsersUseCase } from '@/application/useCases/implements/admin/users/GetUsersUseCase';
-import { ToggleUserStatusUseCase } from '@/application/useCases/implements/admin/users/ToggleUserStatusUseCase';
-import { GetUserDetailsUseCase } from '@/application/useCases/implements/admin/users/GetUserDetailsUseCase';
-import { GetDevelopersUseCase } from '@/application/useCases/implements/admin/developers/GetDevelopersUseCase';
-import { ManageDeveloperRequestsUseCase } from '@/application/useCases/implements/admin/developers/ManageDeveloperRequestsUseCase';
-import { GetDeveloperDetailsUseCase } from '@/application/useCases/implements/admin/developers/GetDeveloperDetailsUseCase';
-import { GetDeveloperRequestDetailsUseCase } from '@/application/useCases/implements/admin/developers/GetDeveloperRequestDetails';
-import { GetDashboardStatsUseCase } from '@/application/useCases/implements/admin/dashboard/GetDashboardStatsUseCase';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { GetRevenueStatsUseCase } from '@/application/useCases/implements/admin/revenue/GetRevenueStatsUseCase';
-import { GetAdminSessionsUseCase } from '@/application/useCases/implements/admin/sessions/GetAdminSessionsUseCase';
-import { GetDeveloperLeaderboardUseCase } from '@/application/useCases/implements/admin/leaderboard/GetDeveloperLeaderboardUseCase';
+import { inject } from 'inversify';
+import { TYPES } from '@/types/types';
 
 import { IAdminLoginUseCase } from '@/application/useCases/interfaces/admin/auth/IAdminLoginUseCase';
 import { IGetUsersUseCase } from '@/application/useCases/interfaces/admin/users/IGetUsersUseCase';
@@ -38,42 +19,48 @@ import { IGetRevenueStatsUseCase } from '@/application/useCases/interfaces/admin
 import { IGetAdminSessionsUseCase } from '@/application/useCases/interfaces/admin/sessions/IGetAdminSessionsUseCase';
 import { IGetDeveloperLeaderboardUseCase } from '@/application/useCases/interfaces/admin/leaderboard/IGetDeveloperLeaderboardUseCase';
 
+const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
+const REFRESH_COOKIE_MAX_AGE = Number(process.env.REFRESH_COOKIE_MAX_AGE);
 
 export class AdminController{
-    private _adminLoginUseCase: IAdminLoginUseCase;
-    private _getUsersUseCase: IGetUsersUseCase;
-    private _toggleUserStatusUseCase: IToggleUserStatusUseCase;
-    private _getUserDetailsUseCase: IGetUserDetailsUseCase;
-    private _getDeveloperUseCase: IGetDevelopersUseCase;
-    private _manageDeveloperRequestsUseCase: IManageDeveloperRequestsUseCase;
-    private _getDeveloperDetailsUseCase: IGetDeveloperDetailsUseCase;
-    private _getDeveloperRequestDetailsUseCase: IGetDeveloperRequestDetailsUseCase;
-    private _getDashboardStatsUseCase: IGetDashboardStatsUseCase;
-    private _getRevenueStatsUseCase: IGetRevenueStatsUseCase;
-    private _getAdminSessionsUseCase: IGetAdminSessionsUseCase;
-    private _getDeveloperLeaderboardUseCase: IGetDeveloperLeaderboardUseCase;
+
     constructor(
-        private _adminRepository: IAdminRepository,
-        private _userRepository: IUserRepository,
-        private _developerRepository: IDeveloperRepository,
-        private _s3Service: S3Service,
-        private _walletRepository: IWalletRepository,
-        private _sessionRepository: ISessionRepository,
-        private _mailService: IMailService
-    ) {
-        this._adminLoginUseCase = new AdminLoginUseCase(_adminRepository);
-        this._getUsersUseCase = new GetUsersUseCase(_userRepository,_s3Service);
-        this._toggleUserStatusUseCase = new ToggleUserStatusUseCase(_userRepository);
-        this._getUserDetailsUseCase = new GetUserDetailsUseCase(_userRepository,_s3Service);
-        this._getDeveloperUseCase = new GetDevelopersUseCase(_developerRepository,_s3Service)
-        this._manageDeveloperRequestsUseCase = new ManageDeveloperRequestsUseCase(_developerRepository, _walletRepository,_s3Service, _mailService)
-        this._getDeveloperDetailsUseCase = new GetDeveloperDetailsUseCase(_developerRepository,_s3Service)
-        this._getDeveloperRequestDetailsUseCase = new GetDeveloperRequestDetailsUseCase(_developerRepository, _s3Service);
-        this._getDashboardStatsUseCase = new GetDashboardStatsUseCase(_userRepository, _developerRepository, _sessionRepository, _walletRepository, _s3Service)
-        this._getRevenueStatsUseCase = new GetRevenueStatsUseCase( _walletRepository, _sessionRepository, _s3Service);
-        this._getAdminSessionsUseCase = new GetAdminSessionsUseCase(_sessionRepository, _s3Service);
-        this._getDeveloperLeaderboardUseCase = new GetDeveloperLeaderboardUseCase(_developerRepository, _s3Service);
-    }
+        @inject(TYPES.IAdminLoginUseCase)
+        private _adminLoginUseCase: IAdminLoginUseCase,
+
+        @inject(TYPES.IGetUsersUseCase)
+        private _getUsersUseCase: IGetUsersUseCase,
+
+        @inject(TYPES.IToggleUserStatusUseCase)
+        private _toggleUserStatusUseCase: IToggleUserStatusUseCase,
+
+        @inject(TYPES.IGetUserDetailsUseCase)
+        private _getUserDetailsUseCase: IGetUserDetailsUseCase,
+
+        @inject(TYPES.IGetDevelopersUseCase)
+        private _getDeveloperUseCase: IGetDevelopersUseCase,
+
+        @inject(TYPES.IManageDeveloperRequestsUseCase)
+        private _manageDeveloperRequestsUseCase: IManageDeveloperRequestsUseCase,
+
+        @inject(TYPES.IGetDeveloperDetailsUseCase)
+        private _getDeveloperDetailsUseCase: IGetDeveloperDetailsUseCase,
+
+        @inject(TYPES.IGetDeveloperRequestDetailsUseCase)
+        private _getDeveloperRequestDetailsUseCase: IGetDeveloperRequestDetailsUseCase,
+
+        @inject(TYPES.IGetDashboardStatsUseCase)
+        private _getDashboardStatsUseCase: IGetDashboardStatsUseCase,
+
+        @inject(TYPES.IGetRevenueStatsUseCase)
+        private _getRevenueStatsUseCase: IGetRevenueStatsUseCase,
+
+        @inject(TYPES.IGetAdminSessionsUseCase)
+        private _getAdminSessionsUseCase: IGetAdminSessionsUseCase,
+
+        @inject(TYPES.IGetDeveloperLeaderboardUseCase)
+        private _getDeveloperLeaderboardUseCase: IGetDeveloperLeaderboardUseCase
+    ) {}
 
     async login(req: Request, res: Response) {
         try {
@@ -82,14 +69,15 @@ export class AdminController{
 
             res.cookie('adminAccessToken', accessToken, {
                 httpOnly: true,
-                maxAge: 15 * 60 * 1000,
+                maxAge: ACCESS_COOKIE_MAX_AGE,
                 sameSite: 'none',
                 secure: true,
                 path: '/'
             });
             res.cookie('adminRefreshToken', refreshToken, {
                 httpOnly: true,
-                maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'none',
+                maxAge: REFRESH_COOKIE_MAX_AGE,
+                sameSite: 'none',
                 secure: true,
                 path: '/'
             });

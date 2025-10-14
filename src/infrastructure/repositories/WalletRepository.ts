@@ -5,7 +5,9 @@ import { WalletModel } from '@/domain/entities/Wallet';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { BaseRepository } from './BaseRepository';
+import { injectable } from 'inversify';
 
+@injectable()
 export class WalletRepository extends BaseRepository<IWallet> implements IWalletRepository {
   constructor() {
     super(WalletModel)

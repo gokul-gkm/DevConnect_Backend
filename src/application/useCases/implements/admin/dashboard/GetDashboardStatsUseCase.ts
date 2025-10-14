@@ -4,13 +4,21 @@ import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
 import { IUserRepository } from "@/domain/interfaces/IUserRepository";
 import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
+import { TYPES } from "@/types/types";
+import { inject, injectable } from "inversify";
 
+@injectable()
 export class GetDashboardStatsUseCase  implements IGetDashboardStatsUseCase{
   constructor(
+    @inject(TYPES.IUserRepository)
     private _userRepository: IUserRepository,
+    @inject(TYPES.IDeveloperRepository)
     private _developerRepository: IDeveloperRepository,
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.IWalletRepository)
     private _walletRepository: IWalletRepository,
+    @inject(TYPES.IS3Service)
     private _s3Service: IS3Service
   ) {}
 

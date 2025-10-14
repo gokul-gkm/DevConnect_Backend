@@ -3,11 +3,14 @@ import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { IManageDeveloperUnavailabilityUseCase } from "@/application/useCases/interfaces/developer/availability/IManageDeveloperUnavailabilityUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class ManageDeveloperUnavailabilityUseCase implements IManageDeveloperUnavailabilityUseCase {
   constructor(
-    private _developerSlotRepository: IDeveloperSlotRepository,
-    private _sessionRepository: ISessionRepository
+    @inject(TYPES.IDeveloperSlotRepository) private _developerSlotRepository: IDeveloperSlotRepository,
+    @inject(TYPES.ISessionRepository) private _sessionRepository: ISessionRepository
   ) {}
 
   async getUnavailableSlots(developerId: string, date: Date): Promise<string[]> {

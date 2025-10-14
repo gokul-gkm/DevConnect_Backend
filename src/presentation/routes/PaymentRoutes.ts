@@ -1,25 +1,15 @@
 import { Router } from 'express';
 import express from 'express'
 import { PaymentController } from '../controllers/PaymentController';
-import { SessionRepository } from '@/infrastructure/repositories/SessionRepository';
-import { WalletRepository } from '@/infrastructure/repositories/WalletRepository';
-import { PaymentRepository } from '@/infrastructure/repositories/PaymentRepository';
 import { adminAuthMiddleware } from '../middleware/adminAuthMiddleware';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { autherization } from '../middleware/autherization';
-
+import { container } from '@/infrastructure/config/inversify.config';
+import { TYPES } from '@/types/types';
 
 const router = Router();
 
-const sessionRepository = new SessionRepository();
-const walletRepository = new WalletRepository();
-const paymentRepository = new PaymentRepository();
-
-const paymentController = new PaymentController(
-  sessionRepository,
-  walletRepository,
-  paymentRepository
-);
+const paymentController = container.get<PaymentController>(TYPES.PaymentController);
 
 router.post( '/sessions/:sessionId/payment', authMiddleware, autherization, 
   paymentController.createPaymentSession.bind(paymentController)

@@ -20,7 +20,7 @@ export class SetNewTokenUseCase implements ISetNewTokenUseCase {
                 const newAccessToken = jwt.sign(
                     { userId: decoded.userId, role: decoded.role },
                     process.env.JWT_ACCESS_SECRET as string,
-                    { expiresIn: "24h" }
+                    { expiresIn: process.env.ACCESS_EXPIRES_IN }
                 );
                 
                 return {

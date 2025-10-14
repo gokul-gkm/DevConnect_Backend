@@ -4,10 +4,15 @@ import { ERROR_MESSAGES } from '@/utils/constants';
 import { IUserRepository } from '@/domain/interfaces/IUserRepository';
 import { IS3Service } from '@/domain/interfaces/IS3Service';
 import { IGetUserProfileUseCase } from '@/application/useCases/interfaces/user/profile/IGetUserProfileUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class GetUserProfileUseCase implements IGetUserProfileUseCase{
     constructor(
+        @inject(TYPES.IUserRepository)
         private _userRepository: IUserRepository,
+        @inject(TYPES.IS3Service)
         private _s3Service: IS3Service
     ) {}
 

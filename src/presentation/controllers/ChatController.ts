@@ -24,27 +24,35 @@ import { IGetDeveloperChatsUseCase } from "@/application/useCases/interfaces/cha
 import { IGetChatMessagesUseCase } from "@/application/useCases/interfaces/chat/IGetChatMessagesUseCase";
 import { ISendMessageUseCase } from "@/application/useCases/interfaces/chat/ISendMessageUseCase";
 import { IMarkMessagesAsReadUseCase } from "@/application/useCases/interfaces/chat/IMarkMessagesAsReadUseCase";
+import { TYPES } from "@/types/types";
+import { inject, injectable } from "inversify";
+import { IGetChatByIdUseCase } from "@/application/useCases/interfaces/chat/IGetChatByIdUseCase";
 
+@injectable()
 export class ChatController {
-    private _createChatUseCase: ICreateChatUseCase;
-    private _getUserChatsUseCase: IGetUserChatsUseCase;
-    private _getDeveloperChatsUseCase: IGetDeveloperChatsUseCase;
-    private _getChatMessagesUseCase: IGetChatMessagesUseCase;
-    private _sendMessageUseCase: ISendMessageUseCase;
-    private _markMessagesAsReadUseCase: IMarkMessagesAsReadUseCase;
+
     constructor(
-        private _chatRepository: IChatRepository,
-        private _messageRepository: IMessageRepository,
-        private _socketService: SocketService,
-        private _s3Service: S3Service
-    ) {
-        this._createChatUseCase = new CreateChatUseCase(_chatRepository);
-        this._getUserChatsUseCase = new GetUserChatsUseCase(_chatRepository);
-        this._getDeveloperChatsUseCase = new GetDeveloperChatsUseCase(_chatRepository);
-        this._getChatMessagesUseCase = new GetChatMessagesUseCase(_messageRepository, _chatRepository, _s3Service);
-        this._sendMessageUseCase = new SendMessageUseCase(_messageRepository, _chatRepository, _socketService, _s3Service)
-        this._markMessagesAsReadUseCase = new MarkMessagesAsReadUseCase(_messageRepository, _chatRepository, _socketService)
-    }
+    @inject(TYPES.ICreateChatUseCase)
+    private _createChatUseCase: ICreateChatUseCase,
+
+    @inject(TYPES.IGetUserChatsUseCase)
+    private _getUserChatsUseCase: IGetUserChatsUseCase,
+
+    @inject(TYPES.IGetDeveloperChatsUseCase)
+    private _getDeveloperChatsUseCase: IGetDeveloperChatsUseCase,
+
+    @inject(TYPES.IGetChatMessagesUseCase)
+    private _getChatMessagesUseCase: IGetChatMessagesUseCase,
+
+    @inject(TYPES.ISendMessageUseCase)
+    private _sendMessageUseCase: ISendMessageUseCase,
+
+    @inject(TYPES.IMarkMessagesAsReadUseCase)
+    private _markMessagesAsReadUseCase: IMarkMessagesAsReadUseCase,
+    @inject(TYPES.IGetChatByIdUseCase)
+    private _getChatByIdUseCase: IGetChatByIdUseCase
+
+  ) {}
     
     async createChat(req: Request, res: Response, next: NextFunction) {
         try {
@@ -78,41 +86,9 @@ export class ChatController {
             }
             const chats = await this._getUserChatsUseCase.execute(userId) as unknown as IChats[];
             
-            const transformedChats = await Promise.all(chats.map(async (chat: IChats) => {
-                let profilePictureUrl = null;
-                if (chat.developerId?.profilePicture) {
-                    profilePictureUrl = await this._s3Service.generateSignedUrl(chat.developerId.profilePicture);
-                }
-
-                let userProfilePictureUrl = null;
-                if (chat.userId?.profilePicture) {
-                    userProfilePictureUrl = await this._s3Service.generateSignedUrl(chat.userId?.profilePicture);
-                }
-    
-                return {
-                    _id: chat._id?.toString(),
-                    userId: {
-                        _id: chat.userId._id?.toString(),
-                        username: chat.userId.username,
-                        profilePicture: userProfilePictureUrl
-                    },
-                    developerId: {
-                        _id: chat.developerId._id?.toString(),
-                        username: chat.developerId.username,
-                        profilePicture: profilePictureUrl
-                    },
-                    lastMessage: chat.lastMessage,
-                    userUnreadCount: chat.userUnreadCount,
-                    developerUnreadCount: chat.developerUnreadCount,
-                    lastMessageTime: chat.lastMessageTime,
-                    createdAt: chat.createdAt,
-                    updatedAt: chat.updatedAt
-                };
-            }));
-    
             return res.status(StatusCodes.OK).json({
                 success: true,
-                chats: transformedChats
+                chats: chats
             });
         } catch (error) {
             next(error)
@@ -128,41 +104,9 @@ export class ChatController {
 
             const chats = await this._getDeveloperChatsUseCase.execute(developerId) as unknown as IChats[];
             
-            const transformedChats = await Promise.all(chats.map(async (chat: IChats) => {
-                let userProfilePictureUrl = null;
-                if (chat.userId?.profilePicture) {
-                    userProfilePictureUrl = await this._s3Service.generateSignedUrl(chat.userId.profilePicture);
-                }
-
-                let developerProfilePictureUrl = null;
-                if (chat.developerId?.profilePicture) {
-                    developerProfilePictureUrl = await this._s3Service.generateSignedUrl(chat.developerId.profilePicture);
-                }
-    
-                return {
-                    _id: chat._id?.toString(),
-                    userId: {
-                        _id: chat.userId._id?.toString(),
-                        username: chat.userId.username,
-                        profilePicture: userProfilePictureUrl
-                    },
-                    developerId: {
-                        _id: chat.developerId._id?.toString(),
-                        username: chat.developerId.username,
-                        profilePicture: developerProfilePictureUrl
-                    },
-                    lastMessage: chat.lastMessage,
-                    userUnreadCount: chat.userUnreadCount,
-                    developerUnreadCount: chat.developerUnreadCount,
-                    lastMessageTime: chat.lastMessageTime,
-                    createdAt: chat.createdAt,
-                    updatedAt: chat.updatedAt
-                };
-            }));
-
             return res.status(StatusCodes.OK).json({
                 success: true,
-                chats: transformedChats
+                chats: chats
             })
         } catch (error) {
             next(error)
@@ -210,13 +154,13 @@ export class ChatController {
                 throw new AppError('ID is required', StatusCodes.BAD_REQUEST);
             }
             
-            const chat = await this._chatRepository.getChatById(chatId);
+            const chat = await this._getChatByIdUseCase.execute(chatId);
             if (!chat) {
                 throw new AppError('Chat not found', StatusCodes.NOT_FOUND);
             }
             
-            const senderType = chat.userId.id.toString() === userId ? 'user' : 'developer';
-            const senderId = senderType === 'user' ? chat.userId.id.toString() : chat.developerId.id.toString();
+            const senderType = chat.userId._id.toString() === userId ? 'user' : 'developer';
+            const senderId = senderType === 'user' ? chat.userId._id.toString() : chat.developerId._id.toString();
 
             const message = await this._sendMessageUseCase.execute({
                 chatId,
@@ -239,13 +183,13 @@ export class ChatController {
     async markMessagesAsRead(req: Request, res: Response, next: NextFunction) {
         try {
             const { chatId } = req.params;
-            const chat = await this._chatRepository.getChatById(chatId);
+            const chat = await this._getChatByIdUseCase.execute(chatId);
             if (!chat) {
                 throw new AppError('Chat not found', StatusCodes.NOT_FOUND)
             }
             
-            const isUser = chat.userId.id.toString() === req.userId;
-            const isDeveloper = chat.developerId.id.toString() === req.userId;
+            const isUser = chat.userId._id.toString() === req.userId;
+            const isDeveloper = chat.developerId._id.toString() === req.userId;
             
             if (!isUser && !isDeveloper) {
                 throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);

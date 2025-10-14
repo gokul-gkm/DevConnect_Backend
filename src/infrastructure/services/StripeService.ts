@@ -6,13 +6,19 @@ import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
 import { Types } from 'mongoose';
 import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
 import { StatusCodes } from 'http-status-codes';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class StripeService implements IPaymentService {
   private stripe: Stripe;
   
   constructor(
+    @inject(TYPES.IPaymentRepository)
     private _paymentRepository: IPaymentRepository,
+    @inject(TYPES.IWalletRepository)
     private _walletRepository: IWalletRepository,
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {

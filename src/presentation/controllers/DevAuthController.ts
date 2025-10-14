@@ -2,18 +2,8 @@ import { HTTP_STATUS_MESSAGES } from "@/utils/constants";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { AppError } from "@/domain/errors/AppError";
-
-import { MailService } from "@/infrastructure/mail/MailService";
-import { DeveloperRepository } from "@/infrastructure/repositories/DeveloperRepository";
-import { OTPRepository } from "@/infrastructure/repositories/OTPRepository";
-import { UserRepository } from "@/infrastructure/repositories/UserRepository";
-import { S3Service } from "@/infrastructure/services/S3_Service";
-
-import { DevLoginUseCase } from "@/application/useCases/implements/developer/auth/DevLoginUseCase";
-import { DevRequestUseCase } from "@/application/useCases/implements/developer/auth/DevRequestUseCase";
-import { RegisterDevUseCase } from "@/application/useCases/implements/developer/auth/RegisterDevUseCase";
-import { ResendOTPUseCase } from "@/application/useCases/implements/user/auth/ResendOTPUseCase";
-import { VerifyOTPUseCase } from "@/application/useCases/implements/user/auth/VerifyOTPUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
 import { IRegisterDevUseCase } from "@/application/useCases/interfaces/developer/auth/IRegisterDevUseCase";
 import { IVerifyOTPUseCase } from "@/application/useCases/interfaces/user/auth/IVerifyOTPUseCase";
@@ -21,25 +11,26 @@ import { IResendOTPUseCase } from "@/application/useCases/interfaces/user/auth/I
 import { IDevRequestUseCase } from "@/application/useCases/interfaces/developer/auth/IDevRequestUseCase";
 import { IDevLoginUseCase } from "@/application/useCases/interfaces/developer/auth/IDevLoginUseCase";
 
+
+const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
+const REFRESH_COOKIE_MAX_AGE = Number(process.env.REFRESH_COOKIE_MAX_AGE);
+
+@injectable()
 export class DevAuthController {
-    private _registerDevUseCase: IRegisterDevUseCase;
-    private _verifyOTPUseCase: IVerifyOTPUseCase;
-    private _resendOTPUseCase: IResendOTPUseCase;
-    private _devRequestUseCase: IDevRequestUseCase;
-    private _devLoginUseCase: IDevLoginUseCase;
+
     constructor(
-        private _userRepository: UserRepository,
-        private _otpRepository: OTPRepository,
-        private _devRepository: DeveloperRepository,
-        private _mailService: MailService,
-        private _s3Service: S3Service,
-    ) {
-        this._registerDevUseCase = new RegisterDevUseCase(_userRepository, _otpRepository, _mailService);
-        this._verifyOTPUseCase = new VerifyOTPUseCase(_otpRepository, _userRepository);
-        this._resendOTPUseCase = new ResendOTPUseCase(_otpRepository, _mailService, _userRepository);
-        this._devRequestUseCase = new DevRequestUseCase(_userRepository, _devRepository, _s3Service)
-        this._devLoginUseCase = new DevLoginUseCase(_userRepository,_devRepository)
-    }
+        @inject(TYPES.IRegisterDevUseCase)
+        private _registerDevUseCase: IRegisterDevUseCase,
+        @inject(TYPES.IVerifyOTPUseCase)
+        private _verifyOTPUseCase: IVerifyOTPUseCase,
+        @inject(TYPES.IResendOTPUseCase)
+        private _resendOTPUseCase: IResendOTPUseCase,
+        @inject(TYPES.IDevRequestUseCase)
+        private _devRequestUseCase: IDevRequestUseCase,
+        @inject(TYPES.IDevLoginUseCase)
+        private _devLoginUseCase: IDevLoginUseCase,
+    ) {}
+
     async register(req: Request, res: Response) {
         try {
             const devData = req.body;
@@ -117,8 +108,8 @@ export class DevAuthController {
             const { email, password } = req.body;            
             const { accessToken, refreshToken, user } = await this._devLoginUseCase.execute({ email, password });
            
-            res.cookie('accessToken', accessToken, { httpOnly: true, maxAge: 15 * 60 * 1000 });
-            res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 });
+            res.cookie('accessToken', accessToken, { httpOnly: true, maxAge: ACCESS_COOKIE_MAX_AGE });
+            res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: REFRESH_COOKIE_MAX_AGE });
             return res.status(StatusCodes.OK).json({message: "Login successful", user, success: true, token: accessToken})
         } catch (error) {
             if (error instanceof AppError) {

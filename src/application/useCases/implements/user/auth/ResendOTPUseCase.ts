@@ -5,14 +5,17 @@ import { IMailService } from "@/domain/interfaces/IMailService";
 import { IOTPRepository } from "@/domain/interfaces/IOTPRepository";
 import { IUserRepository } from "@/domain/interfaces/IUserRepository";
 import { generateOTP } from "@/shared/utils/OTPGenerator";
+import { TYPES } from "@/types/types";
 import { StatusCodes } from "http-status-codes";
+import { inject, injectable } from "inversify";
 
+@injectable()
 export class ResendOTPUseCase implements IResendOTPUseCase{
 
     constructor(
-        private _otpRepository: IOTPRepository,
-        private _mailService: IMailService,
-        private _userRepository: IUserRepository
+        @inject(TYPES.IOTPRepository) private _otpRepository: IOTPRepository,
+        @inject(TYPES.IMailService) private _mailService: IMailService,
+        @inject(TYPES.IUserRepository) private _userRepository: IUserRepository
     ) { }
     
     async execute(email: string): Promise<void> {

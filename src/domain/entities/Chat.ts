@@ -1,10 +1,11 @@
 import { Schema, model, Types, Document } from 'mongoose';
+import { IUserRef } from '../interfaces/IUserRefs';
 
 export interface IChat extends Document {
   // _id?: string;
   _id: string;
-  userId: Types.ObjectId;
-  developerId: Types.ObjectId;
+  userId: Types.ObjectId | IUserRef;
+  developerId: Types.ObjectId | IUserRef;
   lastMessage?: string;
   lastMessageTime?: Date;
   userUnreadCount: number;

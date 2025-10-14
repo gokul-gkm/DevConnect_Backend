@@ -1,5 +1,5 @@
 import { CreateDeveloperDTO } from '@/application/dto/developer/CreateDeveloperDTO';
-import { DeveloperSearchDTO, DeveloperSearchResponse, ValidatedSearchParams } from '@/application/dto/users/DeveloperSearchDTO';
+import {  DeveloperSearchResponse, ValidatedSearchParams } from '@/application/dto/users/DeveloperSearchDTO';
 import Developer, { IDeveloper } from '@/domain/entities/Developer';
 import { User } from '@/domain/entities/User';
 import { AppError } from '@/domain/errors/AppError';
@@ -9,8 +9,9 @@ import { StatusCodes } from 'http-status-codes';
 import mongoose, { FilterQuery, SortOrder } from 'mongoose';
 import { BaseRepository } from './BaseRepository';
 import { ERROR_MESSAGES } from '@/utils/constants';
+import { injectable } from 'inversify';
 
-
+@injectable()
 export class DeveloperRepository extends BaseRepository<IDeveloper> implements IDeveloperRepository {
 
     constructor() {
@@ -51,15 +52,6 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             throw new AppError('Failed to fetch developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
-
-    // async findById(id: string): Promise<IDeveloper | null>{
-    //     try {
-    //         return await Developer.findById(id);
-    //     } catch (error) {
-    //         console.error('Error finding developer:', error);
-    //         throw new AppError('Failed to fetch developer profile', StatusCodes.INTERNAL_SERVER_ERROR);
-    //     }
-    // }
 
     async updateDeveloper(developerId: string, updateData: Partial<IDeveloper>): Promise<IDeveloper | null> {
         try {

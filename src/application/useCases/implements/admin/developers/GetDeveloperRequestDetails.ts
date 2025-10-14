@@ -4,11 +4,15 @@ import { StatusCodes } from "http-status-codes";
 import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
 import { IS3Service } from "@/domain/interfaces/IS3Service";
 import { IGetDeveloperRequestDetailsUseCase } from "@/application/useCases/interfaces/admin/developers/IGetDeveloperRequestDetailsUseCase";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
-
+@injectable()
 export class GetDeveloperRequestDetailsUseCase implements IGetDeveloperRequestDetailsUseCase {
     constructor(
+        @inject(TYPES.IDeveloperRepository)
         private _developerRepository: IDeveloperRepository,
+        @inject(TYPES.IS3Service)
         private _s3Service: IS3Service
     ) {}
 

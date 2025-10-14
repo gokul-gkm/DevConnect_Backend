@@ -8,6 +8,7 @@ import { StatusCodes } from 'http-status-codes';
 import mongoose, { Types } from 'mongoose';
 import DeveloperSlot from '@/domain/entities/Slot';
 import { BaseRepository } from './BaseRepository';
+import { injectable } from 'inversify';
 
 interface PopulatedUser {
   _id: Types.ObjectId;
@@ -28,7 +29,7 @@ interface PopulatedDeveloper {
 }
 
 
-
+@injectable()
 export class SessionRepository extends BaseRepository<ISession> implements ISessionRepository  {
 
   constructor() {

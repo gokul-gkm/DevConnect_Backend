@@ -5,10 +5,15 @@ import { ISocketService } from '@/domain/interfaces/ISocketService';
 import { StatusCodes } from 'http-status-codes';
 import { Types } from 'mongoose';
 import { ICreateNotificationUseCase } from '../../interfaces/notification/ICreateNotificationUseCase';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types/types';
 
+@injectable()
 export class CreateNotificationUseCase implements ICreateNotificationUseCase {
   constructor(
+    @inject(TYPES.INotificationRepository)
     private _notificationRepository: INotificationRepository,
+    @inject(TYPES.ISocketService)
     private _socketService: ISocketService
   ) {}
 

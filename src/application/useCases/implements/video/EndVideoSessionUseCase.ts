@@ -6,12 +6,19 @@ import mongoose, { Types } from "mongoose";
 import { ISocketService } from "@/domain/interfaces/ISocketService";
 import { IEndVideoSessionUseCase } from "../../interfaces/video/IEndVideoSessionUseCase";
 import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types/types";
 
+@injectable()
 export class EndVideoSessionUseCase implements IEndVideoSessionUseCase {
   constructor(
+    @inject(TYPES.IVideoSessionRepository)
     private _videoSessionRepository: IVideoSessionRepository,
+    @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
+    @inject(TYPES.ISocketService)
     private _socketService: ISocketService,
+    @inject(TYPES.IWalletRepository)
     private _walletRepository: IWalletRepository
   ) {}
 
