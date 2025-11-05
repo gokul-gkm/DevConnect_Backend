@@ -1,6 +1,6 @@
 import { CreateChatDTO } from "@/application/dto/chat/ChatDTO";
 import { AppError } from "@/domain/errors/AppError";
-import { IChatRepository } from "@/domain/interfaces/IChatRepository";
+import { IChatRepository } from "@/domain/interfaces/repositories/IChatRepository";
 import { StatusCodes } from "http-status-codes";
 import { ICreateChatUseCase } from "../../interfaces/chat/ICreateChatUseCase";
 import { inject, injectable } from "inversify";
@@ -21,7 +21,7 @@ export class CreateChatUseCase implements ICreateChatUseCase {
             }
             const chat = await this._chatRepository.createChat(userId, developerId);
             return chat
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to create chat', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }

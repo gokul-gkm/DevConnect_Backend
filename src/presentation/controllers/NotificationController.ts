@@ -11,6 +11,7 @@ import { IGetUnreadCountUseCase } from '@/application/useCases/interfaces/notifi
 
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
+import { handleControllerError } from '../error/handleControllerError';
 
 @injectable()
 export class NotificationController {
@@ -45,13 +46,9 @@ export class NotificationController {
         success: true,
         data: notifications
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error getting notifications:', error);
-      
-      return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
-      });
+      handleControllerError(error, res, 'Failed to fetch notifications')
     }
   }
 
@@ -70,13 +67,9 @@ export class NotificationController {
         success: true,
         data: notification
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error marking notification as read:', error);
-      
-      return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
-      });
+      handleControllerError(error, res, 'Failed to mark notification as read')
     }
   }
 
@@ -93,13 +86,9 @@ export class NotificationController {
         success: true,
         message: 'All notifications marked as read'
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error marking all notifications as read:', error);
-      
-      return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
-      });
+      handleControllerError(error, res, 'Failed mark all notification as read')
     }
   }
 
@@ -118,13 +107,9 @@ export class NotificationController {
         success: deleted,
         message: deleted ? 'Notification deleted' : 'Failed to delete notification'
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting notification:', error);
-      
-      return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
-      });
+      handleControllerError(error, res, HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR)
     }
   }
 
@@ -141,13 +126,9 @@ export class NotificationController {
         success: true,
         data: { count }
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error getting unread count:', error);
-      
-      return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
-      });
+      handleControllerError(error, res, HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR)
     }
   }
 }

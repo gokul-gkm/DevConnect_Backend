@@ -1,6 +1,6 @@
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
+import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
 import { IGetBookedSlotsUseCase } from "@/application/useCases/interfaces/user/session/IGetBookedSlotsUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";

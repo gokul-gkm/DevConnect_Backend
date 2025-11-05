@@ -1,6 +1,6 @@
 import { AppError } from '@/domain/errors/AppError';
-import { INotificationRepository } from '@/domain/interfaces/INotificationRepository';
-import { ISocketService } from '@/domain/interfaces/ISocketService';
+import { INotificationRepository } from '@/domain/interfaces/repositories/INotificationRepository';
+import { ISocketService } from '@/domain/interfaces/services/ISocketService';
 import { StatusCodes } from 'http-status-codes';
 import { IMarkAllNotificationsAsReadUseCase } from '../../interfaces/notification/IMarkAllNotificationsAsReadUseCase';
 import { inject, injectable } from 'inversify';

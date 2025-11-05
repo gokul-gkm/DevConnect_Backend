@@ -1,10 +1,10 @@
 import { AppError } from '@/domain/errors/AppError';
 import { Types } from 'mongoose';
 import { StatusCodes } from 'http-status-codes';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { ISocketService } from '@/domain/interfaces/ISocketService';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
+import { ISocketService } from '@/domain/interfaces/services/ISocketService';
 import { IAcceptSessionRequestUseCase } from '@/application/useCases/interfaces/developer/sessions/IAcceptSessionRequestUseCase';
-import { INotificationService } from '@/domain/interfaces/INotificationService';
+import { INotificationService } from '@/domain/interfaces/services/INotificationService';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
 
@@ -59,35 +59,17 @@ export class AcceptSessionRequestUseCase implements IAcceptSessionRequestUseCase
             sessionId
           );
 
-          // Emit session update to both user and developer
           if (this._socketService.isUserOnline(recipientId)) {
             console.log('user is online. emitting session updated')
             this._socketService.emitToUser(recipientId, 'session:updated', {
               sessionId: sessionId,
               status: 'approved',
-              notification: {
-                id: notification._id,
-                title: notification.title,
-                message: notification.message,
-                type: notification.type,
-                isRead: notification.isRead,
-                timestamp: notification.createdAt,
-                sender: notification.sender
-              }
             });
           }
 
-          // Also emit to developer if they're online
-          if (this._socketService.isDeveloperOnline(developerId)) {
-            this._socketService.emitToDeveloper(developerId, 'session:updated', {
-              sessionId: sessionId,
-              status: 'approved'
-            });
-          }
 
         } catch (notificationError) {
           console.error('Failed to create or send notification:', notificationError);
-          // Don't throw the error, as the session was successfully updated
         }
       }
 

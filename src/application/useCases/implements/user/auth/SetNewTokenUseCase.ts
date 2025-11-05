@@ -34,7 +34,7 @@ export class SetNewTokenUseCase implements ISetNewTokenUseCase {
                 success: false,
                 message: "Invalid token payload"
             };
-        } catch (error) {
+        } catch (_error) {
             return {
                 success: false,
                 message: "Invalid or expired token"

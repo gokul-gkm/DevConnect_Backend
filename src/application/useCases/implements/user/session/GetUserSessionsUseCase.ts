@@ -2,7 +2,7 @@ import { AppError } from '@/domain/errors/AppError';
 import { ISession } from '@/domain/entities/Session';
 import { StatusCodes } from 'http-status-codes';
 import { ERROR_MESSAGES } from '@/utils/constants';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
 import { IGetUserSessionsUseCase } from '@/application/useCases/interfaces/user/session/IGetUserSessionsUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';

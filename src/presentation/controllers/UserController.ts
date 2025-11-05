@@ -43,6 +43,7 @@ export class UserController {
             return res.status(StatusCodes.OK).json({data: user, success: true});
             
         } catch (error) {
+            console.error("Get profile error:", error);
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({success: false, message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR});
         }
     }
@@ -73,7 +74,7 @@ export class UserController {
                 message: 'Profile updated ',
                 data: updatedUser
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Update profile error:", error);
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({
@@ -118,10 +119,12 @@ export class UserController {
                 success: true,
                 data: result
             });
-        } catch (error: any) {
-            return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+        } catch (error: unknown) {
+            const message = error instanceof AppError ? error.message : 'Failed to search developers';
+            const statusCode = error instanceof AppError ? error.statusCode : StatusCodes.INTERNAL_SERVER_ERROR;
+            return res.status(statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: error.message || 'Failed to search developers'
+                message: message || 'Failed to search developers' 
             });
         }
     }
@@ -135,10 +138,12 @@ export class UserController {
                 success: true,
                 data: profile
             });
-        } catch (error: any) {
-            return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+        } catch (error: unknown) {
+            const message = error instanceof AppError ? error.message : 'Failed to fetch developer profile';
+            const statusCode = error instanceof AppError ? error.statusCode : StatusCodes.INTERNAL_SERVER_ERROR;
+            return res.status(statusCode).json({
                 success: false,
-                message: error.message || 'Failed to fetch developer profile'
+                message
             });
         }
     }

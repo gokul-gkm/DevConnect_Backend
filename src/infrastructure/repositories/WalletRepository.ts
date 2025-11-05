@@ -1,5 +1,5 @@
 import mongoose, { Types } from 'mongoose';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { IRefundResult, IWalletRepository } from '@/domain/interfaces/repositories/IWalletRepository';
 import { IWallet, IWalletTransaction } from '@/domain/entities/Wallet';
 import { WalletModel } from '@/domain/entities/Wallet';
 import { AppError } from '@/domain/errors/AppError';
@@ -15,7 +15,7 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
   async findByUserId(userId: Types.ObjectId): Promise<IWallet | null> {
     try {
       return await WalletModel.findOne({ userId });
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to fetch wallet', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -24,7 +24,7 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
     try {
       const wallet = new WalletModel({ userId, balance: 0 });
       return await wallet.save();
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to create wallet', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -46,7 +46,7 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
         throw new AppError('Wallet not found', StatusCodes.NOT_FOUND);
       }
       return updatedWallet;
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to add transaction', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -62,7 +62,7 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
         throw new AppError('Wallet not found', StatusCodes.NOT_FOUND);
       }
       return updatedWallet;
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to update wallet balance', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -123,7 +123,7 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
   async findByAdminId(adminId: string): Promise<IWallet | null> {
     try {
       return await WalletModel.findOne({ adminId });
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to fetch admin wallet', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -137,7 +137,7 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
         transactions: []
       });
       return await wallet.save();
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to create admin wallet', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -214,7 +214,7 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
   }
 
 
-  async processRefund(sessionId: string, userId: string, developerId: string, amount: number, reason: string): Promise<any> {
+  async processRefund(sessionId: string, userId: string, developerId: string, amount: number, reason: string): Promise<IRefundResult> {
     try {
       
       const adminWallet = await WalletModel.findOne({ adminId: process.env.ADMIN_ID });

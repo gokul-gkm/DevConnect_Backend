@@ -2,7 +2,7 @@ import { LoginUserDTO } from "@/application/dto/LoginUserDTO";
 import { ILoginUserUseCase } from "@/application/useCases/interfaces/user/auth/ILoginUserUseCase";
 import { IUser } from "@/domain/entities/User";
 import { AppError } from "@/domain/errors/AppError";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { TYPES } from "@/types/types";
 import bcrypt from 'bcryptjs'
 import { StatusCodes } from "http-status-codes";

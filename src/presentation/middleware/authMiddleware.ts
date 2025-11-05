@@ -30,6 +30,7 @@ export const authMiddleware = (
         next();
         return;
     } catch (accessTokenError) {
+          console.error('Access token verification failed:', accessTokenError);
         if (!refreshToken) {
             res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized', success: false });
             return;
@@ -56,6 +57,7 @@ export const authMiddleware = (
             next();
             return;
         } catch (refreshTokenError) {
+            console.error('Refresh token verification failed:', refreshTokenError);
             res.clearCookie('accessToken');
             res.clearCookie('refreshToken');
             res.status(StatusCodes.FORBIDDEN).json({ message: 'Unauthorized', success: false });

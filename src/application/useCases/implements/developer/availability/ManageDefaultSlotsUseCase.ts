@@ -1,4 +1,4 @@
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { IManageDefaultSlotsUseCase } from "@/application/useCases/interfaces/developer/availability/IManageDefaultSlotsUseCase";

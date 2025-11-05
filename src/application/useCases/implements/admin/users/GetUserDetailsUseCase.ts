@@ -1,8 +1,8 @@
 import { IGetUserDetailsUseCase } from "@/application/useCases/interfaces/admin/users/IGetUserDetailsUseCase";
 import { IUser } from "@/domain/entities/User";
 import { AppError } from "@/domain/errors/AppError";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { TYPES } from "@/types/types";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { StatusCodes } from "http-status-codes";

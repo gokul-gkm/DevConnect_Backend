@@ -95,17 +95,20 @@ export class SessionController {
         success: true,
         data: session
       });
-    } catch (error: any) {
-      console.log("error message : ", error.message)
+    } catch (error: unknown) {
+      const message = error instanceof AppError ? error.message : 'Failed to create session';
+      const statusCode = error instanceof AppError ? error.statusCode : StatusCodes.INTERNAL_SERVER_ERROR;
+
+      console.log("error message : ", message)
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
           message: error.message
         });
       }
-      return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+      return res.status(statusCode).json({
         success: false,
-        message: error.message
+        message
       });
     }
   }
@@ -113,20 +116,6 @@ export class SessionController {
   async getBookedSlots(req: Request, res: Response) {
     try {
       const { developerId, date } = req.query;
-      
-      // if (!developerId || !date) {
-      //   throw new AppError('Developer ID and date are required', StatusCodes.BAD_REQUEST);
-      // }
-  
-      // const bookedSlots = await this._sessionRepository.getBookedSlots(
-      //   developerId as string,
-      //   new Date(date as string)
-      // );
-  
-      // const formattedSlots = bookedSlots.map((slot: any) => ({
-      //   startTime: slot.startTime,
-      //   duration: slot.duration
-      // }));
 
       const slots = await this._getBookedSlotsUseCase.execute(
         developerId as string,
@@ -138,11 +127,7 @@ export class SessionController {
         data: slots,
       });
   
-      // return res.status(StatusCodes.OK).json({
-      //   success: true,
-      //   data: formattedSlots
-      // });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -439,7 +424,7 @@ export class SessionController {
         success: true,
         data: unavailableSlots
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -510,7 +495,7 @@ export class SessionController {
         data: ratingData
       });
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,
@@ -552,7 +537,7 @@ export class SessionController {
         data: ratingData
       });
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof AppError) {
         return res.status(error.statusCode).json({
           success: false,

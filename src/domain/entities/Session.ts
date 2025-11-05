@@ -14,7 +14,7 @@ export interface ISession extends Document {
     startTime: Date;
     createdAt: Date;
     updatedAt: Date;
-    topics: String[];
+    topics: string[];
     developerId: Types.ObjectId | null;
     userId: Types.ObjectId | null;
 }

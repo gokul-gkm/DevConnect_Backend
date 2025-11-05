@@ -1,5 +1,5 @@
 import { IVideoSession } from "@/domain/entities/VideoSession";
-import { IVideoSessionRepository } from "@/domain/interfaces/IVideoSessionRepository";
+import { IVideoSessionRepository } from "@/domain/interfaces/repositories/IVideoSessionRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
@@ -18,7 +18,7 @@ export class VideoSessionRepository extends BaseRepository<IVideoSession> implem
             const videoSession = new VideoSession(sessionData);
             await videoSession.save();
             return videoSession;
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to create video session', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
@@ -28,7 +28,7 @@ export class VideoSessionRepository extends BaseRepository<IVideoSession> implem
             return await VideoSession.findOne({ sessionId })
                 .populate('hostId')
                 .populate('participantId');
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to fetch video session', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
@@ -38,7 +38,7 @@ export class VideoSessionRepository extends BaseRepository<IVideoSession> implem
             return await VideoSession.findOne({ roomId })
                 .populate('hostId')
                 .populate('participantId');
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to fetch video session', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
@@ -50,7 +50,7 @@ export class VideoSessionRepository extends BaseRepository<IVideoSession> implem
                 { status },
                 { new: true }
             ).populate('hostId').populate('participantId');
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to update video session status', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
@@ -62,7 +62,7 @@ export class VideoSessionRepository extends BaseRepository<IVideoSession> implem
                 { hostJoinedAt: new Date() },
                 { new: true }
             ).populate('hostId').populate('participantId');
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to update host join time', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
@@ -74,7 +74,7 @@ export class VideoSessionRepository extends BaseRepository<IVideoSession> implem
                 { participantJoinedAt: new Date() },
                 { new: true }
             ).populate('hostId').populate('participantId');
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to update participant join time', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
@@ -89,7 +89,7 @@ export class VideoSessionRepository extends BaseRepository<IVideoSession> implem
                 },
                 { new: true }
             ).populate('hostId').populate('participantId');
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to end video session', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }

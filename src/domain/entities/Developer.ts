@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, ObjectId } from 'mongoose';
 
 export interface IDeveloper extends Document {
   _id: string;
-  expertise: String[] | null;
+  expertise: string[] | null;
   hourlyRate: number | null;
   rating: number | null;
   timezone: string | null;

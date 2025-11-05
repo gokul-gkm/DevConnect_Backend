@@ -1,5 +1,5 @@
-import { IDeveloperSlotRepository } from "@/domain/interfaces/IDeveloperSlotRepository";
-import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
+import { IDeveloperSlotRepository } from "@/domain/interfaces/repositories/IDeveloperSlotRepository";
+import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { IManageDeveloperUnavailabilityUseCase } from "@/application/useCases/interfaces/developer/availability/IManageDeveloperUnavailabilityUseCase";

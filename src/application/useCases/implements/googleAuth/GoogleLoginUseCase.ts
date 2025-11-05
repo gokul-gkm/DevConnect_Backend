@@ -4,8 +4,8 @@ import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
-import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
+import { IWalletRepository } from "@/domain/interfaces/repositories/IWalletRepository";
 import { User } from "@/domain/entities/User";
 import { IGoogleLoginUseCase, IGoogleLoginResponse } from "@/application/useCases/interfaces/googleAuth/IGoogleLoginUseCase";
 import { TYPES } from "@/types/types";
@@ -60,7 +60,7 @@ export class GoogleLoginUseCase implements IGoogleLoginUseCase {
         if (!existingWallet) {
             try {
                 await this._walletRepository.create(new Types.ObjectId(user._id));
-            } catch (error) {
+            } catch (_error) {
                 if (!user.createdAt) {
                     await this._userRepository.deleteById(user._id);
                 }

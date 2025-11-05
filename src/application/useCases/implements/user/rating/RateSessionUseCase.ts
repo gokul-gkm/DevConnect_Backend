@@ -1,9 +1,9 @@
-import { IRatingRepository } from '@/domain/interfaces/IRatingRepository';
+import { IRatingRepository } from '@/domain/interfaces/repositories/IRatingRepository';
 import { Types } from 'mongoose';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { INotificationService } from '@/domain/interfaces/INotificationService';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
+import { INotificationService } from '@/domain/interfaces/services/INotificationService';
 import { IRateSessionUseCase } from '@/application/useCases/interfaces/user/rating/IRateSessionUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';

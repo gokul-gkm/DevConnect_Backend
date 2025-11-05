@@ -1,11 +1,11 @@
 import { SendMessageDTO } from "@/application/dto/chat/ChatDTO";
 import { AppError } from "@/domain/errors/AppError";
-import { IChatRepository } from "@/domain/interfaces/IChatRepository";
-import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
+import { IChatRepository } from "@/domain/interfaces/repositories/IChatRepository";
+import { IMessageRepository } from "@/domain/interfaces/repositories/IMessageRepository";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-import { ISocketService } from "@/domain/interfaces/ISocketService";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
+import { ISocketService } from "@/domain/interfaces/services/ISocketService";
 import { ISendMessageUseCase } from "../../interfaces/chat/ISendMessageUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";

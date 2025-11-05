@@ -1,4 +1,4 @@
-import { IDeveloperSlotRepository } from "@/domain/interfaces/IDeveloperSlotRepository";
+import { IDeveloperSlotRepository } from "@/domain/interfaces/repositories/IDeveloperSlotRepository";
 import DeveloperSlot, {IDeveloperSlot} from "@/domain/entities/Slot";
 import mongoose from "mongoose";
 import { AppError } from "@/domain/errors/AppError";

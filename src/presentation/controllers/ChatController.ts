@@ -6,18 +6,6 @@ import { AppError } from "@/domain/errors/AppError";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { StatusCodes } from "http-status-codes";
 
-import { IChatRepository } from "@/domain/interfaces/IChatRepository";
-import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
-import { SocketService } from "@/infrastructure/services/SocketService";
-import { S3Service } from "@/infrastructure/services/S3_Service";
-
-import { CreateChatUseCase } from "@/application/useCases/implements/chat/CreateChatUseCase";
-import { GetChatMessagesUseCase } from "@/application/useCases/implements/chat/GetChatMessagesUseCase";
-import { GetDeveloperChatsUseCase } from "@/application/useCases/implements/chat/GetDeveloperChatsUseCase";
-import { GetUserChatsUseCase } from "@/application/useCases/implements/chat/GetUserChatsUseCase";
-import { MarkMessagesAsReadUseCase } from "@/application/useCases/implements/chat/MarkMessagesAsReadUseCase";
-import { SendMessageUseCase } from "@/application/useCases/implements/chat/SendMessageUseCase";
-
 import { ICreateChatUseCase } from "@/application/useCases/interfaces/chat/ICreateChatUseCase";
 import { IGetUserChatsUseCase } from "@/application/useCases/interfaces/chat/IGetUserChatsUseCase";
 import { IGetDeveloperChatsUseCase } from "@/application/useCases/interfaces/chat/IGetDeveloperChatsUseCase";

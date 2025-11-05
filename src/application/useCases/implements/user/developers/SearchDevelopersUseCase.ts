@@ -1,8 +1,8 @@
 import { DeveloperSearchDTO, DeveloperSearchResponse } from "@/application/dto/users/DeveloperSearchDTO";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { ISearchDevelopersUseCase } from "@/application/useCases/interfaces/user/developers/ISearchDevelopersUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";

@@ -1,8 +1,8 @@
 import { Types } from 'mongoose';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { IS3Service } from '@/domain/interfaces/IS3Service';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
+import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { IGetScheduledSessionDetailsUseCase } from '@/application/useCases/interfaces/developer/sessions/IGetScheduledSessionDetailsUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
@@ -25,10 +25,11 @@ export class GetScheduledSessionDetailsUseCase implements IGetScheduledSessionDe
       const session = await this._sessionRepository.getScheduledSessionById(
         new Types.ObjectId(sessionId)
       );
-      
-      if (session.developerId.toString() !== developerId) {
-        throw new AppError('Not authorized to access this session', StatusCodes.FORBIDDEN);
+
+      if (!session.developerId || session.developerId.toString() !== developerId) {
+          throw new AppError("Unauthorized access", StatusCodes.FORBIDDEN);
       }
+
 
       if (session.userId && session.userId.profilePicture) {
         try {

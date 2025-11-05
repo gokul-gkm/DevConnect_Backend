@@ -1,8 +1,8 @@
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { ERROR_MESSAGES } from '@/utils/constants';
-import { IUserRepository } from '@/domain/interfaces/IUserRepository';
-import { IS3Service } from '@/domain/interfaces/IS3Service';
+import { IUserRepository } from '@/domain/interfaces/repositories/IUserRepository';
+import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { IGetUserProfileUseCase } from '@/application/useCases/interfaces/user/profile/IGetUserProfileUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';

@@ -1,15 +1,16 @@
 import { CreateDeveloperDTO } from '@/application/dto/developer/CreateDeveloperDTO';
 import {  DeveloperSearchResponse, ValidatedSearchParams } from '@/application/dto/users/DeveloperSearchDTO';
 import Developer, { IDeveloper } from '@/domain/entities/Developer';
-import { User } from '@/domain/entities/User';
+import { IUser, User } from '@/domain/entities/User';
 import { AppError } from '@/domain/errors/AppError';
-import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
+import { IDeveloperRepository } from '@/domain/interfaces/repositories/IDeveloperRepository';
 import { DevPaginatedResponse, DevQueryParams} from '@/domain/types/types';
 import { StatusCodes } from 'http-status-codes';
-import mongoose, { FilterQuery, SortOrder } from 'mongoose';
+import mongoose, { FilterQuery, PipelineStage, SortOrder } from 'mongoose';
 import { BaseRepository } from './BaseRepository';
 import { ERROR_MESSAGES } from '@/utils/constants';
 import { injectable } from 'inversify';
+import { IDeveloperPopulated, IDeveloperAggregateResult, ILeaderboardResponse, ITopDeveloper } from '@/domain/interfaces/types/IDeveloperTypes';
 
 @injectable()
 export class DeveloperRepository extends BaseRepository<IDeveloper> implements IDeveloperRepository {
@@ -79,7 +80,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
     ): Promise<IDeveloper | null> {
         try {
         
-            const updateData: any = { status };
+            const updateData: Partial<IDeveloper> = { status };
             if (status === 'rejected' && rejectionReason) {
                 updateData.rejectionReason = rejectionReason;
             }
@@ -117,7 +118,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
                 status
             } = queryParams;
          
-            const userFilter: FilterQuery<any> = { role: 'developer' };         
+            const userFilter: FilterQuery<IUser> = { role: 'developer' };         
             if (search) {
                 userFilter.$or = [
                     { username: { $regex: search, $options: 'i' } },
@@ -175,14 +176,15 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
         }
     }
 
-    async findDeveloperDetails(developerId: string): Promise<IDeveloper | null> {
+    async findDeveloperDetails(developerId: string): Promise<IDeveloperPopulated | null> {
         try {
             const developer = await Developer.findById(developerId)
                 .populate({
                     path: 'userId',
                     select: 'username email profilePicture status bio contact socialLinks'
                 })
-                .select('-__v');
+                .select('-__v')
+                .lean<IDeveloperPopulated | null>();;
                 if (!developer) {
                     return null;
                 }
@@ -191,7 +193,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
     
             
             if (user && developer.userId) {
-                (developer.userId as any).socialLinks = user.socialLinks;
+                (developer.userId ).socialLinks = user.socialLinks;
             }
     
             return developer;
@@ -201,13 +203,13 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
         }
     }
 
-    async findDeveloperWithDetails(developerId: string): Promise<IDeveloper | null> {
+    async findDeveloperWithDetails(developerId: string):  Promise<IDeveloperPopulated | null> {
         try {
             const developer = await Developer.findById(developerId)
                 .populate({
                     path: 'userId',
                     select: 'username email profilePicture status bio contact'
-                });
+                }).lean<IDeveloperPopulated | null>();;
                 
                 if (!developer) {
                     return null;
@@ -217,7 +219,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
     
             
             if (user && developer.userId) {
-                (developer.userId as any).socialLinks = user.socialLinks;
+                (developer.userId).socialLinks = user.socialLinks;
             }
             
             return developer;
@@ -314,7 +316,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
         } = params;
     
         try {
-            const aggregationPipeline: any[] = [
+            const aggregationPipeline: PipelineStage[] = [
                 {
                     $match: {
                         status: 'active',
@@ -377,7 +379,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             }
 
             if (priceRange) {
-                const priceMatch: any = {};
+                const priceMatch:  FilterQuery<IDeveloperAggregateResult>  = {};
                 if (priceRange.min !== undefined) {
                     priceMatch['developerProfile.hourlyRate'] = { 
                         ...priceMatch['developerProfile.hourlyRate'],
@@ -405,26 +407,27 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
                 });
             }
 
-            const sortStage: any = {};
+            let sortStage: PipelineStage.Sort;
+           
             switch (sort) {
                 case 'oldest':
-                    sortStage.$sort = { createdAt: 1 };
+                    sortStage = { $sort: { createdAt: 1 } };
                     break;
                 case 'name_asc':
-                    sortStage.$sort = { username: 1 };
+                    sortStage = { $sort: { username: 1 } };
                     break;
                 case 'name_desc':
-                    sortStage.$sort = { username: -1 };
+                    sortStage = { $sort: { username: -1 } };
                     break;
                 case 'price_low':
-                    sortStage.$sort = { 'developerProfile.hourlyRate': 1 };
+                    sortStage = { $sort: { 'developerProfile.hourlyRate': 1 } };
                     break;
                 case 'price_high':
-                    sortStage.$sort = { 'developerProfile.hourlyRate': -1 };
+                    sortStage = { $sort: { 'developerProfile.hourlyRate': -1 } };
                     break;
                 default:
-                    sortStage.$sort = { createdAt: -1 };
-            }
+                    sortStage = { $sort: { createdAt: -1 } };
+                }
             aggregationPipeline.push(sortStage);
     
             aggregationPipeline.push({
@@ -521,7 +524,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
         }
     }
 
-    private transformDeveloperResponse(dev: any) {
+    private transformDeveloperResponse(dev:  IDeveloperAggregateResult) {
         return {
             _id: dev._id.toString(),
             username: dev.username,
@@ -553,7 +556,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
         }
     }
 
-    async getTopPerformingDevelopers(limit: number = 5): Promise<any[]> {
+    async getTopPerformingDevelopers(limit: number = 5): Promise<ITopDeveloper[]> {
         try {
             return await Developer.aggregate([
                 {
@@ -663,113 +666,118 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
         }
     }
 
-    async getLeaderboard(page = 1, limit = 10, sortBy = 'combined'): Promise<any> {
-        try {
-            const skip = (page - 1) * limit;
-            
-            const matchStage = { status: 'approved' };
-            
-            const lookupSessionsStage = {
-                $lookup: {
-                    from: 'sessions',
-                    let: { userId: '$userId' },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        { $eq: ['$developerId', '$$userId'] },
-                                        { $eq: ['$status', 'completed'] },
-                                        { $eq: ['$paymentStatus', 'completed'] }
-                                    ]
-                                }
-                            }
-                        }
-                    ],
-                    as: 'completedSessions'
-                }
-            };
-            
-            const lookupUserStage = {
-                $lookup: {
-                    from: 'users',
-                    localField: 'userId',
-                    foreignField: '_id',
-                    as: 'userDetails'
-                }
-            };
-            
-            const unwindUserStage = {
-                $unwind: {
-                    path: '$userDetails',
-                    preserveNullAndEmptyArrays: true
-                }
-            };
-            
-            const projectStage = {
-                $project: {
-                    _id: 1,
-                    userId: 1,
-                    rating: { $ifNull: ['$rating', 0] },
-                    username: '$userDetails.username',
-                    profilePicture: '$userDetails.profilePicture',
-                    bio: '$userDetails.bio',
-                    expertise: 1,
-                    totalSessions: { $size: '$completedSessions' },
-                    totalEarnings: { $sum: '$completedSessions.price' },
-              
-                    maxPossibleRating: 5,
-                    combinedScore: {
-                        $add: [
 
-                            { $multiply: [{ $ifNull: ['$rating', 0] }, 12] },
-                            { $multiply: [{ $sum: '$completedSessions.price' }, 0.001] }
-                        ]
-                    }
-                }
-            };
-        
-            let sortStage;
-            switch (sortBy) {
-                case 'rating':
-                    sortStage = { $sort: { rating: -1, totalSessions: -1 } };
-                    break;
-                case 'earnings':
-                    sortStage = { $sort: { totalEarnings: -1 } };
-                    break;
-                case 'sessions':
-                    sortStage = { $sort: { totalSessions: -1 } };
-                    break;
-                case 'combined':
-                default:
-                    sortStage = { $sort: { combinedScore: -1 } };
-            }
+async getLeaderboard(page = 1, limit = 10, sortBy = "combined"): Promise<ILeaderboardResponse> {
+  try {
+    const skip = (page - 1) * limit;
 
-            const totalItems = await Developer.countDocuments(matchStage);
-            const totalPages = Math.ceil(totalItems / limit);
-            
-            const developers = await Developer.aggregate([
-                { $match: matchStage },
-                lookupSessionsStage,
-                lookupUserStage,
-                unwindUserStage,
-                projectStage,
-                sortStage as any,
-                { $skip: skip },
-                { $limit: limit }
-            ]);
-            return {
-                developers,
-                pagination: {
-                    currentPage: page,
-                    totalPages,
-                    totalItems
-                }
-            };
-        } catch (error) {
-            console.error('Error getting developer leaderboard:', error);
-            throw new AppError('Failed to fetch developer leaderboard', StatusCodes.INTERNAL_SERVER_ERROR);
-        }
+    const matchStage: PipelineStage.Match = { $match: { status: "approved" } };
+
+    const lookupSessionsStage: PipelineStage.Lookup = {
+      $lookup: {
+        from: "sessions",
+        let: { userId: "$userId" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$developerId", "$$userId"] },
+                  { $eq: ["$status", "completed"] },
+                  { $eq: ["$paymentStatus", "completed"] },
+                ],
+              },
+            },
+          },
+        ],
+        as: "completedSessions",
+      },
+    };
+
+    const lookupUserStage: PipelineStage.Lookup = {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "userDetails",
+      },
+    };
+
+    const unwindUserStage: PipelineStage.Unwind = {
+      $unwind: {
+        path: "$userDetails",
+        preserveNullAndEmptyArrays: true,
+      },
+    };
+
+    const projectStage: PipelineStage.Project = {
+      $project: {
+        _id: 1,
+        userId: 1,
+        rating: { $ifNull: ["$rating", 0] },
+        username: "$userDetails.username",
+        profilePicture: "$userDetails.profilePicture",
+        bio: "$userDetails.bio",
+        expertise: 1,
+        totalSessions: { $size: "$completedSessions" },
+        totalEarnings: { $sum: "$completedSessions.price" },
+        maxPossibleRating: 5,
+        combinedScore: {
+          $add: [
+            { $multiply: [{ $ifNull: ["$rating", 0] }, 12] },
+            { $multiply: [{ $sum: "$completedSessions.price" }, 0.001] },
+          ],
+        },
+      },
+    };
+
+    let sortStage: PipelineStage.Sort;
+
+    switch (sortBy) {
+      case "rating":
+        sortStage = { $sort: { rating: -1 as const, totalSessions: -1 as const } };
+        break;
+      case "earnings":
+        sortStage = { $sort: { totalEarnings: -1 as const } };
+        break;
+      case "sessions":
+        sortStage = { $sort: { totalSessions: -1 as const } };
+        break;
+      case "combined":
+      default:
+        sortStage = { $sort: { combinedScore: -1 as const } };
     }
+
+    const totalItems = await Developer.countDocuments(matchStage.$match);
+    const totalPages = Math.ceil(totalItems / limit);
+
+    const developers = await Developer.aggregate([
+      matchStage,
+      lookupSessionsStage,
+      lookupUserStage,
+      unwindUserStage,
+      projectStage,
+      sortStage,
+      { $skip: skip },
+      { $limit: limit },
+    ]);
+
+    return {
+      developers,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting developer leaderboard:", error);
+    throw new AppError(
+      "Failed to fetch developer leaderboard",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 }
 

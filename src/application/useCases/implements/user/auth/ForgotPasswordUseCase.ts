@@ -1,7 +1,7 @@
 import { IForgotPasswordUseCase } from "@/application/useCases/interfaces/user/auth/IForgotPasswordUseCase";
 import { AppError } from "@/domain/errors/AppError";
-import { IMailService } from "@/domain/interfaces/IMailService";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IMailService } from "@/domain/interfaces/services/IMailService";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { generatePasswordResetToken } from "@/shared/utils/TokenGenerator";
 import { TYPES } from "@/types/types";
 import { ERROR_MESSAGES } from "@/utils/constants";

@@ -4,6 +4,7 @@ import { TYPES } from "@/types/types";
 import { StatusCodes } from "http-status-codes";
 import { AppError } from "@/domain/errors/AppError";
 import { IGoogleLoginUseCase } from "@/application/useCases/interfaces/googleAuth/IGoogleLoginUseCase";
+import { handleControllerError } from "../error/handleControllerError";
 
 const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
 const REFRESH_COOKIE_MAX_AGE = Number(process.env.REFRESH_COOKIE_MAX_AGE);
@@ -36,7 +37,7 @@ export class GoogleAuthController {
                 success: true,
                 token: accessToken,
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Google login error: ", error);
             if (error instanceof AppError) {
                 return res
@@ -44,10 +45,7 @@ export class GoogleAuthController {
                     .json({ message: error.message, success: false });
             }
 
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                message: error.message || "Google Login Error",
-                success: false,
-            });
+            handleControllerError(error, res, "Google Login Error");
         }
     }
 }

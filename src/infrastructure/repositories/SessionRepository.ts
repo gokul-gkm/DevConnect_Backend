@@ -1,14 +1,15 @@
 import Developer from '@/domain/entities/Developer';
 import { Session, ISession } from '@/domain/entities/Session';
 import { AppError } from '@/domain/errors/AppError';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { SessionDetails, SessionDocument, UserInfo } from '@/domain/types/session';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
+import { SessionDetails, SessionDocument, UserInfo, IUserData, IAdminSession, IPagination, ITopEarningDeveloper, IUpcomingSession, IUserInfo, ISessionMatchCondition, IDeveloperSessionMatch } from '@/domain/types/session';
 import { startOfDay, endOfDay } from 'date-fns';
 import { StatusCodes } from 'http-status-codes';
 import mongoose, { Types } from 'mongoose';
 import DeveloperSlot from '@/domain/entities/Slot';
 import { BaseRepository } from './BaseRepository';
 import { injectable } from 'inversify';
+import { ISessionDetails } from '@/domain/interfaces/types/ISessionTypes';
 
 interface PopulatedUser {
   _id: Types.ObjectId;
@@ -18,6 +19,7 @@ interface PopulatedUser {
   bio?: string;
 }
 
+
 interface PopulatedDeveloper {
   _id: Types.ObjectId;
   expertise: string[];
@@ -26,6 +28,10 @@ interface PopulatedDeveloper {
     experience: number;
   };
   userId: PopulatedUser;
+}
+
+export interface IPopulatedSession extends Omit<ISession, "userId"> {
+  userId: IUserData;
 }
 
 
@@ -45,12 +51,12 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       const session = new Session(sessionData);
       await session.save();
       return session;
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to create session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getBookedSlots(developerId: string, date: Date) {
+  async getBookedSlots(developerId: string, date: Date) : Promise<Pick<ISession, 'startTime' | 'duration'>[]>{
     try {
       
       const result = 
@@ -63,7 +69,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
         }
        }).select('startTime duration');
       return result
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to fetch booked slots', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -223,7 +229,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       })
       .populate('userId', 'username email profilePicture')
       .sort({ sessionDate: 1 });
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to fetch developer sessions', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -346,7 +352,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
     try {
       const skip = (page - 1) * limit;
 
-      const statusCounts = await Session.aggregate([
+      const statusCounts = await Session.aggregate<{ _id: string; count: number }>([
         { $match: { developerId } },
         { $group: { 
             _id: "$status", 
@@ -355,7 +361,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
         }
       ]);
 
-      const statusCountMap = statusCounts.reduce((acc: Record<string, number>, curr: any) => {
+      const statusCountMap = statusCounts.reduce((acc: Record<string, number>, curr) => {
         acc[curr._id] = curr.count;
         return acc;
       }, {});
@@ -514,7 +520,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       await Session.findByIdAndUpdate(sessionId, {
         paymentStatus: status
       });
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to update payment status', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -524,7 +530,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       await Session.findByIdAndUpdate(sessionId, {
         paymentTransferStatus: status
       });
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to update payment transfer status', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -587,7 +593,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
     }
   }
 
-  async getScheduledSessionById(sessionId: Types.ObjectId): Promise<any> {
+  async getScheduledSessionById(sessionId: Types.ObjectId): Promise<IPopulatedSession> {
     try {
       const session = await Session.findOne({
         _id: sessionId,
@@ -595,7 +601,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       }).populate({
         path: 'userId',
         select: 'username email profilePicture'
-      });
+      }).lean<IPopulatedSession>(); ;
 
       if (!session) {
         throw new AppError('Scheduled session not found', StatusCodes.NOT_FOUND);
@@ -690,7 +696,10 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
     }
   }
 
-  async getTopEarningDevelopers(page: number = 1, limit: number = 10): Promise<any> {
+  async getTopEarningDevelopers(page: number = 1, limit: number = 10): Promise<{
+  developers: ITopEarningDeveloper[];
+  pagination: IPagination;
+}> {
     try {
       const skip = (page - 1) * limit;
       
@@ -789,13 +798,16 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
     }
   }
 
-  async getAdminSessionsList(status: string[], page: number = 1, limit: number = 10, search: string = ''): Promise<any> {
+  async getAdminSessionsList(status: string[], page: number = 1, limit: number = 10, search: string = ''): Promise<{
+  sessions: IAdminSession[];
+  pagination: IPagination;
+}> {
     try {
       const skip = (page - 1) * limit;
       const currentDate = new Date();
       currentDate.setHours(0, 0, 0, 0); 
 
-      let matchCondition: any = { status: { $in: status } };
+      const matchCondition: ISessionMatchCondition = { status: { $in: status } };
       
     
       if (status.includes('pending') || status.includes('approved') || status.includes('scheduled')) {
@@ -911,7 +923,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
   ) {
     try {
       const skip = (page - 1) * limit;
-      const match: any = {
+      const match: IDeveloperSessionMatch = {
         developerId: new Types.ObjectId(developerId),
         sessionDate: { $lte: currentDate },
         status: { $in: ['cancelled', 'rejected', 'completed'] }
@@ -987,12 +999,12 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
           itemsPerPage: limit
         }
       };
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to fetch developer session history', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async getDeveloperSessionHistoryById(developerId: string, sessionId: string) {
+  async getDeveloperSessionHistoryById(developerId: string, sessionId: string): Promise<ISessionDetails> {
     try {
       const session = await Session.aggregate([
         {
@@ -1049,12 +1061,11 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
         }
       ]);
       return session[0] || null;
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to fetch session history details', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 
-  // Get monthly revenue and session count for a developer
   async getDeveloperMonthlyStats(developerId: string, year: number) {
     const match = {
       developerId: new Types.ObjectId(developerId),
@@ -1096,19 +1107,32 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
     return result;
   }
 
-  async getDeveloperUpcomingSessions(developerId: string, limit: number = 2): Promise<any> {
-    const now = new Date();
+  async getDeveloperUpcomingSessions(
+    developerId: string,
+    limit: number = 2
+  ): Promise<IUpcomingSession[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const sessions = await Session.find({
       developerId: new Types.ObjectId(developerId),
-      sessionDate: { $gte: now },
-      status: { $in: ['scheduled', 'approved', 'pending'] }
+      sessionDate: { $gte: today },
+      status: { $in: ["scheduled", "approved", "pending"] },
     })
-      .populate('userId', 'username profilePicture')
+      .populate<{ userId: IUserInfo }>("userId", "username profilePicture")
       .sort({ sessionDate: 1, startTime: 1 })
       .limit(limit)
-      .lean();
+      .lean<IUpcomingSession[]>();
 
-    return sessions;
+    if (!sessions.length) {
+      throw new AppError("No upcoming sessions found", StatusCodes.NOT_FOUND);
+    }
+
+    return sessions.map((s) => ({
+      ...s,
+      userId: s.userId,
+    }));
+
   }
 
   async getTopicBasedRevenue(page: number = 1, limit: number = 10): Promise<{

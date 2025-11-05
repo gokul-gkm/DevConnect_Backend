@@ -1,5 +1,5 @@
 import { Schema, model, Types, Document } from 'mongoose';
-import { IUserRef } from '../interfaces/IUserRefs';
+import { IUserRef } from '../interfaces/types/IUserRefs';
 
 export interface IChat extends Document {
   // _id?: string;

@@ -1,10 +1,10 @@
-import { IVideoSessionRepository } from "@/domain/interfaces/IVideoSessionRepository";
-import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
+import { IVideoSessionRepository } from "@/domain/interfaces/repositories/IVideoSessionRepository";
+import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
 import { v4 as uuidv4 } from 'uuid';
-import { ISocketService } from "@/domain/interfaces/ISocketService";
+import { ISocketService } from "@/domain/interfaces/services/ISocketService";
 import { IInitVideoSessionUseCase } from "../../interfaces/video/IInitVideoSessionUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";

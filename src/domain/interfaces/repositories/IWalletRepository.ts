@@ -1,5 +1,12 @@
 import { Types } from 'mongoose';
-import { IWallet, IWalletTransaction } from '../entities/Wallet';
+import { IWallet, IWalletTransaction } from '../../entities/Wallet';
+
+export interface IRefundResult {
+  sessionId: string;
+  amount: number;
+  reason: string;
+  status: string;
+}
 
 export interface IWalletRepository {
   findByUserId(userId: Types.ObjectId): Promise<IWallet | null>;
@@ -22,5 +29,5 @@ export interface IWalletRepository {
     developerId: string,
     amount: number,
     reason: string
-  ): Promise<any>;
+  ): Promise<IRefundResult>;
 }

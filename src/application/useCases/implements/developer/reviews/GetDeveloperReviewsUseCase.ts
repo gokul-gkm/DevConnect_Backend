@@ -1,6 +1,6 @@
 import { IGetDeveloperReviewsUseCase } from '@/application/useCases/interfaces/developer/reviews/IGetDeveloperReviewsUseCase';
-import { IRatingRepository } from '@/domain/interfaces/IRatingRepository';
-import { IS3Service } from '@/domain/interfaces/IS3Service';
+import { IRatingRepository } from '@/domain/interfaces/repositories/IRatingRepository';
+import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { TYPES } from '@/types/types';
 import { inject, injectable } from 'inversify';
 

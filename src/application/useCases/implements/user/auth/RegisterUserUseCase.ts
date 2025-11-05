@@ -6,10 +6,10 @@ import { OTP } from '@/domain/entities/OTP';
 import { AppError } from '@/domain/errors/AppError';
 import { Types } from 'mongoose';
 import { StatusCodes } from 'http-status-codes';
-import { IUserRepository } from '@/domain/interfaces/IUserRepository';
-import { IOTPRepository } from '@/domain/interfaces/IOTPRepository';
-import { IMailService } from '@/domain/interfaces/IMailService';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { IUserRepository } from '@/domain/interfaces/repositories/IUserRepository';
+import { IOTPRepository } from '@/domain/interfaces/repositories/IOTPRepository';
+import { IMailService } from '@/domain/interfaces/services/IMailService';
+import { IWalletRepository } from '@/domain/interfaces/repositories/IWalletRepository';
 import { IRegisterUserUseCase } from '@/application/useCases/interfaces/user/auth/IRegisterUserUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
@@ -84,7 +84,7 @@ export class RegisterUserUseCase implements IRegisterUserUseCase{
 
         try {
             await this._walletRepository.create(new Types.ObjectId(savedUser._id));
-        } catch (error) {
+        } catch (_error) {
             await this._userRepository.deleteById(savedUser._id);
             throw new AppError('Failed to create user wallet', StatusCodes.INTERNAL_SERVER_ERROR);
         }
@@ -100,7 +100,7 @@ export class RegisterUserUseCase implements IRegisterUserUseCase{
         await this._otpRepository.save(otpRecord)
         try {
             await this._mailService.sendOTP(email,otp)
-        } catch (error) {
+        } catch (_error) {
             await this._otpRepository.deleteByEmail(email);
             throw new AppError('Failed to send OTP email', StatusCodes.INTERNAL_SERVER_ERROR);
         }

@@ -1,6 +1,6 @@
 import { IGetDeveloperLeaderboardUseCase } from '@/application/useCases/interfaces/admin/leaderboard/IGetDeveloperLeaderboardUseCase';
-import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
-import { IS3Service } from '@/domain/interfaces/IS3Service';
+import { IDeveloperRepository } from '@/domain/interfaces/repositories/IDeveloperRepository';
+import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { TYPES } from '@/types/types';
 import { inject, injectable } from 'inversify';
 

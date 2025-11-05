@@ -1,9 +1,9 @@
 import { AppError } from "@/domain/errors/AppError";
 import { AddProjectDTO } from "@/application/dto/developer/AddProjectDTO";
 import { StatusCodes } from "http-status-codes";
-import { IProjectRepository } from "@/domain/interfaces/IProjectRepository";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
+import { IProjectRepository } from "@/domain/interfaces/repositories/IProjectRepository";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { IAddProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IAddProjectUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
@@ -35,11 +35,10 @@ export class AddProjectUseCase implements IAddProjectUseCase {
                 coverImage: coverImageKey 
             });
 
-            const developer = await this._developerRepository.findByUserId(developerId);
             await this._developerRepository.addProjectToPortfolio(developerId, project._id as string);
 
             return { ...project, coverImageUrl };
-        } catch (error) {
+        } catch (_error) {
             if (coverImageKey) {
                 await this._s3Service.deleteFile(coverImageKey);
             }

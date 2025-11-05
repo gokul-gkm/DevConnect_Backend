@@ -1,10 +1,10 @@
 import Stripe from 'stripe';
-import { IPaymentService, CreateCheckoutSessionParams } from '@/domain/interfaces/IPaymentService';
+import { IPaymentService, CreateCheckoutSessionParams } from '@/domain/interfaces/services/IPaymentService';
 import { AppError } from '@/domain/errors/AppError';
-import { IPaymentRepository } from '@/domain/interfaces/IPaymentRepository';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { IPaymentRepository } from '@/domain/interfaces/repositories/IPaymentRepository';
+import { IWalletRepository } from '@/domain/interfaces/repositories/IWalletRepository';
 import { Types } from 'mongoose';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
 import { StatusCodes } from 'http-status-codes';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
@@ -66,7 +66,7 @@ export class StripeService implements IPaymentService {
     }
   }
 
-  async handleWebhookEvent(payload: any, signature: string): Promise<void> {
+  async handleWebhookEvent(payload: Buffer | string, signature: string): Promise<void> {
     try {
       const event = this.stripe.webhooks.constructEvent(
         payload,
@@ -143,6 +143,7 @@ export class StripeService implements IPaymentService {
       );
       return true;
     } catch (error) {
+      console.error('Webhook validation error : ', error);
       return false;
     }
   }

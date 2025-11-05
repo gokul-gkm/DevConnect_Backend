@@ -26,7 +26,7 @@ export const adminAuthMiddleware = async (
         const decodedAccessToken = jwt.verify(adminAccessToken, process.env.JWT_ADMIN_ACCESS_SECRET as string) as DecodedJwt;
         req.adminId = decodedAccessToken.adminId;
         return next();
-    } catch (accessTokenError) {
+    } catch (_accessTokenError) {
         if (!adminRefreshToken) {
             res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized', success: false });
             return
@@ -44,7 +44,7 @@ export const adminAuthMiddleware = async (
             req.adminId = decodedRefreshToken.adminId;
             next();
             return;
-        } catch (refreshTokenError) {
+        } catch (_refreshTokenError) {
             res.clearCookie('adminAccessToken');
             res.clearCookie('adminRefreshToken');
             res.status(StatusCodes.FORBIDDEN).json({ message: 'Unauthorized', success: false });  

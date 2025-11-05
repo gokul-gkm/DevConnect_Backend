@@ -1,6 +1,6 @@
 import { AppError } from '@/domain/errors/AppError';
 import { IWallet } from '@/domain/entities/Wallet';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { IWalletRepository } from '@/domain/interfaces/repositories/IWalletRepository';
 import { StatusCodes } from 'http-status-codes';
 import { IGetAdminWalletDetailsUseCase } from '@/application/useCases/interfaces/user/payment/IGetAdminWalletDetailsUseCase';
 import { inject, injectable } from 'inversify';

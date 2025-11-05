@@ -26,6 +26,10 @@ export const autherization = async (
         .json({ message: "Your account has been blocked by admin" });
     }
   } catch (error) {
-    console.log("Error in Autherization");
+    console.error("Error in Authorization:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Internal server error in authorization middleware",
+    });
   }
 };

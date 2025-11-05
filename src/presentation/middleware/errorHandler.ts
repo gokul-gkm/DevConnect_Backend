@@ -4,13 +4,14 @@ import { StatusCodes } from 'http-status-codes';
 import { MulterError } from 'multer';
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import { ZodError } from 'zod';
-import { HTTP_STATUS_MESSAGES } from './constants';
+import { HTTP_STATUS_MESSAGES } from '../../utils/constants';
+import { MongooseValidationError, MongoServerError } from '@/infrastructure/errors/DatabaseErrors';
 
 export const errorHandler: ErrorRequestHandler = (
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   console.error('Error:', {
     name: err.name,
@@ -57,25 +58,29 @@ export const errorHandler: ErrorRequestHandler = (
     return;
   }
 
-  if (err.name === 'MongoServerError' && (err as any).code === 11000) {
-    res.status(StatusCodes.CONFLICT).json({
-      success: false,
-      message: 'Duplicate entry found',
-      field: Object.keys((err as any).keyPattern)[0],
-      code: 'DUPLICATE_ERROR'
-    });
-    return;
+  if (err.name === 'MongoServerError') {
+    const mongoErr = err as MongoServerError;
+    if (mongoErr.code === 11000) {
+      res.status(StatusCodes.CONFLICT).json({
+        success: false,
+        message: 'Duplicate entry found',
+        field: Object.keys(mongoErr.keyPattern ?? {})[0],
+        code: 'DUPLICATE_ERROR',
+      });
+      return;
+    }
   }
 
   if (err.name === 'ValidationError') {
+    const validationErr = err as MongooseValidationError;
     res.status(StatusCodes.BAD_REQUEST).json({
       success: false,
       message: 'Validation error',
-      errors: Object.values((err as any).errors).map((err: any) => ({
-        field: err.path,
-        message: err.message
+      errors: Object.values(validationErr.errors ?? {}).map((e) => ({
+        field: e.path,
+        message: e.message,
       })),
-      code: 'VALIDATION_ERROR'
+      code: 'VALIDATION_ERROR',
     });
     return;
   }

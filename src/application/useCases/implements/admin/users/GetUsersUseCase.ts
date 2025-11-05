@@ -1,6 +1,6 @@
 import { IGetUsersUseCase } from "@/application/useCases/interfaces/admin/users/IGetUsersUseCase";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { PaginatedResponse, QueryParams } from "@/domain/types/types";
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";

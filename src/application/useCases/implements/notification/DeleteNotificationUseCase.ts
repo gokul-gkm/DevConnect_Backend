@@ -1,5 +1,5 @@
 import { AppError } from '@/domain/errors/AppError';
-import { INotificationRepository } from '@/domain/interfaces/INotificationRepository';
+import { INotificationRepository } from '@/domain/interfaces/repositories/INotificationRepository';
 import { StatusCodes } from 'http-status-codes';
 import { IDeleteNotificationUseCase } from '../../interfaces/notification/IDeleteNotificationUseCase';
 import { inject, injectable } from 'inversify';

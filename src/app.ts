@@ -11,7 +11,7 @@ import adminRouter from './presentation/routes/AdminRoutes';
 import devRouter from './presentation/routes/DevRoutes';
 import userRouter from '@/presentation/routes/UserRoutes'
 import { createSessionRouter } from '@/presentation/routes/SessionRoutes';
-import { errorHandler } from './utils/errorHandler';
+import { errorHandler } from './presentation/middleware/errorHandler';
 import { StatusCodes } from 'http-status-codes';
 import { paymentRouter } from './presentation/routes/PaymentRoutes';
 import { createChatRouter } from './presentation/routes/ChatRoutes';
@@ -20,6 +20,8 @@ import { SocketService } from './infrastructure/services/SocketService';
 import { Server as SocketServer } from 'socket.io';
 import { createNotificationRouter } from './presentation/routes/NotificationRoutes';
 import { createVideoSessionRouter } from './presentation/routes/videoSessionRoutes';
+import { container } from "./infrastructure/config/inversify.config";
+import { TYPES } from "./types/types";
 
 dotenv.config();
 
@@ -38,7 +40,9 @@ export const io = new SocketServer(httpServer, {
     pingInterval: 25000
 });
 
-SocketService.getInstance(httpServer, io);
+const socketService = container.get<SocketService>(TYPES.ISocketService);
+
+socketService.initialize(httpServer, io);
 
 const morganFormat = ":method :url :status :response-time ms";
 

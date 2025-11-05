@@ -1,6 +1,6 @@
 import { ChangePasswordDTO } from "@/application/dto/users/ChangePasswordDTO";
 import { AppError } from "@/domain/errors/AppError";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { StatusCodes } from "http-status-codes";
 import bcrypt from 'bcryptjs'
 import { ERROR_MESSAGES } from "@/utils/constants";

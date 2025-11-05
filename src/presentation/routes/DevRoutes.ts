@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { GoogleAuthController } from "../controllers/GoogleAuthController";
+// import { GoogleAuthController } from "../controllers/GoogleAuthController";
 import { DevAuthController } from "../controllers/DevAuthController";
 import { upload } from "@/utils/multer";
 import { DevController } from "../controllers/DevController";
@@ -15,7 +15,7 @@ const devAuthController = container.get<DevAuthController>(TYPES.DevAuthControll
 
 const devController = container.get<DevController>(TYPES.DevController);
 
-const googleAuthController = container.get<GoogleAuthController>(TYPES.GoogleAuthController);
+// const googleAuthController = container.get<GoogleAuthController>(TYPES.GoogleAuthController);
 
 devRouter.post('/auth/register', async (req, res) => {
     await devAuthController.register(req, res);
@@ -40,12 +40,13 @@ devRouter.post('/auth/dev-request', upload.fields([
 ]), async (req, res) => {
   try {
     await devAuthController.devRequest(req, res);
-} catch (error: any) {
+} catch (error: unknown) {
     console.error('Error in route handler:', error);
+    const message = error instanceof Error ? error.message : 'Unexpected error occurred'
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
         success: false, 
         message: 'Error processing request',
-        error: error.message 
+        error: message 
     });
     }
 })

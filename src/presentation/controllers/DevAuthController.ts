@@ -10,6 +10,7 @@ import { IVerifyOTPUseCase } from "@/application/useCases/interfaces/user/auth/I
 import { IResendOTPUseCase } from "@/application/useCases/interfaces/user/auth/IResendOTPUseCase";
 import { IDevRequestUseCase } from "@/application/useCases/interfaces/developer/auth/IDevRequestUseCase";
 import { IDevLoginUseCase } from "@/application/useCases/interfaces/developer/auth/IDevLoginUseCase";
+import { handleControllerError } from "../error/handleControllerError";
 
 
 const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
@@ -97,9 +98,9 @@ export class DevAuthController {
                 success: true,
                 message: 'Developer request submitted successfully. Please wait for admin confirmation'
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false })
+            handleControllerError(error, res, HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR);
         }
     }
 

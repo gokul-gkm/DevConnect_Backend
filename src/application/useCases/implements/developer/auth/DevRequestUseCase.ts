@@ -2,9 +2,9 @@ import { DevRequestDTO } from "@/application/dto/DevRequestDTO";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { ERROR_MESSAGES } from "@/utils/constants";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { IDevRequestUseCase } from "@/application/useCases/interfaces/developer/auth/IDevRequestUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
@@ -23,8 +23,6 @@ export class DevRequestUseCase implements IDevRequestUseCase {
     }): Promise<void> {
         let profilePictureKey: string | undefined;
         let resumeKey: string | undefined;
-        let profilePictureUrl: string | undefined;
-        let resumeUrl: string | undefined;
 
         try {
             const existingUser = await this._userRepository.findByEmail(data.email);
@@ -40,13 +38,11 @@ export class DevRequestUseCase implements IDevRequestUseCase {
             if (files.profilePicture && files.profilePicture[0]) {
                 const uploadResult = await this._s3Service.uploadFile(files.profilePicture[0], 'profile-images');
                 profilePictureKey = uploadResult.Key;
-                profilePictureUrl = await this._s3Service.generateSignedUrl(profilePictureKey);
             }
 
             if (files.resume && files.resume[0]) {
                 const uploadResult = await this._s3Service.uploadFile(files.resume[0], 'resumes');
                 resumeKey = uploadResult.Key;
-                resumeUrl = await this._s3Service.generateSignedUrl(resumeKey);
             }
 
             await this._userRepository.update(existingUser.id, {

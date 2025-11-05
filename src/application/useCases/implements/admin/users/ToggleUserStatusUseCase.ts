@@ -1,6 +1,6 @@
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { IToggleUserStatusUseCase } from "@/application/useCases/interfaces/admin/users/IToggleUserStatusUseCase";
 import { inject, injectable } from "inversify";

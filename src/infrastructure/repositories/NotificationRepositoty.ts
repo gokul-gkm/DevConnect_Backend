@@ -1,4 +1,4 @@
-import { INotificationRepository } from '@/domain/interfaces/INotificationRepository';
+import { INotificationRepository } from '@/domain/interfaces/repositories/INotificationRepository';
 import { INotification, Notification } from '@/domain/entities/Notification';
 import  { Types } from 'mongoose';
 import { AppError } from '@/domain/errors/AppError';
