@@ -39,9 +39,8 @@ export class UpdateProjectUseCase implements IUpdateProjectUseCase{
                 description: data.description,
             };
 
-            if (data.projectLink) {
-                updateData.projectLink = data.projectLink;
-            }
+            updateData.projectLink = data.projectLink;
+          
 
             if (data.coverImage) {
                 if (existingProject.coverImage) {

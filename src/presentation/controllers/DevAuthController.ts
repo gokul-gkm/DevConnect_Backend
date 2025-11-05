@@ -11,10 +11,7 @@ import { IResendOTPUseCase } from "@/application/useCases/interfaces/user/auth/I
 import { IDevRequestUseCase } from "@/application/useCases/interfaces/developer/auth/IDevRequestUseCase";
 import { IDevLoginUseCase } from "@/application/useCases/interfaces/developer/auth/IDevLoginUseCase";
 import { handleControllerError } from "../error/handleControllerError";
-
-
-const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
-const REFRESH_COOKIE_MAX_AGE = Number(process.env.REFRESH_COOKIE_MAX_AGE);
+import { setCookie } from "@/utils/cookie.util";
 
 @injectable()
 export class DevAuthController {
@@ -108,9 +105,10 @@ export class DevAuthController {
         try {
             const { email, password } = req.body;            
             const { accessToken, refreshToken, user } = await this._devLoginUseCase.execute({ email, password });
-           
-            res.cookie('accessToken', accessToken, { httpOnly: true, maxAge: ACCESS_COOKIE_MAX_AGE });
-            res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: REFRESH_COOKIE_MAX_AGE });
+
+            setCookie(res, "accessToken",accessToken)
+            setCookie(res, "refreshToken", refreshToken)
+
             return res.status(StatusCodes.OK).json({message: "Login successful", user, success: true, token: accessToken})
         } catch (error) {
             if (error instanceof AppError) {

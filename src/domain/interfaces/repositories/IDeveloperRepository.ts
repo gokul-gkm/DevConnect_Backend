@@ -27,5 +27,6 @@ export interface IDeveloperRepository extends IBaseRepository<IDeveloper> {
     getTopPerformingDevelopers(limit: number): Promise<ITopDeveloper[]>
     getDefaultUnavailableSlots(developerId: string): Promise<string[]>;
     updateDefaultUnavailableSlots(developerId: string, slots: string[]): Promise<IDeveloper>;
-    getLeaderboard(page: number, limit:number, sortBy: string): Promise<ILeaderboardResponse>
+    getLeaderboard(page: number, limit: number, sortBy: string): Promise<ILeaderboardResponse>
+    getDeveloperCompletedSessionsCount(userId: string): Promise<number>
 }

@@ -6,7 +6,7 @@ import { AppError } from '@/domain/errors/AppError';
 import { IDeveloperRepository } from '@/domain/interfaces/repositories/IDeveloperRepository';
 import { DevPaginatedResponse, DevQueryParams} from '@/domain/types/types';
 import { StatusCodes } from 'http-status-codes';
-import mongoose, { FilterQuery, PipelineStage, SortOrder } from 'mongoose';
+import mongoose, { FilterQuery, PipelineStage, SortOrder, Types } from 'mongoose';
 import { BaseRepository } from './BaseRepository';
 import { ERROR_MESSAGES } from '@/utils/constants';
 import { injectable } from 'inversify';
@@ -190,11 +190,18 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
                 }
             const user = await User.findById(developer.userId)
                 .select('socialLinks');
-    
+            
+            const developerSessionCount = await this.getDeveloperCompletedSessionsCount(developer.userId._id);
             
             if (user && developer.userId) {
                 (developer.userId ).socialLinks = user.socialLinks;
             }
+
+            if (developer && developerSessionCount) {
+                developer.totalSessions = developerSessionCount
+            }
+
+            console.log(developer)
     
             return developer;
         } catch (error) {
@@ -492,6 +499,8 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
                 userId: developerId,
                 status: 'approved'
             });
+
+            const developerSessionCount = await this.getDeveloperCompletedSessionsCount(developerId);
     
             if (!developer) {
                 return null;
@@ -514,7 +523,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
                     workingExperience: developer.workingExperience,
                     hourlyRate: developer.hourlyRate,
                     rating: developer.rating,
-                    totalSessions: developer.totalSessions,
+                    totalSessions: developerSessionCount,
                     portfolio: developer.portfolio
                 }
             };
@@ -776,6 +785,43 @@ async getLeaderboard(page = 1, limit = 10, sortBy = "combined"): Promise<ILeader
       "Failed to fetch developer leaderboard",
       StatusCodes.INTERNAL_SERVER_ERROR
     );
+  }
+}
+    
+async getDeveloperCompletedSessionsCount(userId: string): Promise<number> {
+  try {
+    const result = await Developer.aggregate([
+      {
+        $match: { userId: new Types.ObjectId(userId), status: 'approved' }
+      },
+      {
+        $lookup: {
+          from: 'sessions',
+          localField: 'userId',
+          foreignField: 'developerId',
+          as: 'sessions'
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          completedSessionsCount: {
+            $size: {
+              $filter: {
+                input: '$sessions',
+                as: 'session',
+                cond: { $eq: ['$$session.status', 'completed'] }
+              }
+            }
+          }
+        }
+      }
+    ]);
+
+    return result[0]?.completedSessionsCount || 0;
+  } catch (error) {
+    console.error('Error fetching developer completed sessions count:', error);
+    throw new AppError('Failed to fetch developer completed sessions count', StatusCodes.INTERNAL_SERVER_ERROR);
   }
 }
 

@@ -12,10 +12,7 @@ import { ILoginUserUseCase } from "@/application/useCases/interfaces/user/auth/I
 import { IForgotPasswordUseCase } from "@/application/useCases/interfaces/user/auth/IForgotPasswordUseCase";
 import { IResetPasswordUseCase } from "@/application/useCases/interfaces/user/auth/IResetPasswordUseCase";
 import { ISetNewTokenUseCase } from "@/application/useCases/interfaces/user/auth/ISetNewTokenUseCase";
-
-
-const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
-const REFRESH_COOKIE_MAX_AGE = Number(process.env.REFRESH_COOKIE_MAX_AGE);
+import { setCookie } from "@/utils/cookie.util";
 
 @injectable()
 export class AuthController {
@@ -119,15 +116,10 @@ export class AuthController {
       const { email, password } = req.body;
       const { accessToken, refreshToken, user } =
         await this._loginUserUseCase.execute({ email, password });
-
-      res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        maxAge: ACCESS_COOKIE_MAX_AGE,
-      });
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        maxAge: REFRESH_COOKIE_MAX_AGE,
-      });
+      
+      setCookie(res, "accessToken",accessToken)
+      setCookie(res, "refreshToken", refreshToken)
+      
       return res
         .status(StatusCodes.OK)
         .json({

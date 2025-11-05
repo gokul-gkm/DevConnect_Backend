@@ -19,9 +19,7 @@ import { IGetRevenueStatsUseCase } from '@/application/useCases/interfaces/admin
 import { IGetAdminSessionsUseCase } from '@/application/useCases/interfaces/admin/sessions/IGetAdminSessionsUseCase';
 import { IGetDeveloperLeaderboardUseCase } from '@/application/useCases/interfaces/admin/leaderboard/IGetDeveloperLeaderboardUseCase';
 import { handleControllerError } from '../error/handleControllerError';
-
-const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
-const REFRESH_COOKIE_MAX_AGE = Number(process.env.REFRESH_COOKIE_MAX_AGE);
+import { setCookie } from '@/utils/cookie.util';
 
 export class AdminController{
 
@@ -67,21 +65,8 @@ export class AdminController{
         try {
             const { email, password } = req.body;
             const { accessToken, refreshToken, admin } = await this._adminLoginUseCase.execute({ email, password });
-
-            res.cookie('adminAccessToken', accessToken, {
-                httpOnly: true,
-                maxAge: ACCESS_COOKIE_MAX_AGE,
-                sameSite: 'none',
-                secure: true,
-                path: '/'
-            });
-            res.cookie('adminRefreshToken', refreshToken, {
-                httpOnly: true,
-                maxAge: REFRESH_COOKIE_MAX_AGE,
-                sameSite: 'none',
-                secure: true,
-                path: '/'
-            });
+            setCookie(res, "adminAccessToken",accessToken)
+            setCookie(res, "adminRefreshToken", refreshToken)
 
             return res.status(StatusCodes.OK).json({ message: 'Admin Login successful', admin, success: true });
         } catch (error) {

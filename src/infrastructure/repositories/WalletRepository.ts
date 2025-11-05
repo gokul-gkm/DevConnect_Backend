@@ -122,7 +122,13 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
 
   async findByAdminId(adminId: string): Promise<IWallet | null> {
     try {
-      return await WalletModel.findOne({ adminId });
+      const wallet = await WalletModel.findOne({ adminId })
+      if (wallet) {
+      wallet.transactions.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      );
+    }
+      return wallet
     } catch (_error) {
       throw new AppError('Failed to fetch admin wallet', StatusCodes.INTERNAL_SERVER_ERROR);
     }

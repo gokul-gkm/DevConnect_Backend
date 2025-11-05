@@ -1,8 +1,7 @@
+import { setCookie } from "@/utils/cookie.util";
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
-
-const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
 
 interface DecodedJwt {
     userId: string;
@@ -48,10 +47,8 @@ export const authMiddleware = (
                 { expiresIn: process.env.ACCESS_EXPIRES_IN }
             );
 
-            res.cookie('accessToken', newAccessToken, {
-                httpOnly: true,
-                maxAge: ACCESS_COOKIE_MAX_AGE
-            });
+            setCookie(res, "accessToken",newAccessToken)
+
 
             req.userId = decodedRefreshToken.userId;
             next();
