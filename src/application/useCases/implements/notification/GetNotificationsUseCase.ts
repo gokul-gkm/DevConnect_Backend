@@ -12,10 +12,14 @@ export class GetNotificationsUseCase implements IGetNotificationsUseCase {
     @inject(TYPES.INotificationRepository)
     private _notificationRepository: INotificationRepository
   ) {}
-
-  async execute(userId: string): Promise<INotification[]> {
+  
+  async execute(userId: string, page = 1, limit = 10): Promise<{
+    items: INotification[];
+    pagination: { page: number; limit: number; totalPages: number; totalItems: number };
+    totalsByType: { message: number; session: number; update: number; alert: number };
+  }> {
     try {
-      return await this._notificationRepository.getNotificationsByUserId(userId);
+      return await this._notificationRepository.getNotificationsByUserId(userId, page, limit);
     } catch (error) {
       console.error('Error in GetNotificationsUseCase:', error);
       throw error instanceof AppError 

@@ -1,4 +1,4 @@
-import { VerifyOTPDTO } from "@/application/dto/VerifyOTPDTO";
+import { VerifyOTPDTO } from "@/application/dto/users/VerifyOTPDTO";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { ERROR_MESSAGES } from "@/utils/constants";

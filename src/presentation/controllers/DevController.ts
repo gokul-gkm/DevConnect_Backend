@@ -18,6 +18,7 @@ import { IGetDeveloperMonthlyStatsUseCase } from "@/application/useCases/interfa
 import { IGetDeveloperUpcomingSessionsUseCase } from "@/application/useCases/interfaces/developer/dashboard/IGetDeveloperUpcomingSessionsUseCase";
 import { IGetDeveloperProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IGetDeveloperProjectUseCase";
 import { handleControllerError } from "../error/handleControllerError";
+import { IChangePasswordUseCase } from "@/application/useCases/interfaces/shared/profile/IChangePasswordUseCase";
 
 interface MulterFiles {
     profilePicture?: Express.Multer.File[];
@@ -52,6 +53,8 @@ export class DevController {
           private _getDeveloperMonthlyStatsUseCase: IGetDeveloperMonthlyStatsUseCase,
           @inject(TYPES.IGetDeveloperUpcomingSessionsUseCase)
           private _getDeveloperUpcomingSessionsUseCase: IGetDeveloperUpcomingSessionsUseCase,
+          @inject(TYPES.IChangePasswordUseCase)
+          private _changePasswordUseCase: IChangePasswordUseCase,
         ) {}
     
     async getProfile(req: Request, res: Response) {
@@ -131,6 +134,28 @@ export class DevController {
             handleControllerError(error, res, HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR)
         }
     }
+
+    async changePassword (req: Request, res: Response) {
+        try {
+            const userId = req.userId;
+            if (!userId) {
+                throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
+            }
+            const { currentPassword, newPassword, confirmPassword } = req.body;
+            await this._changePasswordUseCase.execute(userId,{ currentPassword, newPassword, confirmPassword });
+
+            return res.status(StatusCodes.OK).json({message: "Password has been updated successfully", success: true})
+        } catch (error) {
+            if (error instanceof AppError) {
+                return res.status(error.statusCode).json({
+                    success: false,
+                    message: error.message
+                })
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Failde to update password' });
+        }
+    }
+
 
     async addProject(req: Request, res: Response) {
         try {

@@ -1,3 +1,3 @@
 export interface IResendOTPUseCase{
-    execute(email: string): Promise<void>
+    execute(email: string): Promise<{ expiresAt: Date }>
 }

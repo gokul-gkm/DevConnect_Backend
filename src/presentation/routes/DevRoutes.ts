@@ -70,7 +70,11 @@ devRouter
     (req, res, next) => {
       devController.updateProfile(req, res).catch(next);
     }
-  );
+);
+  
+devRouter.put('/change-password', authMiddleware, autherization, (req, res, next) => {
+  devController.changePassword(req, res).catch(next)
+})
 
 devRouter
   .use(authMiddleware, autherization)

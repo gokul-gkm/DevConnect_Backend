@@ -81,7 +81,7 @@ import { IGetUserProfileUseCase } from "@/application/useCases/interfaces/user/p
 import { IUpdateUserProfileUseCase } from "@/application/useCases/interfaces/user/profile/IUpdateUserProfileUseCase";
 import { ISearchDevelopersUseCase } from "@/application/useCases/interfaces/user/developers/ISearchDevelopersUseCase";
 import { IGetPublicProfileUseCase } from "@/application/useCases/interfaces/user/developers/IGetPublicProfileUseCase";
-import { IChangeUserPasswordUseCase } from "@/application/useCases/interfaces/user/profile/IChangeUserPasswordUseCase";
+import { IChangePasswordUseCase } from "@/application/useCases/interfaces/shared/profile/IChangePasswordUseCase";
 
 // (Session & Rating)
 import { ICreateSessionUseCase } from "@/application/useCases/interfaces/user/session/ICreateSessionUseCase";
@@ -306,7 +306,7 @@ container.bind<IGetUserProfileUseCase>(TYPES.IGetUserProfileUseCase).to(GetUserP
 container.bind<IUpdateUserProfileUseCase>(TYPES.IUpdateUserProfileUseCase).to(UpdateUserProfileUseCase);
 container.bind<ISearchDevelopersUseCase>(TYPES.ISearchDevelopersUseCase).to(SearchDevelopersUseCase);
 container.bind<IGetPublicProfileUseCase>(TYPES.IGetPublicProfileUseCase).to(GetPublicProfileUseCase);
-container.bind<IChangeUserPasswordUseCase>(TYPES.IChangeUserPasswordUseCase).to(ChangeUserPasswordUseCase);
+container.bind<IChangePasswordUseCase>(TYPES.IChangePasswordUseCase).to(ChangeUserPasswordUseCase);
 
 //Developer Auth Usecase
 container.bind<IRegisterDevUseCase>(TYPES.IRegisterDevUseCase).to(RegisterDevUseCase);

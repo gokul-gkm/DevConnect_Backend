@@ -1,4 +1,4 @@
-import { LoginUserDTO } from "@/application/dto/LoginUserDTO";
+import { LoginUserDTO } from "@/application/dto/users/LoginUserDTO";
 import { IDevLoginUseCase } from "@/application/useCases/interfaces/developer/auth/IDevLoginUseCase";
 import { IUser } from "@/domain/entities/User";
 import { AppError } from "@/domain/errors/AppError";

@@ -1,4 +1,4 @@
-import { LoginAdminDTO } from "@/application/dto/LoginAdminDTO";
+import { LoginAdminDTO } from "@/application/dto/admin/LoginAdminDTO";
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { IAdminRepository } from "@/domain/interfaces/repositories/IAdminRepository";

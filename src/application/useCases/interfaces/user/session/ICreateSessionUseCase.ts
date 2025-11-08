@@ -1,4 +1,5 @@
-import { CreateSessionDTO } from "@/application/useCases/implements/user/session/CreateSessionUseCase";
+
+import { CreateSessionDTO } from "@/application/dto/users/session/CreateSessionDTO";
 import { ISession } from "@/domain/entities/Session";
 
 export interface ICreateSessionUseCase{

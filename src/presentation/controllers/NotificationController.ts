@@ -32,7 +32,6 @@ export class NotificationController {
     private  _getUnreadCountUseCase: IGetUnreadCountUseCase,
   ) {}
 
-
   async getNotifications(req: Request, res: Response) {
     try {
       const userId = req.userId;
@@ -40,11 +39,16 @@ export class NotificationController {
         throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
       }
 
-      const notifications = await this._getNotificationsUseCase.execute(userId);
+      const page = Number(req.query.page) || 1;
+      const limit = Math.min(Number(req.query.limit) || 10, 50);
+
+      const result = await this._getNotificationsUseCase.execute(userId, page, limit);
       
       return res.status(StatusCodes.OK).json({
         success: true,
-        data: notifications
+        data: result.items,
+        pagination: result.pagination,
+        totalsByType: result.totalsByType
       });
     } catch (error: unknown) {
       console.error('Error getting notifications:', error);

@@ -18,7 +18,7 @@ export class ResendOTPUseCase implements IResendOTPUseCase{
         @inject(TYPES.IUserRepository) private _userRepository: IUserRepository
     ) { }
     
-    async execute(email: string): Promise<void> {
+    async execute(email: string): Promise<{ expiresAt: Date }> {
 
         const user = await this._userRepository.findByEmail(email)
 
@@ -42,13 +42,15 @@ export class ResendOTPUseCase implements IResendOTPUseCase{
         }
 
         const newOTP = generateOTP();
-        console.log('Resend OTP : ', newOTP);     
+        console.log('Resend OTP : ', newOTP);
+        
+        const expiresAt = new Date(Date.now() + 1 * 60 * 1000)
 
         const otpRecord = new OTP({
             email,
             otp: newOTP,
             createdAt: Date.now(),
-            expiresAt: new Date(Date.now() + 1 * 60 * 1000)
+            expiresAt 
         })
 
         await this._otpRepository.save(otpRecord);
@@ -58,6 +60,6 @@ export class ResendOTPUseCase implements IResendOTPUseCase{
             await this._otpRepository.deleteByEmail(email);
             throw new AppError('Failed to send OTP email', StatusCodes.INTERNAL_SERVER_ERROR)
         }
-        
+        return {expiresAt}
     }
 }

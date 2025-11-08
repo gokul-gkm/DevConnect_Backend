@@ -32,8 +32,8 @@ export class DevAuthController {
     async register(req: Request, res: Response) {
         try {
             const devData = req.body;
-            await this._registerDevUseCase.execute(devData);
-            return res.status(StatusCodes.CREATED).json({ message: "Developer registered and OTP send", success: true })
+            const { expiresAt } = await this._registerDevUseCase.execute(devData);
+            return res.status(StatusCodes.CREATED).json({ message: "Developer registered and OTP send", expiresAt, success: true })
             
         } catch (error) {
             if (error instanceof AppError) {
@@ -61,8 +61,8 @@ export class DevAuthController {
     async resendOTP(req: Request, res: Response) {
         try {
             const { email } = req.body;
-            await this._resendOTPUseCase.execute(email);
-            return res.status(StatusCodes.OK).json({ message: "New OTP send successfully.", success: true })
+            const { expiresAt } = await this._resendOTPUseCase.execute(email);
+            return res.status(StatusCodes.OK).json({ message: "New OTP send successfully.", expiresAt, success: true })
         } catch (error) {
             if (error instanceof AppError) {
                 if (error.statusCode === StatusCodes.TOO_MANY_REQUESTS) {

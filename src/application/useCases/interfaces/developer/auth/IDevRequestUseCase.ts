@@ -1,4 +1,4 @@
-import { DevRequestDTO } from "@/application/dto/DevRequestDTO"
+import { DevRequestDTO } from "@/application/dto/developer/DevRequestDTO"
 
 export interface IDevRequestUseCase{
     execute(

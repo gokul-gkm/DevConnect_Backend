@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { RegisterUserDTO } from "@/application/dto/RegisterUserDTO";
+import { RegisterUserDTO } from "@/application/dto/users/RegisterUserDTO";
 import { User } from "@/domain/entities/User";
 import { generateOTP } from '@/shared/utils/OTPGenerator';
 import { OTP } from '@/domain/entities/OTP';
@@ -21,7 +21,7 @@ export class RegisterDevUseCase implements IRegisterDevUseCase{
         @inject(TYPES.IMailService) private _mailService: IMailService
     ) { }
 
-    async execute(userData: RegisterUserDTO): Promise<void> {
+    async execute(userData: RegisterUserDTO): Promise<{expiresAt: Date}> {
         const { username, email, contact, password, confirmPassword } = userData;
         
         if (password !== confirmPassword) {
@@ -37,11 +37,12 @@ export class RegisterDevUseCase implements IRegisterDevUseCase{
                 await this._userRepository.deleteById(existingUser._id)
             } else {
                 const otp = generateOTP();
+                const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
                 const otpRecord = new OTP({
                     email,
                     otp,
                     createdAt: new Date(),
-                    expiresAt: new Date(Date.now() + 1 * 60 * 1000),
+                    expiresAt
                 });
                 await this._otpRepository.save(otpRecord);
                 try {
@@ -80,12 +81,13 @@ export class RegisterDevUseCase implements IRegisterDevUseCase{
         await this._userRepository.save(newUser);
         
         const otp = generateOTP();
-        console.log("Signup OTP: ",otp);
+        console.log("Signup OTP: ", otp);
+        const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
         const otpRecord = new OTP({
             email,
             otp,
             createdAt: new Date(),
-            expiresAt: new Date(Date.now() + 1 * 60 * 1000)
+            expiresAt
         })
         await this._otpRepository.save(otpRecord)
         try {
@@ -94,6 +96,6 @@ export class RegisterDevUseCase implements IRegisterDevUseCase{
             await this._otpRepository.deleteByEmail(email);
             throw new AppError('Failed to send OTP email', StatusCodes.INTERNAL_SERVER_ERROR);
         }
-        
+        return { expiresAt };
     }
 }

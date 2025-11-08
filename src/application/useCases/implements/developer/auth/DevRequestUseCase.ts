@@ -1,4 +1,4 @@
-import { DevRequestDTO } from "@/application/dto/DevRequestDTO";
+import { DevRequestDTO } from "@/application/dto/developer/DevRequestDTO";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { ERROR_MESSAGES } from "@/utils/constants";
