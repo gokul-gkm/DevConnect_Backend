@@ -30,6 +30,10 @@ export class LoginUserUseCase implements ILoginUserUseCase{
         if (user.status === 'suspended') {
             throw new AppError("User account is already suspended")
         }
+        
+        if (user.role !== 'user') {
+            throw new AppError('User profile not found. Please register as a user first.', StatusCodes.BAD_REQUEST);
+        }
 
         const isPasswordValid = await bcrypt.compare(password, user.password as string);
         
