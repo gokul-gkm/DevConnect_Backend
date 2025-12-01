@@ -69,9 +69,14 @@ const createSessionSchema = z.object({
     path: ['startTime']
 }).refine((data) => {
 
-    const sessionDateISO = data.sessionDate.toISOString().slice(0, 10);
-    const startTimeISO = data.startTime.toISOString().slice(0, 10); 
-    return sessionDateISO === startTimeISO;
+    const d1 = data.sessionDate;
+    const d2 = data.startTime; 
+
+    return (
+        d1.getUTCFullYear() === d2.getUTCFullYear() &&
+        d1.getUTCMonth() === d2.getUTCMonth() &&
+        d1.getUTCDate() === d2.getUTCDate()
+    );
 }, {
     message: 'Session date and start time must be on the same day',
     path: ['startTime']
