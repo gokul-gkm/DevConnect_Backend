@@ -674,7 +674,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
             }
           }
         },
-        { $sort: { sessionDate: 1, startTime: 1 } },
+        { $sort: { sessionDate: -1, startTime: -1 } },
         { $skip: skip },
         { $limit: limit }
       ]);
