@@ -67,20 +67,7 @@ const createSessionSchema = z.object({
 }, {
     message: 'Session start time must be in the future',
     path: ['startTime']
-}).refine((data) => {
-
-    const d1 = data.sessionDate;
-    const d2 = data.startTime; 
-
-    return (
-        d1.getUTCFullYear() === d2.getUTCFullYear() &&
-        d1.getUTCMonth() === d2.getUTCMonth() &&
-        d1.getUTCDate() === d2.getUTCDate()
-    );
-}, {
-    message: 'Session date and start time must be on the same day',
-    path: ['startTime']
-});
+})
 
 export const validateCreateSession = (data: unknown) => {
     try {
