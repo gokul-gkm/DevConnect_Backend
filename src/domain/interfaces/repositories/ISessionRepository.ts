@@ -1,11 +1,13 @@
 import { ISession } from "@/domain/entities/Session";
 import { Types } from "mongoose";
-import { SessionDetails } from "../types/session";
+import { IAdminSession, IPagination, ITopEarningDeveloper, IUpcomingSession, SessionDetails } from "../../types/session";
 import { IBaseRepository } from "./IBaseRepository";
+import { IPopulatedSession } from "@/infrastructure/repositories/SessionRepository";
+import { ISessionDetails } from "../types/ISessionTypes";
 
 export interface ISessionRepository extends IBaseRepository<ISession>{
     createSession(sessionData: Partial<ISession>): Promise<ISession>
-    getBookedSlots(developerId: string, date: Date): Promise<any>
+    getBookedSlots(developerId: string, date: Date): Promise<Pick<ISession, 'startTime' | 'duration'>[]>
     checkSlotAvailability(developerId: string, sessionDate: Date | string, startTime: Date | string, duration: number): Promise<boolean>
     getUserSessions(userId: string): Promise<ISession[]>
     getDeveloperSessions(developerId: string): Promise<ISession[]>
@@ -20,10 +22,16 @@ export interface ISessionRepository extends IBaseRepository<ISession>{
     updatePaymentStatus(sessionId: Types.ObjectId, status: string): Promise<void>
     countCompletedSessions(): Promise<number>
     getDeveloperScheduledSessions(developerId: Types.ObjectId, page: number, limit: number): Promise<any>
-    getScheduledSessionById(sessionId: Types.ObjectId): Promise<any>
+    getScheduledSessionById(sessionId: Types.ObjectId): Promise<IPopulatedSession>
     getSessionHistory(userId: string, currentDate: Date, page?: number, limit?: number): Promise<any>
-    getTopEarningDevelopers(page: number, limit: number): Promise<any>
-    getAdminSessionsList(status: string[], page: number, limit: number, search: string): Promise<any>
+    getTopEarningDevelopers(page: number, limit: number): Promise<{
+      developers: ITopEarningDeveloper[];
+      pagination: IPagination;
+    }>
+    getAdminSessionsList(status: string[], page: number, limit: number, search: string): Promise<{
+      sessions: IAdminSession[];
+      pagination: IPagination;
+    }>
     getDeveloperSessionHistory(
         developerId: string,
         currentDate: Date,
@@ -31,9 +39,9 @@ export interface ISessionRepository extends IBaseRepository<ISession>{
         limit: number,
         search: string
     ): Promise<any>
-    getDeveloperSessionHistoryById(developerId: string, sessionId: string): Promise<any>;
+    getDeveloperSessionHistoryById(developerId: string, sessionId: string): Promise<ISessionDetails> ;
     getDeveloperMonthlyStats(developerId: string, year: number): Promise<any>;
-    getDeveloperUpcomingSessions(developerId: string, limit?: number): Promise<any>;
+    getDeveloperUpcomingSessions(developerId: string, limit?: number): Promise<IUpcomingSession[]>;
     getTopicBasedRevenue(page: number, limit: number): Promise<{
         topics: Array<{
           topic: string;

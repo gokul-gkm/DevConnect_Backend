@@ -1,6 +1,6 @@
 import { Admin, IAdmin } from "@/domain/entities/Admin";
 import { AppError } from "@/domain/errors/AppError";
-import { IAdminRepository } from "@/domain/interfaces/IAdminRepository";
+import { IAdminRepository } from "@/domain/interfaces/repositories/IAdminRepository";
 import { StatusCodes } from "http-status-codes";
 import { BaseRepository } from "./BaseRepository";
 import { injectable } from "inversify";

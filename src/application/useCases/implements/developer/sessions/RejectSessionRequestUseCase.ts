@@ -1,9 +1,9 @@
 import { AppError } from '@/domain/errors/AppError';
 import { Types } from 'mongoose';
 import { StatusCodes } from 'http-status-codes';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
 import { IRejectSessionRequestUseCase } from '@/application/useCases/interfaces/developer/sessions/IRejectSessionRequestUseCase';
-import { INotificationService } from '@/domain/interfaces/INotificationService';
+import { INotificationService } from '@/domain/interfaces/services/INotificationService';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
 

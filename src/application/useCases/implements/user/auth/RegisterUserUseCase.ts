@@ -1,15 +1,15 @@
 import bcrypt from 'bcryptjs';
-import { RegisterUserDTO } from "@/application/dto/RegisterUserDTO";
+import { RegisterUserDTO } from "@/application/dto/users/RegisterUserDTO";
 import { User } from "@/domain/entities/User";
 import { generateOTP } from '@/shared/utils/OTPGenerator';
 import { OTP } from '@/domain/entities/OTP';
 import { AppError } from '@/domain/errors/AppError';
 import { Types } from 'mongoose';
 import { StatusCodes } from 'http-status-codes';
-import { IUserRepository } from '@/domain/interfaces/IUserRepository';
-import { IOTPRepository } from '@/domain/interfaces/IOTPRepository';
-import { IMailService } from '@/domain/interfaces/IMailService';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { IUserRepository } from '@/domain/interfaces/repositories/IUserRepository';
+import { IOTPRepository } from '@/domain/interfaces/repositories/IOTPRepository';
+import { IMailService } from '@/domain/interfaces/services/IMailService';
+import { IWalletRepository } from '@/domain/interfaces/repositories/IWalletRepository';
 import { IRegisterUserUseCase } from '@/application/useCases/interfaces/user/auth/IRegisterUserUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
@@ -24,7 +24,7 @@ export class RegisterUserUseCase implements IRegisterUserUseCase{
         @inject(TYPES.IWalletRepository) private _walletRepository: IWalletRepository
     ) { }
 
-    async execute(userData: RegisterUserDTO): Promise<void> {
+    async execute(userData: RegisterUserDTO): Promise<{ expiresAt: Date }> {
         const { username, email, contact, password, confirmPassword } = userData;
         
         if (password !== confirmPassword) {
@@ -40,11 +40,12 @@ export class RegisterUserUseCase implements IRegisterUserUseCase{
                 await this._userRepository.deleteById(existingUser._id)
             } else {
                 const otp = generateOTP();
+                const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
                 const otpRecord = new OTP({
                     email,
                     otp,
                     createdAt: new Date(),
-                    expiresAt: new Date(Date.now() + 1 * 60 * 1000),
+                    expiresAt
                 });
                 await this._otpRepository.save(otpRecord);
                 try {
@@ -84,26 +85,27 @@ export class RegisterUserUseCase implements IRegisterUserUseCase{
 
         try {
             await this._walletRepository.create(new Types.ObjectId(savedUser._id));
-        } catch (error) {
+        } catch (_error) {
             await this._userRepository.deleteById(savedUser._id);
             throw new AppError('Failed to create user wallet', StatusCodes.INTERNAL_SERVER_ERROR);
         }
         
         const otp = generateOTP();
-        console.log("Signup OTP: ",otp);
+        console.log("Signup OTP: ", otp);
+        const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
         const otpRecord = new OTP({
             email,
             otp,
             createdAt: new Date(),
-            expiresAt: new Date(Date.now() + 1 * 60 * 1000)
+            expiresAt
         })
         await this._otpRepository.save(otpRecord)
         try {
             await this._mailService.sendOTP(email,otp)
-        } catch (error) {
+        } catch (_error) {
             await this._otpRepository.deleteByEmail(email);
             throw new AppError('Failed to send OTP email', StatusCodes.INTERNAL_SERVER_ERROR);
         }
-        
+        return { expiresAt };
     }
 }

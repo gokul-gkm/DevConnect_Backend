@@ -1,9 +1,9 @@
 import { GetMessagesDTO } from "@/application/dto/chat/ChatDTO";
 import { AppError } from "@/domain/errors/AppError";
-import { IChatRepository } from "@/domain/interfaces/IChatRepository";
-import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
+import { IChatRepository } from "@/domain/interfaces/repositories/IChatRepository";
+import { IMessageRepository } from "@/domain/interfaces/repositories/IMessageRepository";
 import { StatusCodes } from "http-status-codes";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { IGetChatMessagesUseCase } from "../../interfaces/chat/IGetChatMessagesUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";

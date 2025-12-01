@@ -7,9 +7,10 @@ import { TYPES } from "@/types/types";
 
 import { IGetPublicProfileUseCase } from "@/application/useCases/interfaces/user/developers/IGetPublicProfileUseCase";
 import { ISearchDevelopersUseCase } from "@/application/useCases/interfaces/user/developers/ISearchDevelopersUseCase";
-import { IChangeUserPasswordUseCase } from "@/application/useCases/interfaces/user/profile/IChangeUserPasswordUseCase";
+ "@/application/useCases/interfaces/user/profile/IChangeUserPasswordUseCase";
 import { IGetUserProfileUseCase } from "@/application/useCases/interfaces/user/profile/IGetUserProfileUseCase";
 import { IUpdateUserProfileUseCase } from "@/application/useCases/interfaces/user/profile/IUpdateUserProfileUseCase";
+import { IChangePasswordUseCase } from "@/application/useCases/interfaces/shared/profile/IChangePasswordUseCase";
 
 
 @injectable()
@@ -24,8 +25,8 @@ export class UserController {
         private _searchDevelopersUseCase: ISearchDevelopersUseCase,
         @inject(TYPES.IGetPublicProfileUseCase)
         private _getPublicProfileUseCase: IGetPublicProfileUseCase,
-        @inject(TYPES.IChangeUserPasswordUseCase)
-        private _changeUserPasswordUseCase: IChangeUserPasswordUseCase,
+        @inject(TYPES.IChangePasswordUseCase)
+        private _changePasswordUseCase: IChangePasswordUseCase,
       ) {}
     
 
@@ -43,6 +44,7 @@ export class UserController {
             return res.status(StatusCodes.OK).json({data: user, success: true});
             
         } catch (error) {
+            console.error("Get profile error:", error);
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({success: false, message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR});
         }
     }
@@ -73,7 +75,7 @@ export class UserController {
                 message: 'Profile updated ',
                 data: updatedUser
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Update profile error:", error);
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({
@@ -95,7 +97,7 @@ export class UserController {
                 throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
             }
             const { currentPassword, newPassword, confirmPassword } = req.body;
-            await this._changeUserPasswordUseCase.execute(userId,{ currentPassword, newPassword, confirmPassword });
+            await this._changePasswordUseCase.execute(userId,{ currentPassword, newPassword, confirmPassword });
 
             return res.status(StatusCodes.OK).json({message: "Password has been updated successfully", success: true})
         } catch (error) {
@@ -118,10 +120,12 @@ export class UserController {
                 success: true,
                 data: result
             });
-        } catch (error: any) {
-            return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+        } catch (error: unknown) {
+            const message = error instanceof AppError ? error.message : 'Failed to search developers';
+            const statusCode = error instanceof AppError ? error.statusCode : StatusCodes.INTERNAL_SERVER_ERROR;
+            return res.status(statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                message: error.message || 'Failed to search developers'
+                message: message || 'Failed to search developers' 
             });
         }
     }
@@ -135,10 +139,12 @@ export class UserController {
                 success: true,
                 data: profile
             });
-        } catch (error: any) {
-            return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+        } catch (error: unknown) {
+            const message = error instanceof AppError ? error.message : 'Failed to fetch developer profile';
+            const statusCode = error instanceof AppError ? error.statusCode : StatusCodes.INTERNAL_SERVER_ERROR;
+            return res.status(statusCode).json({
                 success: false,
-                message: error.message || 'Failed to fetch developer profile'
+                message
             });
         }
     }

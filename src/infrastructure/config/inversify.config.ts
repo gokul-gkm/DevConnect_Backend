@@ -8,25 +8,25 @@ import { httpServer, io } from "@/app";
 import { TYPES } from "@/types/types";
 
 // ---------------------- Domain Interfaces ----------------------
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
-import { IOTPRepository } from "@/domain/interfaces/IOTPRepository";
-import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
-import { IMailService } from "@/domain/interfaces/IMailService";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IDeveloperSlotRepository } from "@/domain/interfaces/IDeveloperSlotRepository";
-import { IProjectRepository } from "@/domain/interfaces/IProjectRepository";
-import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
-import { IRatingRepository } from "@/domain/interfaces/IRatingRepository";
-import { INotificationService } from "@/domain/interfaces/INotificationService";
-import { INotificationRepository } from "@/domain/interfaces/INotificationRepository";
-import { ISocketService } from "@/domain/interfaces/ISocketService";
-import { IChatRepository } from "@/domain/interfaces/IChatRepository";
-import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
-import { IPaymentService } from "@/domain/interfaces/IPaymentService";
-import { IPaymentRepository } from "@/domain/interfaces/IPaymentRepository";
-import { IVideoSessionRepository } from "@/domain/interfaces/IVideoSessionRepository";
-import { IAdminRepository } from "@/domain/interfaces/IAdminRepository";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
+import { IOTPRepository } from "@/domain/interfaces/repositories/IOTPRepository";
+import { IWalletRepository } from "@/domain/interfaces/repositories/IWalletRepository";
+import { IMailService } from "@/domain/interfaces/services/IMailService";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
+import { IDeveloperSlotRepository } from "@/domain/interfaces/repositories/IDeveloperSlotRepository";
+import { IProjectRepository } from "@/domain/interfaces/repositories/IProjectRepository";
+import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
+import { IRatingRepository } from "@/domain/interfaces/repositories/IRatingRepository";
+import { INotificationService } from "@/domain/interfaces/services/INotificationService";
+import { INotificationRepository } from "@/domain/interfaces/repositories/INotificationRepository";
+import { ISocketService } from "@/domain/interfaces/services/ISocketService";
+import { IChatRepository } from "@/domain/interfaces/repositories/IChatRepository";
+import { IMessageRepository } from "@/domain/interfaces/repositories/IMessageRepository";
+import { IPaymentService } from "@/domain/interfaces/services/IPaymentService";
+import { IPaymentRepository } from "@/domain/interfaces/repositories/IPaymentRepository";
+import { IVideoSessionRepository } from "@/domain/interfaces/repositories/IVideoSessionRepository";
+import { IAdminRepository } from "@/domain/interfaces/repositories/IAdminRepository";
 
 // ---------------------- Infrastructure Implementations ----------------------
 import { UserRepository } from "../repositories/UserRepository";
@@ -81,7 +81,7 @@ import { IGetUserProfileUseCase } from "@/application/useCases/interfaces/user/p
 import { IUpdateUserProfileUseCase } from "@/application/useCases/interfaces/user/profile/IUpdateUserProfileUseCase";
 import { ISearchDevelopersUseCase } from "@/application/useCases/interfaces/user/developers/ISearchDevelopersUseCase";
 import { IGetPublicProfileUseCase } from "@/application/useCases/interfaces/user/developers/IGetPublicProfileUseCase";
-import { IChangeUserPasswordUseCase } from "@/application/useCases/interfaces/user/profile/IChangeUserPasswordUseCase";
+import { IChangePasswordUseCase } from "@/application/useCases/interfaces/shared/profile/IChangePasswordUseCase";
 
 // (Session & Rating)
 import { ICreateSessionUseCase } from "@/application/useCases/interfaces/user/session/ICreateSessionUseCase";
@@ -306,7 +306,7 @@ container.bind<IGetUserProfileUseCase>(TYPES.IGetUserProfileUseCase).to(GetUserP
 container.bind<IUpdateUserProfileUseCase>(TYPES.IUpdateUserProfileUseCase).to(UpdateUserProfileUseCase);
 container.bind<ISearchDevelopersUseCase>(TYPES.ISearchDevelopersUseCase).to(SearchDevelopersUseCase);
 container.bind<IGetPublicProfileUseCase>(TYPES.IGetPublicProfileUseCase).to(GetPublicProfileUseCase);
-container.bind<IChangeUserPasswordUseCase>(TYPES.IChangeUserPasswordUseCase).to(ChangeUserPasswordUseCase);
+container.bind<IChangePasswordUseCase>(TYPES.IChangePasswordUseCase).to(ChangeUserPasswordUseCase);
 
 //Developer Auth Usecase
 container.bind<IRegisterDevUseCase>(TYPES.IRegisterDevUseCase).to(RegisterDevUseCase);

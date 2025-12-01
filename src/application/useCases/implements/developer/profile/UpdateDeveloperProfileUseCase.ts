@@ -2,9 +2,9 @@ import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { ProfileUpdateData } from '@/domain/types/developer';
 import { ERROR_MESSAGES } from '@/utils/constants';
-import { IUserRepository } from '@/domain/interfaces/IUserRepository';
-import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
-import { IS3Service } from '@/domain/interfaces/IS3Service';
+import { IUserRepository } from '@/domain/interfaces/repositories/IUserRepository';
+import { IDeveloperRepository } from '@/domain/interfaces/repositories/IDeveloperRepository';
+import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { IUpdateDeveloperProfileUseCase } from '@/application/useCases/interfaces/developer/profile/IUpdateDeveloperProfileUseCase';
 import { TYPES } from '@/types/types';
 import { inject, injectable } from 'inversify';
@@ -42,7 +42,7 @@ export class UpdateDeveloperProfileUseCase implements IUpdateDeveloperProfileUse
                 if (existingUser.profilePicture) {
                     try {
                         await this._s3Service.deleteFile(existingUser.profilePicture);
-                    } catch (error) {
+                    } catch (_error) {
                         console.error('Error deleting old profile picture');
                     }
                 }
@@ -55,7 +55,7 @@ export class UpdateDeveloperProfileUseCase implements IUpdateDeveloperProfileUse
                 if (existingDeveloper.resume) {
                     try {
                         await this._s3Service.deleteFile(existingDeveloper.resume);
-                    } catch (error) {
+                    } catch (_error) {
                         console.error('Error deleting old resume');
                     }
                 }

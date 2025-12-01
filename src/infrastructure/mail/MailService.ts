@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-import { IMailService } from '../../domain/interfaces/IMailService';
+import { IMailService } from '../../domain/interfaces/services/IMailService';
 import { injectable } from 'inversify';
 dotenv.config();
 

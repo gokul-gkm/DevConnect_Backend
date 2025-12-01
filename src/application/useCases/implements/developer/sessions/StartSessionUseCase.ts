@@ -1,9 +1,8 @@
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
-import { SocketService } from '@/infrastructure/services/SocketService';
 import mongoose from 'mongoose';
-import { ISocketService } from '@/domain/interfaces/ISocketService';
+import { ISocketService } from '@/domain/interfaces/services/ISocketService';
 import { IStartSessionUseCase } from '@/application/useCases/interfaces/developer/sessions/IStartSessionUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';

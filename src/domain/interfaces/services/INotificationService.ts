@@ -1,3 +1,5 @@
+import { INotification } from "../../entities/Notification";
+
 export interface INotificationService {
   notify(
     recipientId: string,
@@ -6,5 +8,5 @@ export interface INotificationService {
     type: "message" | "session" | "update" | "alert",
     senderId?: string,
     relatedId?: string
-  ): Promise<any>;
+  ): Promise<INotification>;
 } 

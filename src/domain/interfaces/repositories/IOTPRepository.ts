@@ -1,5 +1,5 @@
 import { IOTP } from "../entities/OTP";
-import { IBaseRepository } from "./IBaseRepository";
+import { IBaseRepository } from "./repositories/IBaseRepository";
 
 export interface IOTPRepository extends IBaseRepository<IOTP>{
     save(otp: IOTP): Promise<IOTP>;

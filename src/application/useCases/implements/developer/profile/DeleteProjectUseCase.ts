@@ -1,8 +1,8 @@
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { IProjectRepository } from "@/domain/interfaces/IProjectRepository";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
+import { IProjectRepository } from "@/domain/interfaces/repositories/IProjectRepository";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { IDeleteProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IDeleteProjectUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";

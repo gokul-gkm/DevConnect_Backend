@@ -18,9 +18,8 @@ import { IGetDashboardStatsUseCase } from '@/application/useCases/interfaces/adm
 import { IGetRevenueStatsUseCase } from '@/application/useCases/interfaces/admin/revenue/IGetRevenueStatsUseCase';
 import { IGetAdminSessionsUseCase } from '@/application/useCases/interfaces/admin/sessions/IGetAdminSessionsUseCase';
 import { IGetDeveloperLeaderboardUseCase } from '@/application/useCases/interfaces/admin/leaderboard/IGetDeveloperLeaderboardUseCase';
-
-const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
-const REFRESH_COOKIE_MAX_AGE = Number(process.env.REFRESH_COOKIE_MAX_AGE);
+import { handleControllerError } from '../error/handleControllerError';
+import { setCookie } from '@/utils/cookie.util';
 
 export class AdminController{
 
@@ -66,21 +65,8 @@ export class AdminController{
         try {
             const { email, password } = req.body;
             const { accessToken, refreshToken, admin } = await this._adminLoginUseCase.execute({ email, password });
-
-            res.cookie('adminAccessToken', accessToken, {
-                httpOnly: true,
-                maxAge: ACCESS_COOKIE_MAX_AGE,
-                sameSite: 'none',
-                secure: true,
-                path: '/'
-            });
-            res.cookie('adminRefreshToken', refreshToken, {
-                httpOnly: true,
-                maxAge: REFRESH_COOKIE_MAX_AGE,
-                sameSite: 'none',
-                secure: true,
-                path: '/'
-            });
+            setCookie(res, "adminAccessToken",accessToken)
+            setCookie(res, "adminRefreshToken", refreshToken)
 
             return res.status(StatusCodes.OK).json({ message: 'Admin Login successful', admin, success: true });
         } catch (error) {
@@ -95,7 +81,7 @@ export class AdminController{
             res.clearCookie('adminAccessToken');
             res.clearCookie('adminRefreshToken');
             return res.status(StatusCodes.OK).json({ message: 'Admin Logout successfully', success: true });
-        } catch (error) {
+        } catch (_error) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false });
         }
     }
@@ -118,7 +104,7 @@ export class AdminController{
             const users = await this._getUsersUseCase.execute(queryParams);
 
             return res.status(StatusCodes.OK).json({ success: true, ...users });
-        } catch (error) {
+        } catch (_error) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Error Fetching Users', success: false });
         }
     }
@@ -126,10 +112,10 @@ export class AdminController{
     async toggleUserStatus(req: Request, res: Response) { 
         try {
             const userId = req.params.id;
-            const response = await this._toggleUserStatusUseCase.execute(userId);
+            await this._toggleUserStatusUseCase.execute(userId);
             return res.status(StatusCodes.OK).json({ message: "User Status Updated Successfully", success: true });
-        } catch (error: any) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ message: error.message, success: false });
+        } catch (error: unknown) {
+            handleControllerError(error, res, HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -138,8 +124,8 @@ export class AdminController{
             const userId = req.params.id;
             const user = await this._getUserDetailsUseCase.execute(userId);
             return res.status(StatusCodes.OK).json({user, success: true})
-        } catch (error: any) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false})
+        } catch (error: unknown) {
+            handleControllerError(error, res, HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -160,17 +146,8 @@ export class AdminController{
 
 
             
-        } catch (error: any) {
-            if (error instanceof AppError) {
-                return res.status(error.statusCode).json({
-                    success: false,
-                    message: error.message
-                });
-            }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message ||HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
-            });
+        } catch (error: unknown) {
+            handleControllerError(error, res, HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -304,10 +281,8 @@ export class AdminController{
         try {
           const stats = await this._getDashboardStatsUseCase.execute();
           res.json(stats);
-        } catch (error: any) {
-          res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-            message: error.message || 'Failed to fetch dashboard stats'
-          });
+        } catch (error: unknown) {
+            handleControllerError(error, res, 'Failed to fetch dashboard stats');
         }
       }
 
@@ -318,10 +293,8 @@ export class AdminController{
             
             const revenueStats = await this._getRevenueStatsUseCase.execute(page, limit);
             res.json(revenueStats);
-        } catch (error: any) {
-            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-                message: error.message || 'Failed to fetch revenue stats'
-            });
+        } catch (error: unknown) {
+            handleControllerError(error, res, 'Failed to fetch revenue stats');
         }
     }
 
@@ -334,10 +307,8 @@ export class AdminController{
             
             const sessions = await this._getAdminSessionsUseCase.execute(status, page, limit, search);
             res.json(sessions);
-        } catch (error: any) {
-            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-                message: error.message || 'Failed to fetch sessions'
-            });
+        } catch (error: unknown) {
+            handleControllerError(error, res, 'Failed to fetch sessions');
         }
     }
 

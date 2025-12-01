@@ -1,5 +1,5 @@
 import { IGetDeveloperMonthlyStatsUseCase } from "@/application/useCases/interfaces/developer/dashboard/IGetDeveloperMonthlyStatsUseCase";
-import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
+import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";
 

@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
-import { IRating } from "../entities/Rating";
+import { IRating } from "../../entities/Rating";
 import { IBaseRepository } from "./IBaseRepository";
+import { IReviewResult } from "../types/IRatingTypes";
 
 export interface IRatingRepository extends IBaseRepository<IRating> {
     createRating(rating: {
@@ -23,8 +24,5 @@ export interface IRatingRepository extends IBaseRepository<IRating> {
         limit?: number, 
         search?: string,
         sortOrder?: string
-    ): Promise<{
-        reviews: any[];
-        pagination: { totalPages: number; currentPage: number; totalItems: number };
-    }>
+    ): Promise<IReviewResult>
 }

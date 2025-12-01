@@ -1,7 +1,7 @@
-import { LoginAdminDTO } from "@/application/dto/LoginAdminDTO";
+import { LoginAdminDTO } from "@/application/dto/admin/LoginAdminDTO";
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { IAdminRepository } from "@/domain/interfaces/IAdminRepository";
+import { IAdminRepository } from "@/domain/interfaces/repositories/IAdminRepository";
 import { IAdminLoginUseCase } from "../../../interfaces/admin/auth/IAdminLoginUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";

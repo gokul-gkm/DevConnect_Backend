@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
-import { ERROR_MESSAGES, HTTP_STATUS_MESSAGES } from '@/utils/constants';
+import { ERROR_MESSAGES } from '@/utils/constants';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
 
@@ -10,6 +10,7 @@ import { IProcessPaymentWebhookUseCase } from '@/application/useCases/interfaces
 import { ITransferToDevWalletUseCase } from '@/application/useCases/interfaces/user/payment/ITransferToDevWalletUseCase';
 import { IGetWalletDetailsUseCase } from '@/application/useCases/interfaces/user/payment/IGetWalletDetailsUseCase';
 import { IGetAdminWalletDetailsUseCase } from '@/application/useCases/interfaces/user/payment/IGetAdminWalletDetailsUseCase';
+import { handleControllerError } from '../error/handleControllerError';
 
 @injectable()
 export class PaymentController {
@@ -42,10 +43,8 @@ export class PaymentController {
       });
 
       res.json({ url: checkoutUrl });
-    } catch (error: any) {
-      res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: error.message || HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
-      });
+    } catch (error: unknown) {
+      handleControllerError(error, res, 'Failed to create payment session')
     }
   }
 
@@ -63,11 +62,8 @@ export class PaymentController {
       );
 
       res.json({ received: true });
-    } catch (error: any) {
-      console.error('Webhook Error:', error.message);
-      res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: error.message || 'Webhook processing failed'
-      });
+    } catch (error: unknown) {
+      handleControllerError(error, res, 'Webhook processing failed')
     }
   }
 
@@ -78,10 +74,8 @@ export class PaymentController {
       await this._transferToDevWalletUseCase.execute(sessionId);
 
       res.json({ message: 'Payment transferred successfully' });
-    } catch (error: any) {
-      res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: error.message || 'Transfer failed'
-      });
+    } catch (error: unknown) {
+      handleControllerError(error, res, 'Transfer failed')
     }
   }
 
@@ -94,10 +88,8 @@ export class PaymentController {
       
       const wallet = await this._getWalletDetailsUseCase.execute(userId);
       res.json(wallet);
-    } catch (error: any) {
-      res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: error.message || 'Failed to fetch wallet details'
-      });
+    } catch (error: unknown) {
+      handleControllerError(error, res, 'Failed to fetch wallet details');
     }
   }
 
@@ -110,10 +102,8 @@ export class PaymentController {
       
       const wallet = await this._getAdminWalletDetailsUseCase.execute(adminId);
       res.json(wallet);
-    } catch (error: any) {
-      res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-        message: error.message || 'Failed to fetch admin wallet details'
-      });
+    } catch (error: unknown) {
+      handleControllerError(error, res, 'Failed to fetch admin wallet details')
     }
   }
   

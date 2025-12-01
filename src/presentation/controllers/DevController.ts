@@ -17,6 +17,8 @@ import { IGetDeveloperReviewsUseCase } from "@/application/useCases/interfaces/d
 import { IGetDeveloperMonthlyStatsUseCase } from "@/application/useCases/interfaces/developer/dashboard/IGetDeveloperMonthlyStatsUseCase";
 import { IGetDeveloperUpcomingSessionsUseCase } from "@/application/useCases/interfaces/developer/dashboard/IGetDeveloperUpcomingSessionsUseCase";
 import { IGetDeveloperProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IGetDeveloperProjectUseCase";
+import { handleControllerError } from "../error/handleControllerError";
+import { IChangePasswordUseCase } from "@/application/useCases/interfaces/shared/profile/IChangePasswordUseCase";
 
 interface MulterFiles {
     profilePicture?: Express.Multer.File[];
@@ -51,6 +53,8 @@ export class DevController {
           private _getDeveloperMonthlyStatsUseCase: IGetDeveloperMonthlyStatsUseCase,
           @inject(TYPES.IGetDeveloperUpcomingSessionsUseCase)
           private _getDeveloperUpcomingSessionsUseCase: IGetDeveloperUpcomingSessionsUseCase,
+          @inject(TYPES.IChangePasswordUseCase)
+          private _changePasswordUseCase: IChangePasswordUseCase,
         ) {}
     
     async getProfile(req: Request, res: Response) {
@@ -125,20 +129,33 @@ export class DevController {
                 message: 'Profile updated successfully',
                 data: updatedProfile
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Update profile error:", error);
+            handleControllerError(error, res, HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR)
+        }
+    }
+
+    async changePassword (req: Request, res: Response) {
+        try {
+            const userId = req.userId;
+            if (!userId) {
+                throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
+            }
+            const { currentPassword, newPassword, confirmPassword } = req.body;
+            await this._changePasswordUseCase.execute(userId,{ currentPassword, newPassword, confirmPassword });
+
+            return res.status(StatusCodes.OK).json({message: "Password has been updated successfully", success: true})
+        } catch (error) {
             if (error instanceof AppError) {
                 return res.status(error.statusCode).json({
                     success: false,
                     message: error.message
-                });
+                })
             }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
-            });
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Failde to update password' });
         }
     }
+
 
     async addProject(req: Request, res: Response) {
         try {
@@ -168,12 +185,9 @@ export class DevController {
                 data: project
             });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Add Project Error : ", error);
-            return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message || 'Failed to add project'
-            });
+            handleControllerError(error, res,  'Failed to add project')
         }
     }
 
@@ -189,9 +203,9 @@ export class DevController {
 
             return res.status(StatusCodes.OK).json({ success: true, message: 'Developer projects fetched successfully', data: result });
             
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Get Developer Projects Error : ", error)
-            return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: error.message || 'Failed to fetch developer projects' });
+            handleControllerError(error, res, 'Failed to fetch developer projects');
         }
     }
 
@@ -206,11 +220,8 @@ export class DevController {
                 message: 'Project fetched successfully',
                 data: project
             });
-        } catch (error: any) {
-            return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message || 'Failed to fetch project'
-            });
+        } catch (error: unknown) {
+            handleControllerError(error, res, 'Failed to fetch project');
         }
     }
 
@@ -234,11 +245,8 @@ export class DevController {
                 message: 'Project updated successfully',
                 data: updatedProject
             });
-        } catch (error: any) {
-            return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: true,
-                message: error.message || 'Failed to update project'
-            });
+        } catch (error: unknown) {
+            handleControllerError(error, res, 'Failed to update project')
         }
     }
 
@@ -255,11 +263,8 @@ export class DevController {
                 success: true,
                 message: 'Project deleted successfully'
             });
-        } catch (error: any) {
-            return res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message || 'Failed to delete project'
-            });
+        } catch (error: unknown) {
+            handleControllerError(error, res, 'Failed to delete project')
         }
     }
 
@@ -285,11 +290,8 @@ export class DevController {
                 success: true,
                 data: slots
             });
-        } catch (error: any) {
-            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message || 'Failed to get unavailable slots'
-            });
+        } catch (error: unknown) {
+            handleControllerError(error, res, 'Failed to get unavailable slots');
         }
     }
 
@@ -316,11 +318,8 @@ export class DevController {
                 success: true,
                 message: 'Unavailable slots updated successfully'
             });
-        } catch (error: any) {
-            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message || 'Failed to update unavailable slots'
-            });
+        } catch (error: unknown) {
+            handleControllerError(error, res, 'Failed to update unavailable slots');
         }
     }
 
@@ -336,11 +335,8 @@ export class DevController {
                 success: true,
                 data: slots
             });
-        } catch (error: any) {
-            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message || 'Failed to get default unavailable slots'
-            });
+        } catch (error: unknown) {
+            handleControllerError(error, res, 'Failed to get default unavailable slots');
         }
     }
 
@@ -366,11 +362,8 @@ export class DevController {
                 success: true,
                 message: 'Default unavailable slots updated successfully'
             });
-        } catch (error: any) {
-            res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: error.message || 'Failed to update default unavailable slots'
-            });
+        } catch (error: unknown) {
+            handleControllerError(error, res, 'Failed to update default unavailable slots');
         }
     }
 
@@ -402,16 +395,7 @@ export class DevController {
                 data: result
             });
         } catch (error) {
-            if (error instanceof AppError) {
-                return res.status(error.statusCode).json({
-                    success: false,
-                    message: error.message
-                });
-            }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR
-            });
+            handleControllerError(error, res, HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -427,7 +411,7 @@ export class DevController {
             }
             const stats = await this._getDeveloperMonthlyStatsUseCase.execute(developerId, year);
             res.status(200).json({ success: true, data: stats });
-        } catch (error) {
+        } catch (_error) {
             res.status(500).json({ success: false, message: "Failed to fetch stats" });
         }
     }
@@ -444,7 +428,7 @@ export class DevController {
             }
             const sessions = await this._getDeveloperUpcomingSessionsUseCase.execute(developerId, limit);
             res.status(200).json({ success: true, data: sessions });
-        } catch (error) {
+        } catch (_error) {
             res.status(500).json({ success: false, message: "Failed to fetch sessions" });
         }
     }

@@ -7,7 +7,7 @@ import { upload } from "@/utils/multer";
 import { container } from "@/infrastructure/config/inversify.config";
 import { TYPES } from "@/types/types";
 
-export const createChatRouter = (httpServer: Server) => {
+export const createChatRouter = (_httpServer: Server) => {
     
     const chatRouter = Router();
     const chatController = container.get<ChatController>(TYPES.ChatController);

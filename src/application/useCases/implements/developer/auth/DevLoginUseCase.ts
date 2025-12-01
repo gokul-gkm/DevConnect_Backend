@@ -1,9 +1,9 @@
-import { LoginUserDTO } from "@/application/dto/LoginUserDTO";
+import { LoginUserDTO } from "@/application/dto/users/LoginUserDTO";
 import { IDevLoginUseCase } from "@/application/useCases/interfaces/developer/auth/IDevLoginUseCase";
 import { IUser } from "@/domain/entities/User";
 import { AppError } from "@/domain/errors/AppError";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { TYPES } from "@/types/types";
 import bcrypt from 'bcryptjs'
 import { StatusCodes } from "http-status-codes";

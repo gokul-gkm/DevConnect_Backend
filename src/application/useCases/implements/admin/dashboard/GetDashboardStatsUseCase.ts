@@ -1,9 +1,9 @@
 import { IGetDashboardStatsUseCase } from "@/application/useCases/interfaces/admin/dashboard/IGetDashboardStatsUseCase";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
-import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
+import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
+import { IWalletRepository } from "@/domain/interfaces/repositories/IWalletRepository";
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";
 

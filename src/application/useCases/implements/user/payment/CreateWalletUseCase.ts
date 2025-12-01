@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { IWalletRepository } from '@/domain/interfaces/repositories/IWalletRepository';
 import { ICreateWalletUseCase } from '@/application/useCases/interfaces/user/payment/ICreateWalletUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';

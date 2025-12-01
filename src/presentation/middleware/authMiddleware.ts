@@ -1,8 +1,7 @@
+import { setCookie } from "@/utils/cookie.util";
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
-
-const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
 
 interface DecodedJwt {
     userId: string;
@@ -30,6 +29,7 @@ export const authMiddleware = (
         next();
         return;
     } catch (accessTokenError) {
+          console.error('Access token verification failed:', accessTokenError);
         if (!refreshToken) {
             res.status(StatusCodes.UNAUTHORIZED).json({ message: 'Unauthorized', success: false });
             return;
@@ -47,15 +47,14 @@ export const authMiddleware = (
                 { expiresIn: process.env.ACCESS_EXPIRES_IN }
             );
 
-            res.cookie('accessToken', newAccessToken, {
-                httpOnly: true,
-                maxAge: ACCESS_COOKIE_MAX_AGE
-            });
+            setCookie(res, "accessToken",newAccessToken)
+
 
             req.userId = decodedRefreshToken.userId;
             next();
             return;
         } catch (refreshTokenError) {
+            console.error('Refresh token verification failed:', refreshTokenError);
             res.clearCookie('accessToken');
             res.clearCookie('refreshToken');
             res.status(StatusCodes.FORBIDDEN).json({ message: 'Unauthorized', success: false });

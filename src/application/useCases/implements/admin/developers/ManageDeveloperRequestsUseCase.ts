@@ -4,11 +4,11 @@ import { AppError } from "@/domain/errors/AppError";
 import { Types } from "mongoose";
 import { StatusCodes } from "http-status-codes";
 import { ERROR_MESSAGES } from "@/utils/constants";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
+import { IWalletRepository } from "@/domain/interfaces/repositories/IWalletRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { IManageDeveloperRequestsUseCase } from "@/application/useCases/interfaces/admin/developers/IManageDeveloperRequestsUseCase";
-import { IMailService } from "@/domain/interfaces/IMailService";
+import { IMailService } from "@/domain/interfaces/services/IMailService";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
 

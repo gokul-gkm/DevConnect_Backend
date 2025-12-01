@@ -12,10 +12,7 @@ import { ILoginUserUseCase } from "@/application/useCases/interfaces/user/auth/I
 import { IForgotPasswordUseCase } from "@/application/useCases/interfaces/user/auth/IForgotPasswordUseCase";
 import { IResetPasswordUseCase } from "@/application/useCases/interfaces/user/auth/IResetPasswordUseCase";
 import { ISetNewTokenUseCase } from "@/application/useCases/interfaces/user/auth/ISetNewTokenUseCase";
-
-
-const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
-const REFRESH_COOKIE_MAX_AGE = Number(process.env.REFRESH_COOKIE_MAX_AGE);
+import { setCookie } from "@/utils/cookie.util";
 
 @injectable()
 export class AuthController {
@@ -39,10 +36,10 @@ export class AuthController {
   async register(req: Request, res: Response) {
     try {
       const userData = req.body;
-      await this._registerUserUseCase.execute(userData);
+      const { expiresAt } = await this._registerUserUseCase.execute(userData);
       return res
         .status(StatusCodes.CREATED)
-        .json({ message: "User registered and OTP send", success: true });
+        .json({ message: "User registered and OTP send",expiresAt, success: true});
     } catch (error) {
       if (error instanceof AppError) {
         return res
@@ -89,10 +86,10 @@ export class AuthController {
   async resendOTP(req: Request, res: Response) {
     try {
       const { email } = req.body;
-      await this._resendOTPUseCase.execute(email);
+      const { expiresAt } = await this._resendOTPUseCase.execute(email);
       return res
         .status(StatusCodes.OK)
-        .json({ message: "New OTP send successfully.", success: true });
+        .json({ message: "New OTP send successfully.",expiresAt, success: true });
     } catch (error) {
       if (error instanceof AppError) {
         if (error.statusCode === StatusCodes.TOO_MANY_REQUESTS) {
@@ -119,15 +116,10 @@ export class AuthController {
       const { email, password } = req.body;
       const { accessToken, refreshToken, user } =
         await this._loginUserUseCase.execute({ email, password });
-
-      res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        maxAge: ACCESS_COOKIE_MAX_AGE,
-      });
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        maxAge: REFRESH_COOKIE_MAX_AGE,
-      });
+      
+      setCookie(res, "accessToken",accessToken)
+      setCookie(res, "refreshToken", refreshToken)
+      
       return res
         .status(StatusCodes.OK)
         .json({

@@ -3,8 +3,10 @@ import { Server as HttpServer } from "http";
 import { Server } from 'http';
 import jwt from 'jsonwebtoken';
 import logger from '@/utils/logger';
-import { ISocketService } from '@/domain/interfaces/ISocketService';
+import { ISocketService } from '@/domain/interfaces/services/ISocketService';
 import { inject, injectable } from 'inversify';
+import * as cookie from 'cookie';
+
 
 @injectable()
 export class SocketService implements ISocketService {
@@ -21,7 +23,7 @@ export class SocketService implements ISocketService {
 //     this.setupEventHandlers();
   // }
   private static instance: SocketService; 
-  private io: SocketServer;
+  private io!: SocketServer;
   private userSockets: Map<string, Set<string>> = new Map();
   private developerSockets: Map<string, Set<string>> = new Map();
   private webRTCRooms: Map<string, Set<string>> = new Map();
@@ -29,9 +31,18 @@ export class SocketService implements ISocketService {
 
   constructor(
     @inject('HttpServer') private server: HttpServer,
-    @inject('SocketServer') io?: SocketServer 
+    @inject('SocketServer') io: SocketServer 
   ) {
-    this.io = io || new SocketServer(this.server, { /* options */ });
+    // this.io = io;
+    // console.log("IO instance:", this.io);
+    console.log('🧩 SocketService initialized');
+    // this.setupMiddleware();
+    // this.setupEventHandlers();
+  }
+
+  public initialize(server: HttpServer, io: SocketServer): void {
+    this.io = io;
+    console.log('🧩 SocketService initialized with IO');
     this.setupMiddleware();
     this.setupEventHandlers();
   }
@@ -46,41 +57,87 @@ export class SocketService implements ISocketService {
     return SocketService.instance;
 }
 
+  
   private setupMiddleware() {
-    this.io.use(async (socket, next) => {
-      try {
-        const token = socket.handshake.auth.token;
-        if (!token) {
-          throw new Error('Authentication error');
-        }
+    
+  this.io.use(async (socket, next) => {
+    try {
+      const req = socket.request as import('http').IncomingMessage & {
+        headers: { cookie?: string };
+      };
 
+      const cookies = req.headers.cookie
+        ? cookie.parse(req.headers.cookie)
+        : {};
+      
+
+      const token = socket.handshake.auth?.token;
+      const refreshToken = cookies.refreshToken;
+
+      if (!token) {
+        throw new Error('No access token provided');
+      }
+
+      try {
         const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as {
           userId: string;
           role?: string;
           developerId?: string;
         };
 
-        if (!decoded.role || !['user', 'developer'].includes(decoded.role)) {
-          throw new Error('Invalid role');
-        }
-
         socket.data = {
           userId: decoded.userId,
           role: decoded.role,
-          developerId: decoded.developerId
+          developerId: decoded.developerId,
         };
 
-        next();
-      } catch (error) {
-        logger.error('Socket authentication error:', error);
-        console.error('Socket authentication error:', error);
-        next(new Error('Authentication error'));
+        return next();
+      } catch (error: any) {
+        if (error.name === 'TokenExpiredError') {
+          if (!refreshToken) return next(new Error('No refresh token found'));
+
+          const decodedRefresh = jwt.verify(
+            refreshToken,
+            process.env.JWT_REFRESH_SECRET!
+          ) as { userId: string; role: string; developerId?: string };
+
+          const newAccessToken = jwt.sign(
+            {
+              userId: decodedRefresh.userId,
+              role: decodedRefresh.role,
+              developerId: decodedRefresh.developerId,
+            },
+            process.env.JWT_ACCESS_SECRET!,
+            { expiresIn: process.env.ACCESS_EXPIRES_IN }
+          );
+
+          socket.emit('newAccessToken', newAccessToken);
+
+          socket.data = {
+            userId: decodedRefresh.userId,
+            role: decodedRefresh.role,
+            developerId: decodedRefresh.developerId,
+          };
+
+          return next();
+        }
+
+        throw error;
       }
-    });
-  }
+    } catch (error) {
+      console.error('Socket authentication error:', error);
+      return next(new Error('Authentication error'));
+    }
+  });
+}
+
 
   private setupEventHandlers() {
     this.io.on('connection', (socket) => {
+
+      console.log('🟢 New socket connected:', socket.id);
+      console.log('User data:', socket.data);
+
       const { userId, role, developerId } = socket.data;
       console.log("🔰 Role and userID : ", role, userId)
  
@@ -221,7 +278,7 @@ export class SocketService implements ISocketService {
   }
 
   private setupWebRTCHandlers(socket: any) {
-    const { userId, role, developerId } = socket.data;
+    const { userId, role } = socket.data;
     const participantId = userId;
     
     console.log(`[Backend:WebRTC Step 1] Setting up WebRTC handlers for ${participantId} (${role})`);
@@ -531,7 +588,7 @@ export class SocketService implements ISocketService {
   }
 
   private handleDisconnect(socket: any) {
-    const { userId, role, developerId } = socket.data;
+    const { userId, role } = socket.data;
 
     if (role === 'developer' && userId) {
       const sockets = this.developerSockets.get(userId);
@@ -609,10 +666,12 @@ export class SocketService implements ISocketService {
   }
 
   public isUserOnline(userId: string): boolean {
+    console.log("🌍User sockets : ",this.userSockets)
     return this.userSockets.has(userId);
   }
 
   public isDeveloperOnline(developerId: string): boolean {
+    console.log("🌍Developer sockets : ",this.userSockets)
     return this.developerSockets.has(developerId);
   }
 
@@ -663,14 +722,18 @@ export class SocketService implements ISocketService {
 
   public emitNewNotification(userId: string, notification: any) {
     const userSockets = this.userSockets.get(userId);
+    console.log("👿👿👿👿👿👿 User sockets",userSockets)
     if (userSockets && userSockets.size > 0) {
+      console.log("✈️ Emitting new notificaion to user")
       userSockets.forEach(socketId => {
         this.io.to(socketId).emit('notification:new', { notification });
       });
     }
 
     const developerSockets = this.developerSockets.get(userId);
+    console.log("🤖🤖🤖🤖 Developer sockets",developerSockets)
     if (developerSockets && developerSockets.size > 0) {
+      console.log("✈️ Emitting new notificaion to developer")
       developerSockets.forEach(socketId => {
         this.io.to(socketId).emit('notification:new', { notification });
       });

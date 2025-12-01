@@ -1,11 +1,12 @@
 import { IDeveloper } from "@/domain/entities/Developer";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { IGetDeveloperRequestDetailsUseCase } from "@/application/useCases/interfaces/admin/developers/IGetDeveloperRequestDetailsUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
+import { IDeveloperPopulated } from "@/domain/interfaces/types/IDeveloperTypes";
 
 @injectable()
 export class GetDeveloperRequestDetailsUseCase implements IGetDeveloperRequestDetailsUseCase {
@@ -16,7 +17,7 @@ export class GetDeveloperRequestDetailsUseCase implements IGetDeveloperRequestDe
         private _s3Service: IS3Service
     ) {}
 
-    async execute(developerId: string): Promise<IDeveloper> {
+    async execute(developerId: string):Promise<IDeveloperPopulated | null> {
         const developer = await this._developerRepository.findDeveloperWithDetails(developerId);
         
         if (!developer) {

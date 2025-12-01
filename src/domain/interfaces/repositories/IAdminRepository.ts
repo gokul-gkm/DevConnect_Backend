@@ -1,4 +1,4 @@
-import { IAdmin } from "../entities/Admin";
+import { IAdmin } from "../../entities/Admin";
 import { IBaseRepository } from "./IBaseRepository";
 
 export interface IAdminRepository extends IBaseRepository<IAdmin> { 

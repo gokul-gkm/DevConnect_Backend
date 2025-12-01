@@ -1,9 +1,9 @@
-import { VerifyOTPDTO } from "@/application/dto/VerifyOTPDTO";
+import { VerifyOTPDTO } from "@/application/dto/users/VerifyOTPDTO";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { ERROR_MESSAGES } from "@/utils/constants";
-import { IOTPRepository } from "@/domain/interfaces/IOTPRepository";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IOTPRepository } from "@/domain/interfaces/repositories/IOTPRepository";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { IVerifyOTPUseCase } from "@/application/useCases/interfaces/user/auth/IVerifyOTPUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";

@@ -1,7 +1,7 @@
 import { AppError } from "@/domain/errors/AppError";
-import { IChatRepository } from "@/domain/interfaces/IChatRepository";
-import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
-import { ISocketService } from "@/domain/interfaces/ISocketService";
+import { IChatRepository } from "@/domain/interfaces/repositories/IChatRepository";
+import { IMessageRepository } from "@/domain/interfaces/repositories/IMessageRepository";
+import { ISocketService } from "@/domain/interfaces/services/ISocketService";
 import { StatusCodes } from "http-status-codes";
 import { IMarkMessagesAsReadUseCase } from "../../interfaces/chat/IMarkMessagesAsReadUseCase";
 import { inject, injectable } from "inversify";

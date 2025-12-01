@@ -1,8 +1,8 @@
-import { IVideoSessionRepository } from "@/domain/interfaces/IVideoSessionRepository";
+import { IVideoSessionRepository } from "@/domain/interfaces/repositories/IVideoSessionRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { Types } from "mongoose";
-import { ISocketService } from "@/domain/interfaces/ISocketService";
+import { ISocketService } from "@/domain/interfaces/services/ISocketService";
 import { IJoinVideoSessionUseCase } from "../../interfaces/video/IJoinVideoSessionUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";

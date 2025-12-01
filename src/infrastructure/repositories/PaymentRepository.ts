@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { IPaymentRepository } from '@/domain/interfaces/IPaymentRepository';
+import { IPaymentRepository } from '@/domain/interfaces/repositories/IPaymentRepository';
 import { IPayment, PaymentModel } from '@/domain/entities/Payment';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
@@ -16,7 +16,7 @@ export class PaymentRepository extends BaseRepository<IPayment> implements IPaym
     try {
       const newPayment = new PaymentModel(payment);
       return await newPayment.save();
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to create payment record', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -24,7 +24,7 @@ export class PaymentRepository extends BaseRepository<IPayment> implements IPaym
   async findByPaymentId(id: Types.ObjectId): Promise<IPayment | null> {
     try {
       return await PaymentModel.findById(id);
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to fetch payment', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -32,7 +32,7 @@ export class PaymentRepository extends BaseRepository<IPayment> implements IPaym
   async findBySessionId(sessionId: Types.ObjectId): Promise<IPayment | null> {
     try {
       return await PaymentModel.findOne({ sessionId });
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to fetch payment by session ID', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -44,7 +44,7 @@ export class PaymentRepository extends BaseRepository<IPayment> implements IPaym
         { $set: { status } },
         { new: true }
       );
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to update payment status', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
@@ -52,7 +52,7 @@ export class PaymentRepository extends BaseRepository<IPayment> implements IPaym
   async findByStripeSessionId(stripeSessionId: string): Promise<IPayment | null> {
     try {
       return await PaymentModel.findOne({ stripeSessionId });
-    } catch (error) {
+    } catch (_error) {
       throw new AppError('Failed to fetch payment by Stripe session ID', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }

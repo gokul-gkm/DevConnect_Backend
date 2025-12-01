@@ -1,5 +1,5 @@
 import { AppError } from "@/domain/errors/AppError";
-import { IChatRepository } from "@/domain/interfaces/IChatRepository";
+import { IChatRepository } from "@/domain/interfaces/repositories/IChatRepository";
 import { StatusCodes } from "http-status-codes";
 import { IGetChatByIdUseCase } from "../../interfaces/chat/IGetChatByIdUseCase";
 import { inject, injectable } from "inversify";

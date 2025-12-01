@@ -1,6 +1,6 @@
 import { IGetDeveloperSessionHistoryDetailsUseCase } from "@/application/useCases/interfaces/developer/sessions/IGetDeveloperSessionHistoryDetailsUseCase";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
+import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";
 

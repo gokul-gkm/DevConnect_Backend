@@ -1,7 +1,7 @@
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
-import { IProjectRepository } from "@/domain/interfaces/IProjectRepository";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
+import { IProjectRepository } from "@/domain/interfaces/repositories/IProjectRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 
 import { IGetDeveloperProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IGetDeveloperProjectUseCase";
 import { TYPES } from "@/types/types";

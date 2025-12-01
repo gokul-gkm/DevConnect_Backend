@@ -1,8 +1,8 @@
 import { Types } from 'mongoose';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
+import { IWalletRepository } from '@/domain/interfaces/repositories/IWalletRepository';
 import { ITransferToDevWalletUseCase } from '@/application/useCases/interfaces/user/payment/ITransferToDevWalletUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';

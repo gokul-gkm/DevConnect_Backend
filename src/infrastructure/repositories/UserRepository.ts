@@ -1,6 +1,6 @@
-import { ObjectId, Types, FilterQuery, SortOrder } from "mongoose";
+import { Types, FilterQuery, SortOrder } from "mongoose";
 import { IUser, User } from "@/domain/entities/User";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { PaginatedResponse, QueryParams } from "@/domain/types/types";
 import { StatusCodes } from "http-status-codes";
@@ -124,7 +124,7 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
         }
     }
 
-    async getUserById(userId: string):Promise<any> {
+    async getUserById(userId: string):Promise<Partial<IUser>> {
         try {
           const user = await User.findById(userId).select('email username profilePicture');
           

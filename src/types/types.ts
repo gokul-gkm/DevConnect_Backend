@@ -42,7 +42,7 @@ export const TYPES = {
     IUpdateUserProfileUseCase: Symbol.for("IUpdateUserProfileUseCase"),
     ISearchDevelopersUseCase: Symbol.for("ISearchDevelopersUseCase"),
     IGetPublicProfileUseCase: Symbol.for("IGetPublicProfileUseCase"),
-    IChangeUserPasswordUseCase: Symbol.for("IChangeUserPasswordUseCase"),
+    IChangePasswordUseCase: Symbol.for("IChangePasswordUseCase"),
 
     // Developer Auth
     IRegisterDevUseCase: Symbol.for("IRegisterDevUseCase"),

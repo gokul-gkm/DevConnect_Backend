@@ -1,5 +1,5 @@
 import { IUser } from "@/domain/entities/User";
-import { PaginatedResponse, QueryParams } from "../types/types";
+import { PaginatedResponse, QueryParams } from "../../types/types";
 import { IBaseRepository } from "./IBaseRepository";
 
 export interface IUserRepository extends IBaseRepository<IUser>  {
@@ -11,7 +11,7 @@ export interface IUserRepository extends IBaseRepository<IUser>  {
     findByRole(role: string): Promise<IUser[]>
     findUsers(queryParams: QueryParams): Promise<PaginatedResponse<IUser>>
     getUserProfile(userId: string): Promise<IUser | null>
-    getUserById(userId: string): Promise<any>
+    getUserById(userId: string): Promise<Partial<IUser>>
     countByRole(role: string): Promise<number>
     getMonthlyUserGrowth(startDate: Date): Promise<Array<{ year: number; month: number; role: string; count: number }>>
 }

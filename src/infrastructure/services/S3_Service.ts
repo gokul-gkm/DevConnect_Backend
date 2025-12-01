@@ -1,5 +1,5 @@
 import { AppError } from '@/domain/errors/AppError';
-import { IS3Service } from '@/domain/interfaces/IS3Service';
+import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import dotenv from 'dotenv';

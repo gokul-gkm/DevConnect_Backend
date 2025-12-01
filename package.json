@@ -6,7 +6,8 @@
     "dev": "nodemon -r tsconfig-paths/register src/app.ts",
     "start": "node dist/app.js",
     "build": "tsc",
-    "create-admin-wallet": "ts-node -r tsconfig-paths/register src/domain/entities/Wallet.ts"
+    "create-admin-wallet": "ts-node -r tsconfig-paths/register src/domain/entities/Wallet.ts",
+    "lint": "eslint ."
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,7 @@
     "@": "dist"
   },
   "devDependencies": {
+    "@eslint/js": "^9.37.0",
     "@types/bcrypt": "^5.0.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.8",
@@ -27,15 +29,20 @@
     "@types/multer": "^1.4.12",
     "@types/node": "^22.10.1",
     "@types/nodemailer": "^6.4.17",
+    "eslint": "^9.37.0",
+    "globals": "^16.4.0",
+    "jiti": "^2.6.1",
     "nodemon": "^3.1.7",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.46.1"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.726.1",
     "@aws-sdk/s3-request-presigner": "^3.744.0",
     "axios": "^1.7.9",
     "bcryptjs": "^2.4.3",
+    "cookie": "^1.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",

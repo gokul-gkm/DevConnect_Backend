@@ -1,5 +1,5 @@
 import { Model, Document } from 'mongoose';
-import { IBaseRepository } from '@/domain/interfaces/IBaseRepository';
+import { IBaseRepository } from '@/domain/interfaces/repositories/IBaseRepository';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 

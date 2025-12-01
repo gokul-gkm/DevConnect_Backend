@@ -1,9 +1,9 @@
 import { IResendOTPUseCase } from "@/application/useCases/interfaces/user/auth/IResendOTPUseCase";
 import { OTP } from "@/domain/entities/OTP";
 import { AppError } from "@/domain/errors/AppError";
-import { IMailService } from "@/domain/interfaces/IMailService";
-import { IOTPRepository } from "@/domain/interfaces/IOTPRepository";
-import { IUserRepository } from "@/domain/interfaces/IUserRepository";
+import { IMailService } from "@/domain/interfaces/services/IMailService";
+import { IOTPRepository } from "@/domain/interfaces/repositories/IOTPRepository";
+import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { generateOTP } from "@/shared/utils/OTPGenerator";
 import { TYPES } from "@/types/types";
 import { StatusCodes } from "http-status-codes";
@@ -18,7 +18,7 @@ export class ResendOTPUseCase implements IResendOTPUseCase{
         @inject(TYPES.IUserRepository) private _userRepository: IUserRepository
     ) { }
     
-    async execute(email: string): Promise<void> {
+    async execute(email: string): Promise<{ expiresAt: Date }> {
 
         const user = await this._userRepository.findByEmail(email)
 
@@ -42,22 +42,24 @@ export class ResendOTPUseCase implements IResendOTPUseCase{
         }
 
         const newOTP = generateOTP();
-        console.log('Resend OTP : ', newOTP);     
+        console.log('Resend OTP : ', newOTP);
+        
+        const expiresAt = new Date(Date.now() + 1 * 60 * 1000)
 
         const otpRecord = new OTP({
             email,
             otp: newOTP,
             createdAt: Date.now(),
-            expiresAt: new Date(Date.now() + 1 * 60 * 1000)
+            expiresAt 
         })
 
         await this._otpRepository.save(otpRecord);
         try {
             await this._mailService.sendOTP(email, newOTP);
-        } catch (error) {
+        } catch (_error) {
             await this._otpRepository.deleteByEmail(email);
             throw new AppError('Failed to send OTP email', StatusCodes.INTERNAL_SERVER_ERROR)
         }
-        
+        return {expiresAt}
     }
 }

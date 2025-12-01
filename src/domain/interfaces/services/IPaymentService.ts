@@ -6,12 +6,12 @@ export interface CreateCheckoutSessionParams {
   currency: string;
   successUrl: string;
   cancelUrl: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface IPaymentService {
   createCheckoutSession(params: CreateCheckoutSessionParams): Promise<string>;
-  handleWebhookEvent(payload: any, signature: string): Promise<void>;
+  handleWebhookEvent(payload: Buffer | string, signature: string): Promise<void>;
   validateWebhookSignature(payload: string, signature: string): boolean;
   refundPayment(paymentId: string, amount?: number): Promise<void>;
 }

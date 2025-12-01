@@ -26,28 +26,28 @@ export interface ValidatedSearchParams {
     limit: number;
 }
 
-export interface DeveloperSearchResponse {
-    developers: {
-        _id: string;
-        username: string;
-        email: string;
-        profilePicture?: string | null;
-        title?: string;
-        location?: string;
-        socialLinks?: {
-            github?: string;
-            linkedin?: string;
-            twitter?: string;
-        };
-        developerProfile: {
-            title?: string;
-            skills: string[];
-            languages: string[];
-            hourlyRate?: number;
-            bio?: string;
-        };
-    }[];
-    total: number;
-    page: number;
-    totalPages: number;
+export interface DeveloperSearchResponse { 
+  developers: {
+    _id: string;
+    username: string;
+    email: string;
+    profilePicture?: string | null;
+    title?: string | null;
+    location?: string | null;
+    socialLinks?: {
+      github?: string | null;
+      linkedin?: string | null;
+      twitter?: string | null;
+    } | null;
+    developerProfile: {
+      title?: string | null;
+      skills: string[];
+      languages: string[];
+      hourlyRate?: number | null;
+      bio?: string | null;
+    };
+  }[];
+  total: number;
+  page: number;
+  totalPages: number;
 }

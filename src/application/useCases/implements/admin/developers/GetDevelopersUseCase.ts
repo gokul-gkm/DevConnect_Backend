@@ -1,7 +1,7 @@
 import { DevPaginatedResponse, DevQueryParams } from "@/domain/types/types";
 import { IDeveloper } from "@/domain/entities/Developer";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-import { IDeveloperRepository } from "@/domain/interfaces/IDeveloperRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
+import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
 import { IGetDevelopersUseCase } from "@/application/useCases/interfaces/admin/developers/IGetDevelopersUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";

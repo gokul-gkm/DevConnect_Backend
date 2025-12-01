@@ -1,6 +1,6 @@
 import { IMessage, Message } from "@/domain/entities/Message";
 import { AppError } from "@/domain/errors/AppError";
-import { IMessageRepository } from "@/domain/interfaces/IMessageRepository";
+import { IMessageRepository } from "@/domain/interfaces/repositories/IMessageRepository";
 import { StatusCodes } from "http-status-codes";
 import mongoose from "mongoose";
 import { BaseRepository } from "./BaseRepository";
@@ -21,7 +21,7 @@ export class MessageRepository extends BaseRepository<IMessage> implements IMess
                 senderId: new mongoose.Types.ObjectId(message.senderId)
             });
             return await newMessage.populate('senderId', 'username profilePicture')
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to create message', StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }
@@ -43,7 +43,7 @@ export class MessageRepository extends BaseRepository<IMessage> implements IMess
                 hasMore: total > skip + messages.length,
                 total
             };
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to get chat messages', StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }
@@ -62,7 +62,7 @@ export class MessageRepository extends BaseRepository<IMessage> implements IMess
 
 
             if (messages.length > 0) {
-                const updateResult = await Message.updateMany(
+                 await Message.updateMany(
                     {
                         chatId,
                         senderType: senderType,

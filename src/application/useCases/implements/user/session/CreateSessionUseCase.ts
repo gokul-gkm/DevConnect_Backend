@@ -3,25 +3,15 @@ import { AppError } from '@/domain/errors/AppError';
 import { ISession } from '@/domain/entities/Session';
 import { StatusCodes } from 'http-status-codes';
 import { ERROR_MESSAGES } from '@/utils/constants';
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { IUserRepository } from '@/domain/interfaces/IUserRepository';
-import { IDeveloperRepository } from '@/domain/interfaces/IDeveloperRepository';
-import { INotificationService } from '@/domain/interfaces/INotificationService';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
+import { IUserRepository } from '@/domain/interfaces/repositories/IUserRepository';
+import { IDeveloperRepository } from '@/domain/interfaces/repositories/IDeveloperRepository';
+import { INotificationService } from '@/domain/interfaces/services/INotificationService';
 import { ICreateSessionUseCase } from '@/application/useCases/interfaces/user/session/ICreateSessionUseCase';
+import { validateCreateSession } from '@/utils/validation';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
-
-export interface CreateSessionDTO {
-  title: string;
-  description: string;
-  topics: string[];
-  sessionDate: string | Date;
-  startTime: string | Date;
-  duration: number;
-  price: number;
-  developerId: string;
-  userId: string;
-}
+import { CreateSessionDTO } from '@/application/dto/users/session/CreateSessionDTO';
 
 @injectable()
 export class CreateSessionUseCase implements ICreateSessionUseCase {
@@ -38,23 +28,24 @@ export class CreateSessionUseCase implements ICreateSessionUseCase {
 
   async execute(data: CreateSessionDTO): Promise<ISession> {
     try {
-     
-      const developer = await this._developerRepository.findByUserId(data.developerId);
+      const validatedData = validateCreateSession(data);
+
+      const developer = await this._developerRepository.findByUserId(validatedData.developerId);
       
       if (!developer) {
         throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
       }
 
-      const user = await this._userRepository.findById(data.userId);
+      const user = await this._userRepository.findById(validatedData.userId);
       if (!user) {
         throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
       }
 
       const isAvailable = await this._sessionRepository.checkSlotAvailability(
-        data.developerId,
-        new Date(data.sessionDate),
-        new Date(data.startTime),
-        data.duration
+        validatedData.developerId,
+        validatedData.sessionDate,
+        validatedData.startTime,
+        validatedData.duration
       );
 
       if (!isAvailable) {
@@ -62,15 +53,15 @@ export class CreateSessionUseCase implements ICreateSessionUseCase {
       }
 
       const sessionData: Partial<ISession> = {
-        title: data.title,
-        description: data.description,
-        topics: data.topics,
-        sessionDate: new Date(data.sessionDate),
-        startTime: new Date(data.startTime),
-        duration: data.duration,
-        price: data.price,
-        developerId: new Types.ObjectId(data.developerId),
-        userId: new Types.ObjectId(data.userId),
+        title: validatedData.title,
+        description: validatedData.description,
+        topics: validatedData.topics,
+        sessionDate: validatedData.sessionDate,
+        startTime: validatedData.startTime,
+        duration: validatedData.duration,
+        price: validatedData.price,
+        developerId: new Types.ObjectId(validatedData.developerId),
+        userId: new Types.ObjectId(validatedData.userId),
         status: 'pending',
         paymentStatus: 'pending'
       };
@@ -79,11 +70,11 @@ export class CreateSessionUseCase implements ICreateSessionUseCase {
 
       try {
         await this._notificationService.notify(
-          data.developerId,
+          validatedData.developerId,
           'New Session Request',
-          `${user.username} has requested a new session: "${data.title}"`,
+          `${user.username} has requested a new session: "${validatedData.title}"`,
           'session',
-          data.userId,
+          validatedData.userId,
           session._id.toString()
         )
       } catch (notificationError) {

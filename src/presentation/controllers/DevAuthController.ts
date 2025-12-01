@@ -10,10 +10,8 @@ import { IVerifyOTPUseCase } from "@/application/useCases/interfaces/user/auth/I
 import { IResendOTPUseCase } from "@/application/useCases/interfaces/user/auth/IResendOTPUseCase";
 import { IDevRequestUseCase } from "@/application/useCases/interfaces/developer/auth/IDevRequestUseCase";
 import { IDevLoginUseCase } from "@/application/useCases/interfaces/developer/auth/IDevLoginUseCase";
-
-
-const ACCESS_COOKIE_MAX_AGE = Number(process.env.ACCESS_COOKIE_MAX_AGE);
-const REFRESH_COOKIE_MAX_AGE = Number(process.env.REFRESH_COOKIE_MAX_AGE);
+import { handleControllerError } from "../error/handleControllerError";
+import { setCookie } from "@/utils/cookie.util";
 
 @injectable()
 export class DevAuthController {
@@ -34,8 +32,8 @@ export class DevAuthController {
     async register(req: Request, res: Response) {
         try {
             const devData = req.body;
-            await this._registerDevUseCase.execute(devData);
-            return res.status(StatusCodes.CREATED).json({ message: "Developer registered and OTP send", success: true })
+            const { expiresAt } = await this._registerDevUseCase.execute(devData);
+            return res.status(StatusCodes.CREATED).json({ message: "Developer registered and OTP send", expiresAt, success: true })
             
         } catch (error) {
             if (error instanceof AppError) {
@@ -63,8 +61,8 @@ export class DevAuthController {
     async resendOTP(req: Request, res: Response) {
         try {
             const { email } = req.body;
-            await this._resendOTPUseCase.execute(email);
-            return res.status(StatusCodes.OK).json({ message: "New OTP send successfully.", success: true })
+            const { expiresAt } = await this._resendOTPUseCase.execute(email);
+            return res.status(StatusCodes.OK).json({ message: "New OTP send successfully.", expiresAt, success: true })
         } catch (error) {
             if (error instanceof AppError) {
                 if (error.statusCode === StatusCodes.TOO_MANY_REQUESTS) {
@@ -97,9 +95,9 @@ export class DevAuthController {
                 success: true,
                 message: 'Developer request submitted successfully. Please wait for admin confirmation'
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR, success: false })
+            handleControllerError(error, res, HTTP_STATUS_MESSAGES.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -107,9 +105,10 @@ export class DevAuthController {
         try {
             const { email, password } = req.body;            
             const { accessToken, refreshToken, user } = await this._devLoginUseCase.execute({ email, password });
-           
-            res.cookie('accessToken', accessToken, { httpOnly: true, maxAge: ACCESS_COOKIE_MAX_AGE });
-            res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: REFRESH_COOKIE_MAX_AGE });
+
+            setCookie(res, "accessToken",accessToken)
+            setCookie(res, "refreshToken", refreshToken)
+
             return res.status(StatusCodes.OK).json({message: "Login successful", user, success: true, token: accessToken})
         } catch (error) {
             if (error instanceof AppError) {

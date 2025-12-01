@@ -1,7 +1,7 @@
 import { INotification } from '@/domain/entities/Notification';
 import { AppError } from '@/domain/errors/AppError';
-import { INotificationRepository } from '@/domain/interfaces/INotificationRepository';
-import { ISocketService } from '@/domain/interfaces/ISocketService';
+import { INotificationRepository } from '@/domain/interfaces/repositories/INotificationRepository';
+import { ISocketService } from '@/domain/interfaces/services/ISocketService';
 import { StatusCodes } from 'http-status-codes';
 import { Types } from 'mongoose';
 import { ICreateNotificationUseCase } from '../../interfaces/notification/ICreateNotificationUseCase';
@@ -58,7 +58,9 @@ export class CreateNotificationUseCase implements ICreateNotificationUseCase {
       }
 
       const notification = await this._notificationRepository.create(notificationData);
-
+      console.log("recipientId: ",recipientId)
+      console.log(this._socketService.isUserOnline(recipientId), "User online check create noti")
+      console.log(this._socketService.isDeveloperOnline(recipientId), "developer online check create noti")
       if (this._socketService.isUserOnline(recipientId)) {
         console.log('user is online. emitting notification')
         this._socketService.emitToUser(recipientId, 'notification:new', {

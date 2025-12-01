@@ -1,6 +1,6 @@
 import { inject, injectable } from "inversify";
 import { Types } from "mongoose";
-import { IVideoSessionRepository } from "@/domain/interfaces/IVideoSessionRepository";
+import { IVideoSessionRepository } from "@/domain/interfaces/repositories/IVideoSessionRepository";
 import { IGetVideoSessionUseCase } from "@/application/useCases/interfaces/video/IGetVideoSessionUseCase";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";

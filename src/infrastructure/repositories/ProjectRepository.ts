@@ -1,4 +1,4 @@
-import { IProjectRepository } from "@/domain/interfaces/IProjectRepository";
+import { IProjectRepository } from "@/domain/interfaces/repositories/IProjectRepository";
 import { IProject, Project } from "@/domain/entities/Project";
 import { AppError } from "@/domain/errors/AppError";
 import Developer from "@/domain/entities/Developer";
@@ -13,7 +13,7 @@ export class ProjectRepository extends BaseRepository<IProject> implements IProj
     constructor() {
         super(Project)
     }
-    async addProject(project: Partial<IProject>) {
+    async addProject(project: Partial<IProject>): Promise<IProject> {
         try {
             const newProject = new Project({
                 title: project.title,
@@ -25,7 +25,7 @@ export class ProjectRepository extends BaseRepository<IProject> implements IProj
 
             const savedProject = await newProject.save();
             return savedProject;
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to add project', StatusCodes.INTERNAL_SERVER_ERROR);
         }
     }
@@ -88,7 +88,7 @@ export class ProjectRepository extends BaseRepository<IProject> implements IProj
         }
     }
 
-    async getProjectById(projectId: string):Promise<any> {
+    async getProjectById(projectId: string):Promise<IProject> {
         try {
             const project = await Project.findById(projectId);
             if (!project) {
@@ -101,7 +101,7 @@ export class ProjectRepository extends BaseRepository<IProject> implements IProj
         }
     }
 
-    async updateProject(projectId: string, updateData: Partial<IProject>):Promise<any> {
+    async updateProject(projectId: string, updateData: Partial<IProject>):Promise<IProject> {
         try {
             const project = await Project.findByIdAndUpdate(
                 projectId,
@@ -136,7 +136,7 @@ export class ProjectRepository extends BaseRepository<IProject> implements IProj
         try {
             const projects = await Project.find({ category })
             return projects
-        } catch (error) {
+        } catch (_error) {
             throw new AppError('Failed to fetch project', StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }

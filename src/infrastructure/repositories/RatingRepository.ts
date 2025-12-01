@@ -1,11 +1,12 @@
 import { Types } from 'mongoose';
 import { Rating, IRating } from '@/domain/entities/Rating';
-import { IRatingRepository } from '@/domain/interfaces/IRatingRepository';
+import { IRatingRepository } from '@/domain/interfaces/repositories/IRatingRepository';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import Developer from '@/domain/entities/Developer';
 import { BaseRepository } from './BaseRepository';
 import { injectable } from 'inversify';
+import { IReviewResult } from '@/domain/interfaces/types/IRatingTypes';
 
 @injectable()
 export class RatingRepository extends BaseRepository<IRating> implements IRatingRepository {
@@ -129,14 +130,13 @@ export class RatingRepository extends BaseRepository<IRating> implements IRating
       limit = 10, 
       search = '', 
       sortOrder = 'newest'
-    ): Promise<{
-      reviews: any[];
-      pagination: { totalPages: number; currentPage: number; totalItems: number };
-    }> {
+    ): Promise<IReviewResult> {
       try {
         const skip = (page - 1) * limit;
-        
-        let matchQuery: any = { developerId: new Types.ObjectId(developerId) };
+      
+        const matchQuery: Record<string, unknown> = {
+          developerId: new Types.ObjectId(developerId),
+        };
 
         if (search) {
           matchQuery['$or'] = [
@@ -182,7 +182,7 @@ export class RatingRepository extends BaseRepository<IRating> implements IRating
         const totalItems = countResult.length > 0 ? countResult[0].total : 0;
         const totalPages = Math.ceil(totalItems / limit);
         
-        let sortStage: any = {};
+        let sortStage: Record<string, 1 | -1> = {};
         switch (sortOrder) {
           case 'highest':
             sortStage = { rating: -1 };

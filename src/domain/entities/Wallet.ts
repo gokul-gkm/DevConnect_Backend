@@ -1,9 +1,9 @@
-import mongoose, { Types, Schema, model, Document } from 'mongoose';
+import { Types, Schema, model, Document } from 'mongoose';
 
 export interface IWallet extends Document {
   _id: Types.ObjectId;
   userId?: Types.ObjectId;
-  adminId?: String
+  adminId?: string
   balance: number;
   transactions: IWalletTransaction[];
   createdAt: Date;

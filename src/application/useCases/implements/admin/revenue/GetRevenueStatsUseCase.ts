@@ -1,7 +1,7 @@
 import { IGetRevenueStatsUseCase } from "@/application/useCases/interfaces/admin/revenue/IGetRevenueStatsUseCase";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
-import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
+import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
+import { IWalletRepository } from "@/domain/interfaces/repositories/IWalletRepository";
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";
 

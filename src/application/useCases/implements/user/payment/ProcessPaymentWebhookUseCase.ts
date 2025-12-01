@@ -1,4 +1,4 @@
-import { IPaymentService } from '@/domain/interfaces/IPaymentService';
+import { IPaymentService } from '@/domain/interfaces/services/IPaymentService';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import { IProcessPaymentWebhookUseCase } from '@/application/useCases/interfaces/user/payment/IProcessPaymentWebhookUseCase';

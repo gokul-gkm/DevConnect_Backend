@@ -1,11 +1,11 @@
 import { AppError } from "@/domain/errors/AppError";
-import { IChatRepository } from "@/domain/interfaces/IChatRepository";
+import { IChatRepository } from "@/domain/interfaces/repositories/IChatRepository";
 import { StatusCodes } from "http-status-codes";
 import { IGetUserChatsUseCase } from "../../interfaces/chat/IGetUserChatsUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
-import { IS3Service } from "@/domain/interfaces/IS3Service";
-import { IUserRef } from "@/domain/interfaces/IUserRefs";
+import { IS3Service } from "@/domain/interfaces/services/IS3Service";
+import { IUserRef } from "@/domain/interfaces/types/IUserRefs";
 
 @injectable()
 export class GetUserChatsUseCase implements IGetUserChatsUseCase {
@@ -52,7 +52,7 @@ export class GetUserChatsUseCase implements IGetUserChatsUseCase {
       );
 
       return transformedChats;
-    } catch (error) {
+    } catch (_error) {
       throw new AppError(
         "Failed to get user chats",
         StatusCodes.INTERNAL_SERVER_ERROR

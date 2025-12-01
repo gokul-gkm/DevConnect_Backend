@@ -1,10 +1,10 @@
-import { ISessionRepository } from '@/domain/interfaces/ISessionRepository';
-import { INotificationService } from '@/domain/interfaces/INotificationService';
+import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
+import { INotificationService } from '@/domain/interfaces/services/INotificationService';
 import { ICancelSessionUseCase } from '@/application/useCases/interfaces/user/session/ICancelSessionUseCase';
 import { AppError } from '@/domain/errors/AppError';
 import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
-import { IWalletRepository } from '@/domain/interfaces/IWalletRepository';
+import { IWalletRepository } from '@/domain/interfaces/repositories/IWalletRepository';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
 

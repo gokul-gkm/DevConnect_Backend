@@ -1,11 +1,11 @@
-import { IVideoSessionRepository } from "@/domain/interfaces/IVideoSessionRepository";
-import { ISessionRepository } from "@/domain/interfaces/ISessionRepository";
+import { IVideoSessionRepository } from "@/domain/interfaces/repositories/IVideoSessionRepository";
+import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import mongoose, { Types } from "mongoose";
-import { ISocketService } from "@/domain/interfaces/ISocketService";
+import { ISocketService } from "@/domain/interfaces/services/ISocketService";
 import { IEndVideoSessionUseCase } from "../../interfaces/video/IEndVideoSessionUseCase";
-import { IWalletRepository } from "@/domain/interfaces/IWalletRepository";
+import { IWalletRepository } from "@/domain/interfaces/repositories/IWalletRepository";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
 

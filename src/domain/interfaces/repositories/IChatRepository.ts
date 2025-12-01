@@ -1,5 +1,5 @@
 import { IChat } from "@/domain/entities/Chat";
-import { IPopulatedChat } from "./IUserRefs";
+import { IPopulatedChat } from "../types/IUserRefs";
 
 export interface IChatRepository {
   createChat(userId: string, developerId: string): Promise<IChat>;

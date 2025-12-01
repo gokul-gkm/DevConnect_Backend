@@ -1,4 +1,4 @@
-import { IVideoSession } from "../entities/VideoSession";
+import { IVideoSession } from "../../entities/VideoSession";
 import { Types } from "mongoose";
 import { IBaseRepository } from "./IBaseRepository";
 
