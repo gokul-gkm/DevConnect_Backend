@@ -68,11 +68,10 @@ const createSessionSchema = z.object({
     message: 'Session start time must be in the future',
     path: ['startTime']
 }).refine((data) => {
-    const sessionDateOnly = new Date(data.sessionDate);
-    sessionDateOnly.setHours(0, 0, 0, 0);
-    const startTimeDateOnly = new Date(data.startTime);
-    startTimeDateOnly.setHours(0, 0, 0, 0);
-    return sessionDateOnly.getTime() === startTimeDateOnly.getTime();
+
+    const sessionDateISO = data.sessionDate.toISOString().slice(0, 10);
+    const startTimeISO = data.startTime.toISOString().slice(0, 10); 
+    return sessionDateISO === startTimeISO;
 }, {
     message: 'Session date and start time must be on the same day',
     path: ['startTime']
