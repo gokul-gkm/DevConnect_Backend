@@ -4,6 +4,7 @@ import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRep
 import { IGetBookedSlotsUseCase } from "@/application/useCases/interfaces/user/session/IGetBookedSlotsUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
+import { ISession } from "@/domain/entities/Session";
 
 @injectable()
 export class GetBookedSlotsUseCase implements IGetBookedSlotsUseCase {
@@ -26,7 +27,7 @@ export class GetBookedSlotsUseCase implements IGetBookedSlotsUseCase {
         new Date(date)
       );
 
-      const formattedSlots = bookedSlots.map((slot: any) => ({
+      const formattedSlots = bookedSlots.map((slot: Pick<ISession, "startTime" | "duration">) => ({
         startTime: slot.startTime,
         duration: slot.duration,
       }));

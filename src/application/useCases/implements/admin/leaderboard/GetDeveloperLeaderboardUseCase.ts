@@ -1,6 +1,7 @@
 import { IGetDeveloperLeaderboardUseCase } from '@/application/useCases/interfaces/admin/leaderboard/IGetDeveloperLeaderboardUseCase';
 import { IDeveloperRepository } from '@/domain/interfaces/repositories/IDeveloperRepository';
 import { IS3Service } from '@/domain/interfaces/services/IS3Service';
+import { ILeaderboardResponse } from '@/domain/interfaces/types/IDeveloperTypes';
 import { TYPES } from '@/types/types';
 import { inject, injectable } from 'inversify';
 
@@ -13,32 +14,28 @@ export class GetDeveloperLeaderboardUseCase implements IGetDeveloperLeaderboardU
     private _s3Service: IS3Service
   ) {}
   
-  async execute(page = 1, limit = 10, sortBy = 'combined') {
+  async execute(page = 1, limit = 10, sortBy = 'combined'): Promise<ILeaderboardResponse>  {
     const { developers, pagination } = await this._developerRepository.getLeaderboard(
       page, limit, sortBy
     );
     
     const formattedDevelopers = await Promise.all(
-      developers.map(async (developer: any) => {
-        let profilePictureUrl = null;
-        
-        if (developer.profilePicture) {
-          profilePictureUrl = await this._s3Service.generateSignedUrl(developer.profilePicture);
+      developers.map(
+        async (developer: ILeaderboardResponse['developers'][number]) => {
+          let profilePictureUrl: string | null = null;
+          
+          if (developer.profilePicture) {
+            profilePictureUrl = await this._s3Service.generateSignedUrl(developer.profilePicture);
+          }
+          
+          return {
+            ...developer,
+            profilePicture:
+              profilePictureUrl ||
+              `https://ui-avatars.com/api/?name=${developer.username || 'Developer'}`
+          };
         }
-        
-        return {
-          id: developer._id,
-          userId: developer.userId,
-          username: developer.username,
-          profilePicture: profilePictureUrl || `https://ui-avatars.com/api/?name=${developer.username || 'Developer'}`,
-          expertise: developer.expertise || [],
-          rating: developer.rating,
-          totalSessions: developer.totalSessions,
-          totalEarnings: developer.totalEarnings,
-          combinedScore: developer.combinedScore,
-          bio: developer.bio
-        };
-      })
+      )
     );
     
     return {

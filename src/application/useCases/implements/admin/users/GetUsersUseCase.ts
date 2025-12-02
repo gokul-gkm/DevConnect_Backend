@@ -4,6 +4,7 @@ import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepositor
 import { PaginatedResponse, QueryParams } from "@/domain/types/types";
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";
+import { IUser } from "@/domain/entities/User";
 
 @injectable()
 export class GetUsersUseCase implements IGetUsersUseCase {
@@ -14,7 +15,7 @@ export class GetUsersUseCase implements IGetUsersUseCase {
         private _s3Service: IS3Service
     ) { }
 
-    async execute(queryParams: QueryParams): Promise<PaginatedResponse <any>> {
+    async execute(queryParams: QueryParams): Promise<PaginatedResponse <IUser>> {
         try {
             const result = await this._userRepository.findUsers(queryParams);
 

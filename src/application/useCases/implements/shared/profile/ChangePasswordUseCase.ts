@@ -7,6 +7,7 @@ import { ERROR_MESSAGES } from "@/utils/constants";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
 import { IChangePasswordUseCase } from "@/application/useCases/interfaces/shared/profile/IChangePasswordUseCase";
+import { handleError } from "@/utils/errorHandler";
 
 @injectable()
 export class ChangePasswordUseCase implements IChangePasswordUseCase {
@@ -41,12 +42,9 @@ export class ChangePasswordUseCase implements IChangePasswordUseCase {
             await this._userRepository.update(userId, { password: hashedPassword });
             
             
-        } catch (error: any) {
+        } catch (error: unknown) {
 
-            throw new AppError(
-                error.message || 'Failed to Update the Password',
-                error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
-            );
+            handleError(error, 'Failed to Update the Password');
         }
 
     }

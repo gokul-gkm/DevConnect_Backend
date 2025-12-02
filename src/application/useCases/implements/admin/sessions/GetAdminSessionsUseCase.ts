@@ -1,8 +1,9 @@
-import { IGetAdminSessionsUseCase } from "@/application/useCases/interfaces/admin/sessions/IGetAdminSessionsUseCase";
+import { AdminSessionsResponse, AdminSessionWithMeta, IGetAdminSessionsUseCase } from "@/application/useCases/interfaces/admin/sessions/IGetAdminSessionsUseCase";
 import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";
+import { IAdminSession } from "@/domain/types/session";
 
 @injectable()
 export class GetAdminSessionsUseCase implements IGetAdminSessionsUseCase {
@@ -13,11 +14,11 @@ export class GetAdminSessionsUseCase implements IGetAdminSessionsUseCase {
     private _s3Service: IS3Service
   ) {}
 
-  async execute(status: string[], page: number = 1, limit: number = 10, search: string = '') {
+  async execute(status: string[], page: number = 1, limit: number = 10, search: string = ''): Promise<AdminSessionsResponse>  {
     const result = await this._sessionRepository.getAdminSessionsList(status, page, limit, search);
     
-    const sessionsWithSignedUrls = await Promise.all(
-      result.sessions.map(async (session: any) => {
+    const sessionsWithSignedUrls: AdminSessionWithMeta[]  = await Promise.all(
+      result.sessions.map(async (session: IAdminSession) => {
         let userProfilePicture = '/assets/default-avatar.png';
         let developerProfilePicture = '/assets/default-avatar.png';
         
@@ -39,21 +40,21 @@ export class GetAdminSessionsUseCase implements IGetAdminSessionsUseCase {
         
         return {
           ...session,
-          user: {
-            ...session.user,
-            profilePicture: userProfilePicture
-          },
-          developer: {
-            ...session.developer,
-            profilePicture: developerProfilePicture
-          },
+          user: { ...session.user, profilePicture: userProfilePicture },
+          developer: { ...session.developer, profilePicture: developerProfilePicture },
           formattedDate: new Date(session.sessionDate).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
           }),
-          formattedTime: `${new Date(session.startTime).getHours().toString().padStart(2, '0')}:${new Date(session.startTime).getMinutes().toString().padStart(2, '0')}`
-        };
+          formattedTime: `${new Date(session.startTime)
+              .getHours()
+              .toString()
+              .padStart(2, '0')}:${new Date(session.startTime)
+              .getMinutes()
+              .toString()
+              .padStart(2, '0')}`
+      };
       })
     );
     

@@ -7,6 +7,7 @@ import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { IGetDeveloperProfileUseCase } from '@/application/useCases/interfaces/developer/profile/IGetDeveloperProfileUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
+import { handleError } from '@/utils/errorHandler';
 
 @injectable()
 export class GetDeveloperProfileUseCase implements IGetDeveloperProfileUseCase {
@@ -60,11 +61,8 @@ export class GetDeveloperProfileUseCase implements IGetDeveloperProfileUseCase {
                 resume: signedResumeUrl
                             
             };
-        } catch (error: any) {
-            throw new AppError(
-                error.message || 'Error fetching profile',
-                error.statusCode || StatusCodes.NOT_IMPLEMENTED
-            );
+        } catch (error: unknown) {
+            handleError(error, 'Error fetching profile', StatusCodes.NOT_IMPLEMENTED)
         }
     }
 }

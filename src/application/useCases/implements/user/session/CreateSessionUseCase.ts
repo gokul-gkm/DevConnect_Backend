@@ -82,7 +82,7 @@ export class CreateSessionUseCase implements ICreateSessionUseCase {
       }
 
       return session;
-    } catch (error : any) {
+    } catch (error : unknown) {
       console.error("Create session error:", error);
       if (error instanceof AppError) throw error;
       throw new AppError('Failed to create session', StatusCodes.INTERNAL_SERVER_ERROR);

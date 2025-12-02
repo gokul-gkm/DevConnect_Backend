@@ -7,7 +7,6 @@ import { TYPES } from "@/types/types";
 
 import { IGetPublicProfileUseCase } from "@/application/useCases/interfaces/user/developers/IGetPublicProfileUseCase";
 import { ISearchDevelopersUseCase } from "@/application/useCases/interfaces/user/developers/ISearchDevelopersUseCase";
- "@/application/useCases/interfaces/user/profile/IChangeUserPasswordUseCase";
 import { IGetUserProfileUseCase } from "@/application/useCases/interfaces/user/profile/IGetUserProfileUseCase";
 import { IUpdateUserProfileUseCase } from "@/application/useCases/interfaces/user/profile/IUpdateUserProfileUseCase";
 import { IChangePasswordUseCase } from "@/application/useCases/interfaces/shared/profile/IChangePasswordUseCase";

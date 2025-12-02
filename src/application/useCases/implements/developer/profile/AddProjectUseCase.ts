@@ -7,6 +7,9 @@ import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { IAddProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IAddProjectUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
+import { IProject } from "@/domain/entities/Project";
+
+export type AddProjectResult = IProject & { coverImageUrl?: string };
 
 @injectable()
 export class AddProjectUseCase implements IAddProjectUseCase {
@@ -16,7 +19,7 @@ export class AddProjectUseCase implements IAddProjectUseCase {
         @inject(TYPES.IS3Service) private _s3Service: IS3Service
     ) {}
 
-    async execute(developerId: string, data: AddProjectDTO): Promise<any> {
+    async execute(developerId: string, data: AddProjectDTO):  Promise<AddProjectResult>  {
         let coverImageKey: string | undefined;
         let coverImageUrl: string | undefined;
 
@@ -37,7 +40,7 @@ export class AddProjectUseCase implements IAddProjectUseCase {
 
             await this._developerRepository.addProjectToPortfolio(developerId, project._id as string);
 
-            return { ...project, coverImageUrl };
+            return { ...(project.toObject?.() ?? project), coverImageUrl };
         } catch (_error) {
             if (coverImageKey) {
                 await this._s3Service.deleteFile(coverImageKey);

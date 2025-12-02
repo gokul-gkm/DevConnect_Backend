@@ -4,9 +4,10 @@ import { StatusCodes } from 'http-status-codes';
 import { ERROR_MESSAGES } from '@/utils/constants';
 import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
 import { IS3Service } from '@/domain/interfaces/services/IS3Service';
-import { IGetUpcomingSessionsUseCase } from '@/application/useCases/interfaces/user/session/IGetUpcomingSessionsUseCase';
+import { IGetUpcomingSessionsUseCase, UpcomingSession } from '@/application/useCases/interfaces/user/session/IGetUpcomingSessionsUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
+import { IPagination } from '@/domain/types/session';
 
 @injectable()
 export class GetUpcomingSessionsUseCase implements IGetUpcomingSessionsUseCase {
@@ -17,7 +18,7 @@ export class GetUpcomingSessionsUseCase implements IGetUpcomingSessionsUseCase {
     private _s3Service: IS3Service
   ) {}
 
-  async execute(userId: string, page = 1, limit = 10): Promise<{ sessions: ISession[], pagination: any }> {
+  async execute(userId: string, page = 1, limit = 10): Promise<{ sessions: UpcomingSession[], pagination: IPagination }> {
     try {
       if (!userId) {
         throw new AppError(ERROR_MESSAGES.USER_REQUIRED, StatusCodes.BAD_REQUEST);
@@ -26,8 +27,8 @@ export class GetUpcomingSessionsUseCase implements IGetUpcomingSessionsUseCase {
       const currentDate = new Date();
       const { sessions, pagination } = await this._sessionRepository.getUpcomingSessions(userId, currentDate, page, limit);
 
-      const sessionWithUrls = await Promise.all(
-        sessions.map(async (session: any) => {
+      const sessionWithUrls: UpcomingSession[]  = await Promise.all(
+        sessions.map(async (session: UpcomingSession) => {
             const sessionData = { ...session };
             if (sessionData.developerUser.profilePicture) {
                 try {

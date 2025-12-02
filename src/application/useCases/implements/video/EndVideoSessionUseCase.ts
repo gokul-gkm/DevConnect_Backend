@@ -8,6 +8,7 @@ import { IEndVideoSessionUseCase } from "../../interfaces/video/IEndVideoSession
 import { IWalletRepository } from "@/domain/interfaces/repositories/IWalletRepository";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
+import { IVideoSession } from "@/domain/entities/VideoSession";
 
 @injectable()
 export class EndVideoSessionUseCase implements IEndVideoSessionUseCase {
@@ -22,7 +23,7 @@ export class EndVideoSessionUseCase implements IEndVideoSessionUseCase {
     private _walletRepository: IWalletRepository
   ) {}
 
-  async execute(sessionId: string, developerId: string): Promise<any> {
+  async execute(sessionId: string, developerId: string): Promise<IVideoSession | null>  {
     try {
       const videoSession =
         await this._videoSessionRepository.getVideoSessionBySessionId(
