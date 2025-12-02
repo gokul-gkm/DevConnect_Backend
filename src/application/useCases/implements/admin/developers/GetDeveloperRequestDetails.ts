@@ -1,4 +1,3 @@
-import { IDeveloper } from "@/domain/entities/Developer";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
@@ -7,6 +6,13 @@ import { IGetDeveloperRequestDetailsUseCase } from "@/application/useCases/inter
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
 import { IDeveloperPopulated } from "@/domain/interfaces/types/IDeveloperTypes";
+import { IDeveloper } from "@/domain/entities/Developer";
+
+type PopulatedUser = IDeveloperPopulated['userId'];
+
+function isPopulatedUser(user: IDeveloper['userId'] | PopulatedUser | null | undefined): user is PopulatedUser {
+    return Boolean(user && typeof user === 'object' && 'profilePicture' in user);
+}
 
 @injectable()
 export class GetDeveloperRequestDetailsUseCase implements IGetDeveloperRequestDetailsUseCase {
@@ -28,11 +34,9 @@ export class GetDeveloperRequestDetailsUseCase implements IGetDeveloperRequestDe
             throw new AppError('This is not a pending developer request', StatusCodes.BAD_REQUEST);
         }
 
-        if (developer.userId && (developer.userId as any).profilePicture) {
-            const signedProfilePictureUrl = await this._s3Service.generateSignedUrl(
-                (developer.userId as any).profilePicture
-            );
-            (developer.userId as any).profilePicture = signedProfilePictureUrl;
+        if (isPopulatedUser(developer.userId) && developer.userId.profilePicture) {
+            const signedProfilePictureUrl = await this._s3Service.generateSignedUrl(developer.userId.profilePicture);
+            developer.userId.profilePicture = signedProfilePictureUrl;
         }
         
         if (developer.resume) {

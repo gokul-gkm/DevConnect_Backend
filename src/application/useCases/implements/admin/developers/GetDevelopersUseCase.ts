@@ -5,6 +5,7 @@ import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDevelope
 import { IGetDevelopersUseCase } from "@/application/useCases/interfaces/admin/developers/IGetDevelopersUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
+import { IUser } from "@/domain/entities/User";
 
 @injectable()
 export class GetDevelopersUseCase implements IGetDevelopersUseCase {
@@ -20,20 +21,24 @@ export class GetDevelopersUseCase implements IGetDevelopersUseCase {
             const developers = await this._developerRepository.findDevelopers(queryParams);
 
             const transformedData = await Promise.all(developers.data.map(async (developer) => {
-                let signedProfilePictureUrl = null;
-                
-                if (developer.userId && (developer.userId as any).profilePicture) {
+                const user = developer.userId as unknown as IUser | null;
+
+                let signedProfilePictureUrl: string | null = null;
+
+                if (user?.profilePicture) {
                     signedProfilePictureUrl = await this._s3Service.generateSignedUrl(
-                        (developer.userId as any).profilePicture
+                        user.profilePicture
                     );
                 }
 
                 return {
                     ...developer.toObject(),
-                    userId: {
-                        ...(developer.userId as any).toObject(),
-                        profilePicture: signedProfilePictureUrl
-                    }
+                    userId: user
+                        ? {
+                              ...user.toObject(),
+                              profilePicture: signedProfilePictureUrl
+                          }
+                        : null
                 };
             }));
 

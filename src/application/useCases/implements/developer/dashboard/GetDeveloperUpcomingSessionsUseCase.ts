@@ -3,6 +3,7 @@ import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";
+import { IUpcomingSession, IUserInfo } from "@/domain/types/session";
 
 @injectable()
 export class GetDeveloperUpcomingSessionsUseCase implements IGetDeveloperUpcomingSessionsUseCase{
@@ -11,29 +12,30 @@ export class GetDeveloperUpcomingSessionsUseCase implements IGetDeveloperUpcomin
     @inject(TYPES.IS3Service) private _s3Service: IS3Service
   ) {}
 
-  async execute(developerId: string, limit = 2) {
+  async execute(developerId: string, limit = 2): Promise<IUpcomingSession[]>  {
     const sessions = await this._sessionRepository.getDeveloperUpcomingSessions(developerId, limit);
 
     const sessionsWithSignedUrls = await Promise.all(
-      sessions.map(async (session: any) => {
-        if (session.userId && typeof session.userId === 'object' && 'profilePicture' in session.userId) {
-          const userObj = session.userId as any;
-          if (userObj.profilePicture) {
-            try {
-              const signedUrl = await this._s3Service.generateSignedUrl(userObj.profilePicture);
-              const newUserObj = userObj.toObject
-                ? { ...userObj.toObject(), profilePicture: signedUrl }
-                : { ...userObj, profilePicture: signedUrl };
-              return {
-                ...session.toObject?.() ?? session,
-                userId: newUserObj,
-              };
-            } catch (error) {
-            console.log(error)
-            }
+      sessions.map(async (session: IUpcomingSession): Promise<IUpcomingSession> => {
+        const user = session.userId;
+
+        if (user?.profilePicture) {
+          try {
+            const signedUrl = await this._s3Service.generateSignedUrl(user.profilePicture);
+
+            return {
+              ...session,
+              userId: {
+                ...user,
+                profilePicture: signedUrl,
+              } as IUserInfo,
+            };
+          } catch (error) {
+            console.log(error);
           }
         }
-        return session.toObject?.() ?? session;
+
+        return session;
       })
     );
 

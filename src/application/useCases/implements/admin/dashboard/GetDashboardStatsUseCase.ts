@@ -1,4 +1,4 @@
-import { IGetDashboardStatsUseCase } from "@/application/useCases/interfaces/admin/dashboard/IGetDashboardStatsUseCase";
+import { DashboardStats, IGetDashboardStatsUseCase, RevenueDataPoint, TopDeveloperSummary, UserGrowthDataPoint } from "@/application/useCases/interfaces/admin/dashboard/IGetDashboardStatsUseCase";
 import { IDeveloperRepository } from "@/domain/interfaces/repositories/IDeveloperRepository";
 import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
@@ -6,6 +6,7 @@ import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepositor
 import { IWalletRepository } from "@/domain/interfaces/repositories/IWalletRepository";
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";
+import { ITopDeveloper } from "@/domain/interfaces/types/IDeveloperTypes";
 
 @injectable()
 export class GetDashboardStatsUseCase  implements IGetDashboardStatsUseCase{
@@ -22,7 +23,7 @@ export class GetDashboardStatsUseCase  implements IGetDashboardStatsUseCase{
     private _s3Service: IS3Service
   ) {}
 
-  async execute() :Promise<any>{
+  async execute() :Promise<DashboardStats>{
     const [
       totalUsers,
       totalDevelopers,
@@ -52,44 +53,35 @@ export class GetDashboardStatsUseCase  implements IGetDashboardStatsUseCase{
     };
   }
 
-  private async getRevenueData() {
+  private async getRevenueData(): Promise<RevenueDataPoint[]> {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     
     const monthlyRevenue = await this._walletRepository.getMonthlyRevenue(sixMonthsAgo);
     
-    return monthlyRevenue.map((item: any) => ({
-      date: new Date(item.year, item.month - 1).toLocaleString('default', { month: 'short', year: 'numeric' }),
-      revenue: item.revenue
+    return monthlyRevenue.map(({ year, month, revenue }) => ({
+      date: new Date(year, month - 1).toLocaleString('default', { month: 'short', year: 'numeric' }),
+      revenue
     }));
   }
 
-  private async getUserGrowthData() {
+  private async getUserGrowthData() : Promise<UserGrowthDataPoint[]> {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     
     const userGrowthData = await this._userRepository.getMonthlyUserGrowth(sixMonthsAgo);
     
-    const monthlyData = new Map();
+    const monthlyData = new Map<string, UserGrowthDataPoint>();
     
-    userGrowthData.forEach((item: any) => {
-      const dateKey = new Date(item.year, item.month - 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+    userGrowthData.forEach(({ year, month, role, count }) => {
+            const dateKey = new Date(year, month - 1).toLocaleString('default', { month: 'short', year: 'numeric' });
+           const entry = monthlyData.get(dateKey) ?? { date: dateKey, users: 0, developers: 0 };
       
-      if (!monthlyData.has(dateKey)) {
-        monthlyData.set(dateKey, {
-          date: dateKey,
-          users: 0,
-          developers: 0
-        });
-      }
+            if (role === 'user') entry.users = count;
+            if (role === 'developer') entry.developers = count;
       
-      const entry = monthlyData.get(dateKey);
-      if (item.role === 'user') {
-        entry.users = item.count;
-      } else if (item.role === 'developer') {
-        entry.developers = item.count;
-      }
-    });
+            monthlyData.set(dateKey, entry);
+          });
     
     return Array.from(monthlyData.values()).sort((a, b) => {
       const dateA = new Date(a.date);
@@ -98,11 +90,11 @@ export class GetDashboardStatsUseCase  implements IGetDashboardStatsUseCase{
     });
   }
 
-  private async getTopDevelopers() {
+  private async getTopDevelopers() : Promise<TopDeveloperSummary[]>{
     const topDevelopers = await this._developerRepository.getTopPerformingDevelopers(5);
     
     const developersWithSignedUrls = await Promise.all(
-      topDevelopers.map(async (dev: any) => {
+      topDevelopers.map(async (dev: ITopDeveloper) => {
         let avatarUrl = '/assets/default-avatar.png';
         
         if (dev.user?.profilePicture) {

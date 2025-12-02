@@ -9,6 +9,12 @@ import { ERROR_MESSAGES } from "@/utils/constants";
 import { StatusCodes } from "http-status-codes";
 import { inject, injectable } from "inversify";
 
+type PopulatedUser = IDeveloperPopulated['userId'];
+
+function isPopulatedUser(user: IDeveloper['userId'] | PopulatedUser | null | undefined): user is PopulatedUser {
+    return Boolean(user && typeof user === 'object' && 'profilePicture' in user);
+}
+
 @injectable()
 export class GetDeveloperDetailsUseCase implements IGetDeveloperDetailsUseCase {
     constructor(
@@ -25,11 +31,9 @@ export class GetDeveloperDetailsUseCase implements IGetDeveloperDetailsUseCase {
             throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
         }
 
-        if (developer.userId && (developer.userId as any).profilePicture) {
-            const signedProfilePictureUrl = await this._s3Service.generateSignedUrl(
-                (developer.userId as any).profilePicture
-            );
-            (developer.userId as any).profilePicture = signedProfilePictureUrl;
+        if (isPopulatedUser(developer.userId) && developer.userId.profilePicture) {
+            const signedProfilePictureUrl = await this._s3Service.generateSignedUrl(developer.userId.profilePicture);
+            developer.userId.profilePicture = signedProfilePictureUrl;
         }
 
         if (developer.resume) {

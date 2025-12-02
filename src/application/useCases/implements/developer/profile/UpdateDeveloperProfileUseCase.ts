@@ -8,7 +8,7 @@ import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { IUpdateDeveloperProfileUseCase } from '@/application/useCases/interfaces/developer/profile/IUpdateDeveloperProfileUseCase';
 import { TYPES } from '@/types/types';
 import { inject, injectable } from 'inversify';
-
+import { handleError } from '@/utils/errorHandler';
 @injectable()
 export class UpdateDeveloperProfileUseCase implements IUpdateDeveloperProfileUseCase {
     constructor(
@@ -124,7 +124,7 @@ export class UpdateDeveloperProfileUseCase implements IUpdateDeveloperProfileUse
                 createdAt: updatedUser.createdAt,
                 updatedAt: updatedUser.updatedAt
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             if (profilePictureKey) {
                 await this._s3Service.deleteFile(profilePictureKey);
             }
@@ -134,10 +134,7 @@ export class UpdateDeveloperProfileUseCase implements IUpdateDeveloperProfileUse
             if (error instanceof AppError) {
                 throw error;
             }
-            throw new AppError(
-                error.message || 'Error updating profile',
-                error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
-            );
+            handleError(error, 'Error updating profile');
         }
     }
 }

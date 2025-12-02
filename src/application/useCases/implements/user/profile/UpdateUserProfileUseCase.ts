@@ -7,6 +7,7 @@ import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { IUpdateUserProfileUseCase } from '@/application/useCases/interfaces/user/profile/IUpdateUserProfileUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
+import { handleError } from '@/utils/errorHandler';
 
 @injectable()
 export class UpdateUserProfileUseCase implements IUpdateUserProfileUseCase {
@@ -68,14 +69,11 @@ export class UpdateUserProfileUseCase implements IUpdateUserProfileUseCase {
                 socialLinks: updatedUser.socialLinks,
                 memberSince: updatedUser.createdAt
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             if (error instanceof AppError) {
                 throw error;
             }
-            throw new AppError(
-                error.message || 'Error updating profile',
-                error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR
-            );
+            handleError(error, 'Error updating profile');
         }
     }
 }

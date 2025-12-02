@@ -50,7 +50,7 @@ export class AcceptSessionRequestUseCase implements IAcceptSessionRequestUseCase
         try {
           const recipientId = updatedSession.userId._id.toString();
           
-          const notification = await this._notificationService.notify(
+          await this._notificationService.notify(
             recipientId,
             'Session Request Accepted',
             `Your session "${updatedSession.title}" has been accepted.`,

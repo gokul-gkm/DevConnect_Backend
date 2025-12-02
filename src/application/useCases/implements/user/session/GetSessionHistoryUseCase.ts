@@ -7,6 +7,7 @@ import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { IGetSessionHistoryUseCase } from '@/application/useCases/interfaces/user/session/IGetSessionHistoryUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
+import { IPagination } from '@/domain/types/session';
 
 @injectable()
 export class GetSessionHistoryUseCase implements IGetSessionHistoryUseCase {
@@ -17,7 +18,7 @@ export class GetSessionHistoryUseCase implements IGetSessionHistoryUseCase {
     private _s3Service: IS3Service
   ) {}
 
-  async execute(userId: string, page = 1, limit = 10): Promise<{ sessions: ISession[], pagination: any }> {
+  async execute(userId: string, page = 1, limit = 10): Promise<{ sessions: ISession[], pagination: IPagination }> {
     try {
       if (!userId) {
         throw new AppError(ERROR_MESSAGES.USER_REQUIRED, StatusCodes.BAD_REQUEST);

@@ -2,9 +2,10 @@ import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
 import { IProjectRepository } from "@/domain/interfaces/repositories/IProjectRepository";
 import { IS3Service } from "@/domain/interfaces/services/IS3Service";
-import { IUpdateProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IUpdateProjectUseCase";
+import { IUpdateProjectUseCase, UpdateProjectResult } from "@/application/useCases/interfaces/developer/profile/IUpdateProjectUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
+import { IProject } from "@/domain/entities/Project";
 
 export interface UpdateProjectDTO {
     projectId: string;
@@ -22,7 +23,7 @@ export class UpdateProjectUseCase implements IUpdateProjectUseCase{
         @inject(TYPES.IS3Service) private _s3Service: IS3Service
     ) {}
 
-    async execute(data: UpdateProjectDTO): Promise<{ [key: string]: any }> {
+    async execute(data: UpdateProjectDTO): Promise<UpdateProjectResult> {
         let coverImageKey: string | undefined;
         let coverImageUrl: string | undefined;
 
@@ -33,7 +34,7 @@ export class UpdateProjectUseCase implements IUpdateProjectUseCase{
                 throw new AppError('Project not found', StatusCodes.NOT_FOUND);
             }
 
-            const updateData: any = {
+            const updateData: Partial<IProject> = {
                 title: data.title,
                 category: data.category,
                 description: data.description,
@@ -63,7 +64,10 @@ export class UpdateProjectUseCase implements IUpdateProjectUseCase{
                 updateData
             );
 
-            return { ...updatedProject, coverImageUrl };
+            return {
+                ...(updatedProject.toObject?.() ?? updatedProject),
+                coverImageUrl
+            };
         } catch (error) {
             if (coverImageKey) {
                 await this._s3Service.deleteFile(coverImageKey);

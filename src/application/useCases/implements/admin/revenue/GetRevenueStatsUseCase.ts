@@ -1,9 +1,10 @@
-import { IGetRevenueStatsUseCase } from "@/application/useCases/interfaces/admin/revenue/IGetRevenueStatsUseCase";
+import { IGetRevenueStatsUseCase, RevenueStats } from "@/application/useCases/interfaces/admin/revenue/IGetRevenueStatsUseCase";
 import { IS3Service } from "@/domain/interfaces/services/IS3Service";
 import { ISessionRepository } from "@/domain/interfaces/repositories/ISessionRepository";
 import { IWalletRepository } from "@/domain/interfaces/repositories/IWalletRepository";
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";
+import { ITopEarningDeveloper } from "@/domain/types/session";
 
 interface DeveloperEarning {
   id: string;
@@ -27,7 +28,7 @@ export class GetRevenueStatsUseCase implements IGetRevenueStatsUseCase {
     private _s3Service: IS3Service
   ) {}
 
-  async execute(page: number = 1, limit: number = 10) {
+  async execute(page: number = 1, limit: number = 10): Promise<RevenueStats> {
     const [
       totalRevenue,
       platformFees,
@@ -72,15 +73,15 @@ export class GetRevenueStatsUseCase implements IGetRevenueStatsUseCase {
     return totalRevenue * 0.8;
   }
 
-  private async getMonthlyRevenue() {
+  private async getMonthlyRevenue():Promise<{ date: string; revenue: number }[]>  {
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
     
     const monthlyRevenue = await this._walletRepository.getMonthlyRevenue(twelveMonthsAgo);
     
-    return monthlyRevenue.map((item: any) => ({
-      date: new Date(item.year, item.month - 1).toLocaleString('default', { month: 'short', year: 'numeric' }),
-      revenue: item.revenue
+    return monthlyRevenue.map(({ year, month, revenue }) => ({
+      date: new Date(year, month - 1).toLocaleString('default', { month: 'short', year: 'numeric' }),
+      revenue
     }));
   }
 
@@ -96,7 +97,7 @@ export class GetRevenueStatsUseCase implements IGetRevenueStatsUseCase {
       const result = await this._sessionRepository.getTopEarningDevelopers(page, limit);
 
       const developersWithSignedUrls = await Promise.all(
-        result.developers.map(async (dev: any) => {
+        result.developers.map(async (dev: ITopEarningDeveloper): Promise<DeveloperEarning> => {
           let profilePictureUrl = '/assets/default-avatar.png';
           
           if (dev.profilePicture) {
@@ -108,8 +109,14 @@ export class GetRevenueStatsUseCase implements IGetRevenueStatsUseCase {
           }
           
           return {
-            ...dev,
-            profilePicture: profilePictureUrl
+            id: dev.id.toString(),
+            name: dev.name,
+            email: dev.email,
+            profilePicture: profilePictureUrl,
+            sessions: dev.sessions,
+            averageRating: dev.averageRating,
+            totalEarnings: dev.totalEarnings,
+            ratings: dev.ratings,
           };
         })
       );

@@ -32,13 +32,7 @@ export class SocketService implements ISocketService {
   constructor(
     @inject('HttpServer') private server: HttpServer,
     @inject('SocketServer') io: SocketServer 
-  ) {
-    // this.io = io;
-    // console.log("IO instance:", this.io);
-    console.log('🧩 SocketService initialized');
-    // this.setupMiddleware();
-    // this.setupEventHandlers();
-  }
+  ) {  }
 
   public initialize(server: HttpServer, io: SocketServer): void {
     this.io = io;

@@ -11,6 +11,15 @@ import { IManageDeveloperRequestsUseCase } from "@/application/useCases/interfac
 import { IMailService } from "@/domain/interfaces/services/IMailService";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
+import { IUser } from "@/domain/entities/User";
+
+type PopulatedUser = IUser & { profilePicture?: string };
+
+function isPopulatedUser(
+    user: IDeveloper["userId"] | PopulatedUser | null | undefined
+): user is PopulatedUser {
+    return !!user && typeof user === "object" && "profilePicture" in user;
+}
 
 @injectable()
 export class ManageDeveloperRequestsUseCase implements IManageDeveloperRequestsUseCase {
@@ -35,25 +44,26 @@ export class ManageDeveloperRequestsUseCase implements IManageDeveloperRequestsU
             });
 
             const transformedData = await Promise.all(developers.data.map(async (developer) => {
-                let signedProfilePictureUrl = null;
-                let signedResumeUrl = null;
+                let signedProfilePictureUrl: string | null = null;
+                let signedResumeUrl: string | null = null;
 
-                if (developer.userId && (developer.userId as any).profilePicture) {
+                if (isPopulatedUser(developer.userId) && developer.userId.profilePicture) {
                     signedProfilePictureUrl = await this._s3Service.generateSignedUrl(
-                        (developer.userId as any).profilePicture
+                        developer.userId.profilePicture
                     );
                 }
-
                 if (developer.resume) {
                     signedResumeUrl = await this._s3Service.generateSignedUrl(developer.resume);
                 }
 
                 return {
                     ...developer.toObject(),
-                    userId: {
-                        ...(developer.userId as any).toObject(),
-                        profilePicture: signedProfilePictureUrl
-                    },
+                    userId: isPopulatedUser(developer.userId)
+                        ? {
+                              ...developer.userId,
+                              profilePicture: signedProfilePictureUrl
+                          }
+                        : developer.userId,
                     resume: signedResumeUrl
                 };
             }));

@@ -6,6 +6,7 @@ import { IS3Service } from '@/domain/interfaces/services/IS3Service';
 import { IGetUserProfileUseCase } from '@/application/useCases/interfaces/user/profile/IGetUserProfileUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
+import { handleError } from '@/utils/errorHandler';
 
 @injectable()
 export class GetUserProfileUseCase implements IGetUserProfileUseCase{
@@ -41,11 +42,8 @@ export class GetUserProfileUseCase implements IGetUserProfileUseCase{
                 socialLinks: user.socialLinks,
                 createdAt: user.createdAt
             };
-        } catch (error: any) {
-            throw new AppError(
-                error.message || 'Error fetching profile',
-                error.statusCode || StatusCodes.NOT_IMPLEMENTED
-            );
+        } catch (error: unknown) {
+            handleError(error, 'Error fetching profile')
         }
     }
 }
