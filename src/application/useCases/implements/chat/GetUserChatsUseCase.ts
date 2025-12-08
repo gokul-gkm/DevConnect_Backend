@@ -21,25 +21,23 @@ export class GetUserChatsUseCase implements IGetUserChatsUseCase {
       const chats = await this._chatRepository.getUserChats(userId);
       const transformedChats = await Promise.all(
         chats.map(async (chat) => {
-          const profilePictureUrl = await this._s3Service.generateSignedUrl(
-            (chat.developerId as IUserRef).profilePicture!
-          );
+      const developerPic = (chat.developerId as IUserRef).profilePicture;
+      const userPic = (chat.userId as IUserRef).profilePicture;
 
-          const userProfilePictureUrl = await this._s3Service.generateSignedUrl(
-            (chat.userId as IUserRef).profilePicture!
-          );
+      const devUrl = developerPic ? await this._s3Service.generateSignedUrl(developerPic) : null;
+      const userUrl = userPic ? await this._s3Service.generateSignedUrl(userPic) : null;
 
           return {
             _id: chat._id?.toString(),
             userId: {
               _id: chat.userId._id?.toString(),
               username: chat.userId.username,
-              profilePicture: userProfilePictureUrl,
+              profilePicture: userUrl,
             },
             developerId: {
               _id: chat.developerId._id?.toString(),
               username: chat.developerId.username,
-              profilePicture: profilePictureUrl,
+              profilePicture: devUrl,
             },
             lastMessage: chat.lastMessage,
             userUnreadCount: chat.userUnreadCount,
