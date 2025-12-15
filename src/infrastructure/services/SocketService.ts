@@ -10,24 +10,15 @@ import * as cookie from 'cookie';
 
 @injectable()
 export class SocketService implements ISocketService {
-//   private static instance: SocketService | null = null; 
-//   private io: SocketServer;
-//   private userSockets: Map<string, Set<string>> = new Map();
-//   private developerSockets: Map<string, Set<string>> = new Map();
-//   private webRTCRooms: Map<string, Set<string>> = new Map();
-//   private connectionStates: Map<string, string> = new Map();
-
-//   private constructor(server: Server, io: SocketServer) {
-//     this.io = io;
-//     this.setupMiddleware();
-//     this.setupEventHandlers();
-  // }
   private static instance: SocketService; 
   private io!: SocketServer;
   private userSockets: Map<string, Set<string>> = new Map();
   private developerSockets: Map<string, Set<string>> = new Map();
   private webRTCRooms: Map<string, Set<string>> = new Map();
   private connectionStates: Map<string, string> = new Map();
+
+  private pendingDisconnectTimers: Map<string, NodeJS.Timeout> = new Map();
+  private WEBRTC_DISCONNECT_GRACE_PERIOD = 8000;
 
   constructor(
     @inject('HttpServer') private server: HttpServer,
@@ -49,83 +40,81 @@ export class SocketService implements ISocketService {
         throw new Error('SocketService not initialized');
     }
     return SocketService.instance;
-}
+  }
 
   
   private setupMiddleware() {
     
-  this.io.use(async (socket, next) => {
-    try {
-      const req = socket.request as import('http').IncomingMessage & {
-        headers: { cookie?: string };
-      };
-
-      const cookies = req.headers.cookie
-        ? cookie.parse(req.headers.cookie)
-        : {};
-      
-
-      const token = socket.handshake.auth?.token;
-      const refreshToken = cookies.refreshToken;
-
-      if (!token) {
-        throw new Error('No access token provided');
-      }
-
+    this.io.use(async (socket, next) => {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as {
-          userId: string;
-          role?: string;
-          developerId?: string;
+        const req = socket.request as import('http').IncomingMessage & {
+          headers: { cookie?: string };
         };
 
-        socket.data = {
-          userId: decoded.userId,
-          role: decoded.role,
-          developerId: decoded.developerId,
-        };
+        const cookies = req.headers.cookie
+          ? cookie.parse(req.headers.cookie)
+          : {};
+        
 
-        return next();
-      } catch (error: any) {
-        if (error.name === 'TokenExpiredError') {
-          if (!refreshToken) return next(new Error('No refresh token found'));
+        const token = socket.handshake.auth?.token;
+        const refreshToken = cookies.refreshToken;
 
-          const decodedRefresh = jwt.verify(
-            refreshToken,
-            process.env.JWT_REFRESH_SECRET!
-          ) as { userId: string; role: string; developerId?: string };
+        if (!token) {
+          throw new Error('No access token provided');
+        }
 
-          const newAccessToken = jwt.sign(
-            {
-              userId: decodedRefresh.userId,
-              role: decodedRefresh.role,
-              developerId: decodedRefresh.developerId,
-            },
-            process.env.JWT_ACCESS_SECRET!,
-            { expiresIn: process.env.ACCESS_EXPIRES_IN }
-          );
-
-          socket.emit('newAccessToken', newAccessToken);
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as {
+            userId: string;
+            role?: string;
+            developerId?: string;
+          };
 
           socket.data = {
-            userId: decodedRefresh.userId,
-            role: decodedRefresh.role,
-            developerId: decodedRefresh.developerId,
+            userId: decoded.userId,
+            role: decoded.role,
+            developerId: decoded.developerId,
           };
 
           return next();
+        } catch (error: any) {
+          if (error.name === 'TokenExpiredError') {
+            if (!refreshToken) return next(new Error('No refresh token found'));
+
+            const decodedRefresh = jwt.verify(
+              refreshToken,
+              process.env.JWT_REFRESH_SECRET!
+            ) as { userId: string; role: string; developerId?: string };
+
+            const newAccessToken = jwt.sign(
+              {
+                userId: decodedRefresh.userId,
+                role: decodedRefresh.role,
+                developerId: decodedRefresh.developerId,
+              },
+              process.env.JWT_ACCESS_SECRET!,
+              { expiresIn: process.env.ACCESS_EXPIRES_IN }
+            );
+
+            socket.emit('newAccessToken', newAccessToken);
+
+            socket.data = {
+              userId: decodedRefresh.userId,
+              role: decodedRefresh.role,
+              developerId: decodedRefresh.developerId,
+            };
+
+            return next();
+          }
+
+          throw error;
         }
-
-        throw error;
+      } catch (error) {
+        console.error('Socket authentication error:', error);
+        return next(new Error('Authentication error'));
       }
-    } catch (error) {
-      console.error('Socket authentication error:', error);
-      return next(new Error('Authentication error'));
-    }
-  });
-}
-
-
+    });
+  }
   private setupEventHandlers() {
     this.io.on('connection', (socket) => {
 
@@ -270,7 +259,6 @@ export class SocketService implements ISocketService {
       this.setupWebRTCHandlers(socket);
     });
   }
-
   private setupWebRTCHandlers(socket: any) {
     const { userId, role } = socket.data;
     const participantId = userId;
@@ -318,7 +306,64 @@ export class SocketService implements ISocketService {
         console.error('[Backend:WebRTC] Error in join-room handler:', error);
       }
     });
-    
+
+    socket.on('webrtc:reconnect', (data: { roomId: string, userId: string, role?: string, isHost?: boolean }) => {
+      try {
+        const { roomId, userId: reconnectingUserId } = data;
+        if (!roomId || !reconnectingUserId) {
+          console.log('[Backend:WebRTC] Invalid reconnect data, ignoring');
+          return;
+        }
+
+        console.log(`[Backend:WebRTC] Reconnect attempt by ${reconnectingUserId} to room ${roomId}`);
+
+        const roomName = `webrtc:${roomId}`;
+
+        const pendingTimer = this.pendingDisconnectTimers.get(reconnectingUserId);
+        if (pendingTimer) {
+          clearTimeout(pendingTimer);
+          this.pendingDisconnectTimers.delete(reconnectingUserId);
+          console.log(`[Backend:WebRTC] Cleared pending disconnect timer for ${reconnectingUserId}`);
+        }
+
+        socket.join(roomName);
+
+        if (!this.webRTCRooms.has(roomId)) {
+          this.webRTCRooms.set(roomId, new Set());
+        }
+
+        const participantsSet = this.webRTCRooms.get(roomId)!;
+        if (!participantsSet.has(reconnectingUserId)) {
+          console.log(`[Backend:WebRTC] Participant ${reconnectingUserId} not found in room set, adding back`);
+          participantsSet.add(reconnectingUserId);
+        } else {
+          console.log(`[Backend:WebRTC] Participant ${reconnectingUserId} already present in room set`);
+        }
+
+        if (socket.data?.role === 'developer' && reconnectingUserId) {
+          this.addSocket(this.developerSockets, reconnectingUserId, socket.id);
+        } else if (socket.data?.role === 'user' && reconnectingUserId) {
+          this.addSocket(this.userSockets, reconnectingUserId, socket.id);
+        }
+
+        const participants = Array.from(this.webRTCRooms.get(roomId) || []).map(id => {
+          const isDeveloper = this.developerSockets.has(id);
+          return {
+            userId: id,
+            role: isDeveloper ? 'developer' : 'user'
+          };
+        });
+
+        console.log(`[Backend:WebRTC] Emitting session-info after reconnect for room ${roomId}`);
+        this.io.to(roomName).emit('webrtc:session-info', {
+          roomId,
+          participants
+        });
+      } catch (error) {
+        console.error('[Backend:WebRTC] Error in webrtc:reconnect handler:', error);
+      }
+    });
+
     socket.on('webrtc:leave-room', (data: { roomId: string, userId: string, role: string }) => {
       try {
         const { roomId } = data;
@@ -343,6 +388,12 @@ export class SocketService implements ISocketService {
             this.webRTCRooms.delete(roomId);
           }
         }
+
+        const pendingTimer = this.pendingDisconnectTimers.get(participantId);
+        if (pendingTimer) {
+          clearTimeout(pendingTimer);
+          this.pendingDisconnectTimers.delete(participantId);
+        }
         
         console.log(`[Backend:WebRTC Step 12] Notifying other participants about disconnection`);
         socket.to(roomName).emit('webrtc:user-disconnected', {
@@ -353,7 +404,7 @@ export class SocketService implements ISocketService {
         console.error('[Backend:WebRTC Step 13] Error in webrtc:leave-room:', error);
       }
     });
-    
+
     socket.on('webrtc:offer', (data: { sdp: any, to: string, from: string, sessionId: string }) => {
       try {
         const { to, sessionId } = data;
@@ -604,17 +655,38 @@ export class SocketService implements ISocketService {
 
     this.webRTCRooms.forEach((participants, roomId) => {
       if (participants.has(userId)) {
-        participants.delete(userId);
-        
-        const roomName = `webrtc:${roomId}`;
-        socket.to(roomName).emit('webrtc:user-disconnected', {
-          userId: userId,
-          roomId
-        });
-        
-        if (participants.size === 0) {
-          this.webRTCRooms.delete(roomId);
+        console.log(`[Backend:WebRTC] Detected participant ${userId} in room ${roomId} on socket disconnect.`);
+
+        const existingTimer = this.pendingDisconnectTimers.get(userId);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          this.pendingDisconnectTimers.delete(userId);
         }
+        const timer = setTimeout(() => {
+          try {
+            console.log(`[Backend:WebRTC] Grace period expired — removing participant ${userId} from room ${roomId}`);
+
+            participants.delete(userId);
+
+            const roomName = `webrtc:${roomId}`;
+            socket.to(roomName).emit('webrtc:user-disconnected', {
+              userId: userId,
+              roomId
+            });
+
+            if (participants.size === 0) {
+              console.log(`[Backend:WebRTC] Room ${roomId} empty after delayed removal; deleting room`);
+              this.webRTCRooms.delete(roomId);
+            }
+
+            this.pendingDisconnectTimers.delete(userId);
+          } catch (err) {
+            console.error('[Backend:WebRTC] Error during delayed disconnect cleanup:', err);
+          }
+        }, this.WEBRTC_DISCONNECT_GRACE_PERIOD);
+
+        this.pendingDisconnectTimers.set(userId, timer);
+        console.log(`[Backend:WebRTC] Scheduled delayed removal for ${userId} in ${this.WEBRTC_DISCONNECT_GRACE_PERIOD}ms`);
       }
     });
 
