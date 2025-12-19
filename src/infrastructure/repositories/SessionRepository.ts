@@ -564,7 +564,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       const sessions = await Session.find({
         developerId,
         status: 'scheduled',
-        sessionDate: { $gte: today }
+        startTime: { $gte: today }
       })
       .populate({
         path: 'userId',
