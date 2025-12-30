@@ -5,7 +5,7 @@ import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRep
 import { SessionDetails, SessionDocument, UserInfo, IUserData, IAdminSession, IPagination, ITopEarningDeveloper, IUpcomingSession, IUserInfo, ISessionMatchCondition, IDeveloperSessionMatch } from '@/domain/types/session';
 import { startOfDay, endOfDay } from 'date-fns';
 import { StatusCodes } from 'http-status-codes';
-import mongoose, { Types } from 'mongoose';
+import mongoose, { PipelineStage, Types } from 'mongoose';
 import DeveloperSlot from '@/domain/entities/Slot';
 import { BaseRepository } from './BaseRepository';
 import { injectable } from 'inversify';
@@ -253,99 +253,144 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
     }
   }
 
-  async getUpcomingSessions(userId: string, currentDate: Date, page = 1, limit = 10) {
-    try {
-      const skip = (page - 1) * limit;
-      const today = new Date(currentDate);
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+  async  getUpcomingSessions(
+  userId: string,
+  currentDate: Date,
+  page = 1,
+  limit = 10
+) {
+  try {
+    const skip = (page - 1) * limit;
+    const now = new Date(currentDate);
 
-      const match = {
-        userId: new Types.ObjectId(userId),
-        $or: [
-          // { sessionDate: { $gt: today } },
-          {
-            // sessionDate: { $gte: today, $lt: tomorrow },
-            startTime: { $gte: currentDate }
-          }
-        ],
-        status: { $nin: [ 'rejected', 'completed'] }
-      };
+    const baseMatch = {
+      userId: new Types.ObjectId(userId),
+      status: {
+        $nin: ["rejected", "completed", "cancelled", "expired"]
+      }
+    };
 
-      const totalItems = await Session.countDocuments(match);
+    const pipeline: PipelineStage[] = [
+      {
+        $match: baseMatch
+      },
+      {
+        $addFields: {
+          sessionEndTime: {
+            $add: [
+              "$startTime",
+              { $multiply: ["$duration", 60 * 1000] }
+            ]
+          }
+        }
+      },
+      {
+        $match: {
+          sessionEndTime: { $gt: now }
+        }
+      },
+      {
+        $lookup: {
+          from: "developers",
+          localField: "developerId",
+          foreignField: "userId",
+          as: "developer"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "developer.userId",
+          foreignField: "_id",
+          as: "developerUser"
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          description: 1,
+          topics: 1,
+          sessionDate: 1,
+          startTime: 1,
+          duration: 1,
+          price: 1,
+          status: 1,
+          paymentStatus: 1,
+          rejectionReason: 1,
 
-      const sessions = await Session.aggregate([
-        { $match: match },
-        {
-          $lookup: {
-            from: 'developers',
-            localField: 'developerId',
-            foreignField: 'userId',
-            as: 'developer'
-          }
-        },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'developer.userId',
-            foreignField: '_id',
-            as: 'developerUser'
-          }
-        },
-        {
-          $project: {
-            _id: 1,
-            title: 1,
-            description: 1,
-            topics: 1,
-            sessionDate: 1,
-            startTime: 1,
-            duration: 1,
-            price: 1,
-            status: 1,
-            paymentStatus: 1,
-            rejectionReason: 1,
-            'developer': { $first: '$developer' },
-            'developerUser': {
-              $first: {
-                $map: {
-                  input: '$developerUser',
-                  as: 'user',
-                  in: {
-                    _id: '$$user._id',
-                    username: '$$user.username',
-                    email: '$$user.email',
-                    profilePicture: '$$user.profilePicture',                   
-                  }
+          developer: { $first: "$developer" },
+
+          developerUser: {
+            $first: {
+              $map: {
+                input: "$developerUser",
+                as: "user",
+                in: {
+                  _id: "$$user._id",
+                  username: "$$user.username",
+                  email: "$$user.email",
+                  profilePicture: "$$user.profilePicture"
                 }
               }
             }
           }
-        },
-        {
-          $sort: { sessionDate: 1, startTime: 1 }
-        },
-        { $skip: skip },
-        { $limit: limit }
-      ]);
-
-      const totalPages = Math.ceil(totalItems / limit);
-
-      return {
-        sessions,
-        pagination: {
-          currentPage: page,
-          totalPages,
-          totalItems,
-          itemsPerPage: limit
         }
-      };
-    } catch (error) {
-      console.error('Get upcoming sessions repository error:', error);
-      throw new AppError('Failed to fetch upcoming sessions', StatusCodes.INTERNAL_SERVER_ERROR);
-    }
+      },
+      {
+        $sort: { startTime: 1 as const }
+      },
+
+      { $skip: skip },
+      { $limit: limit }
+    ];
+    const countPipeline: PipelineStage[] = [
+      {
+        $match: baseMatch
+      },
+      {
+        $addFields: {
+          sessionEndTime: {
+            $add: [
+              "$startTime",
+              { $multiply: ["$duration", 60 * 1000] }
+            ]
+          }
+        }
+      },
+      {
+        $match: {
+          sessionEndTime: { $gt: now }
+        }
+      },
+      { $count: "count" }
+    ];
+
+    const [sessions, countResult] = await Promise.all([
+      Session.aggregate(pipeline),
+      Session.aggregate(countPipeline)
+    ]);
+
+    const totalItems = countResult[0]?.count || 0;
+    const totalPages = Math.ceil(totalItems / limit);
+
+    return {
+      sessions,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        itemsPerPage: limit
+      }
+    };
+  } catch (error) {
+    console.error("Get upcoming sessions repository error:", error);
+    throw new AppError(
+      "Failed to fetch upcoming sessions",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
   }
+}
 
 
   async getSessionRequests(developerId: Types.ObjectId, page: number = 1, limit: number = 5) {
@@ -546,26 +591,39 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       throw new AppError('Failed to count sessions', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
+  
+  async getDeveloperScheduledSessions(
+  developerId: Types.ObjectId,
+  page: number = 1,
+  limit: number = 5
+) {
+  try {
+    const skip = (page - 1) * limit;
+    const now = new Date();
 
-  async getDeveloperScheduledSessions(developerId: Types.ObjectId, page: number = 1, limit: number = 5){
-    try {
-      const skip = (page - 1) * limit;
-      const today = new Date();
-      // today.setHours(0, 0, 0, 0);
+    const totalCount = await Session.countDocuments({
+      developerId,
+      status: 'scheduled',
+      $expr: {
+        $gt: [
+          { $add: ['$startTime', { $multiply: ['$duration', 60000] }] },
+          now
+        ]
+      }
+    });
 
-      const totalCount = await Session.countDocuments({ 
-        developerId,
-        status: 'scheduled',
-        startTime: { $gte: today }
-      });
-      
-      const totalPages = Math.ceil(totalCount / limit);
-      
-      const sessions = await Session.find({
-        developerId,
-        status: 'scheduled',
-        startTime: { $gte: today }
-      })
+    const totalPages = Math.ceil(totalCount / limit);
+
+    const sessions = await Session.find({
+      developerId,
+      status: 'scheduled',
+      $expr: {
+        $gt: [
+          { $add: ['$startTime', { $multiply: ['$duration', 60000] }] },
+          now
+        ]
+      }
+    })
       .populate({
         path: 'userId',
         select: 'username email profilePicture'
@@ -574,25 +632,30 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       .skip(skip)
       .limit(limit);
 
-      return {
-        sessions,
-        pagination: {
-          currentPage: page,
-          totalPages,
-          totalItems: totalCount,
-          itemsPerPage: limit
-        },
-        stats: {
-          total: totalCount,
-          scheduled: totalCount
-        }
-      };
-    } catch (error) {
-      console.error('Get scheduled sessions repository error:', error);
-      throw new AppError('Failed to fetch scheduled sessions', StatusCodes.INTERNAL_SERVER_ERROR);
-    }
+    return {
+      sessions,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: totalCount,
+        itemsPerPage: limit
+      },
+      stats: {
+        total: totalCount,
+        scheduled: totalCount
+      }
+    };
+  } catch (error) {
+    console.error('Get scheduled sessions repository error:', error);
+    throw new AppError(
+      'Failed to fetch scheduled sessions',
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
   }
+}
 
+
+  
   async getScheduledSessionById(sessionId: Types.ObjectId): Promise<IPopulatedSession> {
     try {
       const session = await Session.findOne({
@@ -698,8 +761,7 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
 
   async getTopEarningDevelopers(page: number = 1, limit: number = 10): Promise<{
   developers: ITopEarningDeveloper[];
-  pagination: IPagination;
-}> {
+  pagination: IPagination;}> {
     try {
       const skip = (page - 1) * limit;
       
