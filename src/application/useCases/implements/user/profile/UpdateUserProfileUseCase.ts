@@ -24,7 +24,20 @@ export class UpdateUserProfileUseCase implements IUpdateUserProfileUseCase {
             if (!existingUser) {
                 throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
+            if (profileData.username  && profileData.username !== existingUser.username) {
+                const existingUsername = await this._userRepository.findByUsername(profileData.username);
+                if (existingUsername && existingUsername._id.toString() !== userId) {
+                    throw new AppError('Username already exists', StatusCodes.BAD_REQUEST);
+                }
+            }
 
+            if (profileData.contact  && profileData.contact !== existingUser.contact) {
+                const existingPhone = await this._userRepository.findByContact(profileData.contact);
+                if (existingPhone && existingPhone._id.toString() !== userId) {
+                    throw new AppError('Phone number already registered', StatusCodes.BAD_REQUEST);
+                }
+            }
+                    
             let profilePictureKey = existingUser.profilePicture;
 
             if (files.profilePicture && files.profilePicture[0]) {

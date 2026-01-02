@@ -37,6 +37,15 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
         }
         
     }
+    async findByContact(contact: string): Promise<IUser | null>{
+        try {
+            return await User.findOne({contact})
+        } catch (error) {
+            console.error('Error fetching User by contact:', error);
+            throw new AppError('Failed to fetch user', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+        
+    }
 
 
     async update(id: string, updateData: Partial<IUser>): Promise<IUser>{

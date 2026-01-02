@@ -85,7 +85,7 @@ export class DevAuthController {
                 profilePicture?: Express.Multer.File[],
                 resume?: Express.Multer.File[]
             };
-            if (!formData.email || !formData.username) {
+            if (!formData.email ) {
                 throw new AppError('Missing required fields', StatusCodes.BAD_REQUEST);
             }
                     

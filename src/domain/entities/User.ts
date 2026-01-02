@@ -20,13 +20,13 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   isVerified: boolean | null;
-  contact: number;
+  contact?: string | null;
   skills: string[] | null;
   verificationExpires: Date;
 }
 
 const UserSchema: Schema = new Schema({
-  email: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
   password: { 
     type: String, 
     required: function(this: IUser) { 
@@ -49,7 +49,7 @@ const UserSchema: Schema = new Schema({
   status: { type: String, required: true, enum: [ 'active', 'blocked' ], default:'active' },
   isVerified: { type: Boolean, default: false, required: true },
   verificationExpires:{type: Date, default: ()=> new Date(Date.now() + 24 * 60 * 60 * 1000)},
-  contact: { type: Number, required: true },
+  contact: { type: String, unique: true, sparse: true, default: null},
   skills: [{ type: String,  }],
 },
 {

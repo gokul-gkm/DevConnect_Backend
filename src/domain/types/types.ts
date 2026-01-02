@@ -37,7 +37,7 @@ export interface DevPaginatedResponse<T> {
 export type ProfileUpdateData = {
     username?: string;
     email?: string;
-    contact?: number;
+    contact?: string;
     location?: string;
     bio?: string;
     skills?: string[];

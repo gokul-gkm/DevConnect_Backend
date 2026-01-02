@@ -28,9 +28,6 @@ export class DevLoginUseCase implements IDevLoginUseCase{
         if (user.status === 'blocked') {
             throw new AppError('User account is blocked',StatusCodes.BAD_REQUEST);
         }
-        if (user.status === 'suspended') {
-            throw new AppError("User account is already suspended")
-        }
 
         const isPasswordValid = await bcrypt.compare(password, user.password as string);
         
