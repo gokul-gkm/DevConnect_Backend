@@ -38,6 +38,20 @@ export class UpdateDeveloperProfileUseCase implements IUpdateDeveloperProfileUse
                 throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
             }
 
+             if (profileData.username  && profileData.username !== existingUser.username) {
+                const existingUsername = await this._userRepository.findByUsername(profileData.username);
+                if (existingUsername && existingUsername._id.toString() !== userId) {
+                    throw new AppError('Username already exists', StatusCodes.BAD_REQUEST);
+                }
+            }
+
+            if (profileData.contact  && profileData.contact !== existingUser.contact) {
+                const existingPhone = await this._userRepository.findByContact(profileData.contact);
+                if (existingPhone && existingPhone._id.toString() !== userId) {
+                    throw new AppError('Phone number already registered', StatusCodes.BAD_REQUEST);
+                }
+            }
+
             if (files.profilePicture?.[0]) {
                 if (existingUser.profilePicture) {
                     try {
@@ -66,7 +80,7 @@ export class UpdateDeveloperProfileUseCase implements IUpdateDeveloperProfileUse
 
             const userUpdateData = {
                 username: profileData.username,
-                contact: Number(profileData.contact),
+                contact: profileData.contact,
                 bio: profileData.bio,
                 profilePicture: profilePictureKey,
                 socialLinks: {
