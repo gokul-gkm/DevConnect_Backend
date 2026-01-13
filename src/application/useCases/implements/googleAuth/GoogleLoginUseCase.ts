@@ -46,7 +46,7 @@ export class GoogleLoginUseCase implements IGoogleLoginUseCase {
                 username: name,
                 googleId: sub,
                 password: "",
-                contact: Number("0000000000"),
+                contact: null,
                 profilePicture: picture,
                 role: "user",
                 isVerified: true,

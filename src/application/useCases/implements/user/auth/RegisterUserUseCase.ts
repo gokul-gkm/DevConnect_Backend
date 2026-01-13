@@ -13,6 +13,7 @@ import { IWalletRepository } from '@/domain/interfaces/repositories/IWalletRepos
 import { IRegisterUserUseCase } from '@/application/useCases/interfaces/user/auth/IRegisterUserUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
+import { validatePhoneNumber } from '@/utils/validatePhoneNumber';
 
 @injectable()
 export class RegisterUserUseCase implements IRegisterUserUseCase{
@@ -26,6 +27,9 @@ export class RegisterUserUseCase implements IRegisterUserUseCase{
 
     async execute(userData: RegisterUserDTO): Promise<{ expiresAt: Date }> {
         const { username, email, contact, password, confirmPassword } = userData;
+
+        const normalizedContact = validatePhoneNumber(contact);
+
         
         if (password !== confirmPassword) {
             throw new AppError("Passwords don't match", StatusCodes.BAD_REQUEST)
@@ -69,13 +73,19 @@ export class RegisterUserUseCase implements IRegisterUserUseCase{
             throw new AppError('Username already exists',StatusCodes.BAD_REQUEST)
         }
 
+        const existingPhone = await this._userRepository.findByContact(normalizedContact);
+        
+        if (existingPhone) {
+            throw new AppError('Phone number already registered', StatusCodes.BAD_REQUEST);
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const newUser = new User({
             username,
             email,
             password: hashedPassword,
-            contact,
+            contact: normalizedContact,
             role: 'user',
             isVerified: false,
             verificationExpires: new Date(Date.now()+ 24 * 60 * 60 * 1000)

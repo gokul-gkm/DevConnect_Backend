@@ -55,6 +55,7 @@
     "inversify": "^7.10.2",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
+    "libphonenumber-js": "^1.12.33",
     "logform": "^2.7.0",
     "module-alias": "^2.2.3",
     "mongoose": "^8.8.4",

@@ -1,5 +1,4 @@
 export interface DevRequestDTO {
-    username: string;
     email: string;
     phoneCode: string;
     phoneNumber: string;

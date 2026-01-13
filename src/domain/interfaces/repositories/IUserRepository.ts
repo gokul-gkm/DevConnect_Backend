@@ -7,6 +7,7 @@ export interface IUserRepository extends IBaseRepository<IUser>  {
     findByEmail(email: string): Promise<IUser | null>
     findById(id: string): Promise<IUser | null>
     findByUsername(username: string): Promise<IUser | null>
+    findByContact(contact: string): Promise<IUser | null>
     update(id: string, updateData: Partial<IUser>): Promise<IUser>
     findByRole(role: string): Promise<IUser[]>
     findUsers(queryParams: QueryParams): Promise<PaginatedResponse<IUser>>

@@ -27,9 +27,6 @@ export class LoginUserUseCase implements ILoginUserUseCase{
         if (user.status === 'blocked') {
             throw new AppError('User account is blocked',StatusCodes.BAD_REQUEST);
         }
-        if (user.status === 'suspended') {
-            throw new AppError("User account is already suspended")
-        }
         
         if (user.role !== 'user') {
             throw new AppError('User profile not found. Please register as a user first.', StatusCodes.BAD_REQUEST);
