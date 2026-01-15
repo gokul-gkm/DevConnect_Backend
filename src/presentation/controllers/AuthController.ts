@@ -13,6 +13,7 @@ import { IForgotPasswordUseCase } from "@/application/useCases/interfaces/user/a
 import { IResetPasswordUseCase } from "@/application/useCases/interfaces/user/auth/IResetPasswordUseCase";
 import { ISetNewTokenUseCase } from "@/application/useCases/interfaces/user/auth/ISetNewTokenUseCase";
 import { setCookie } from "@/utils/cookie.util";
+import { CheckUsernameAvailabilityUseCase } from "@/application/useCases/implements/user/auth/CheckUsernameAvailabilityUseCase";
 
 @injectable()
 export class AuthController {
@@ -30,7 +31,9 @@ export class AuthController {
     @inject(TYPES.IResetPasswordUseCase)
     private _resetPasswordUseCase: IResetPasswordUseCase,
     @inject(TYPES.ISetNewTokenUseCase)
-    private _setNewTokenUseCase: ISetNewTokenUseCase
+    private _setNewTokenUseCase: ISetNewTokenUseCase,
+    @inject(TYPES.ICheckUsernameAvailabilityUseCase)
+    private checkUsernameAvailabilityUseCase: CheckUsernameAvailabilityUseCase
   ) {}
 
   async register(req: Request, res: Response) {
@@ -244,4 +247,24 @@ export class AuthController {
         });
     }
   }
+
+  async checkUsernameAvailability(req: Request, res: Response){
+    try {
+      const { username, excludeUserId  } = req.query;
+
+      if (!username || typeof username !== "string") {
+        return res.status(400).json({ available: false });
+      }
+
+      const available =
+        await this.checkUsernameAvailabilityUseCase.execute(username, excludeUserId as string | undefined);
+      
+      console.log("👤 available in controller : ", available)
+
+
+      return res.status(200).json({ available });
+    } catch (error) {
+      return res.status(500).json({ available: false });
+    }
+  };
 }

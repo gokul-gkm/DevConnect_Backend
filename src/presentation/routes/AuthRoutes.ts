@@ -45,4 +45,8 @@ authRouter.get('/refresh-token', async (req, res) => {
   await authController.setNewToken(req, res)
 })
 
+authRouter.get( "/check-username", async (req, res) => {
+  await authController.checkUsernameAvailability(req, res)
+});
+
 export default authRouter; 

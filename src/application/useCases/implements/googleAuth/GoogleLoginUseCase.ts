@@ -34,16 +34,50 @@ export class GoogleLoginUseCase implements IGoogleLoginUseCase {
         }
 
         const { email, name, picture, sub } = payload;
+
+        if (!email) {
+           throw  new AppError("Email not found from Google", StatusCodes.BAD_REQUEST);
+        }
+
         let user = await this._userRepository.findByEmail(email!);
 
         if (user && user.status === "blocked") {
             throw new AppError("User account is blocked", StatusCodes.BAD_REQUEST);
         }
+       
 
         if (!user) {
+
+            const emailLocalPart = email.split("@")[0];
+
+            let baseName = "";
+            if (name) {
+                const normalizedGoogleName = this.normalizeName(name);
+                if (this.isValidName(normalizedGoogleName)) {
+                baseName = normalizedGoogleName;
+                }
+            }
+
+            if (!baseName) {
+                const normalizedEmailName = this.normalizeName(emailLocalPart);
+                if (this.isValidName(normalizedEmailName)) {
+                baseName = normalizedEmailName;
+                }
+            }
+
+            if (!baseName) {
+                baseName = "user";
+            }
+
+            const uniqueUsername = await this.generateUniqueUsername(
+                baseName,
+                emailLocalPart
+            );
+
+
             const newUser = new User({
                 email,
-                username: name,
+                username: uniqueUsername,
                 googleId: sub,
                 password: "",
                 contact: null,
@@ -82,4 +116,36 @@ export class GoogleLoginUseCase implements IGoogleLoginUseCase {
 
         return { user, accessToken, refreshToken };
     }
+
+   private normalizeName(input: string): string {
+    return input
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/[^a-zA-Z0-9 ]/g, "");
+  }
+
+  private isValidName(name: string): boolean {
+    if (name.length < 3 || name.length > 40) return false;
+    const letterCount = (name.match(/[a-zA-Z]/g) || []).length;
+    return letterCount >= 3;
+  }
+
+  private async generateUniqueUsername(
+    baseName: string,
+    emailLocalPart: string
+  ): Promise<string> {
+    const base = emailLocalPart
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toLowerCase();
+
+    let candidate = base || baseName.replace(/\s+/g, "").toLowerCase();
+    let counter = 1;
+
+    while (await this._userRepository.findByUsername(candidate)) {
+      candidate = `${base}${counter}`;
+      counter++;
+    }
+
+    return candidate;
+  }
 }

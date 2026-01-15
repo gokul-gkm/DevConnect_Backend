@@ -33,6 +33,7 @@ export const TYPES = {
     IForgotPasswordUseCase: Symbol.for("IForgotPasswordUseCase"),
     IResetPasswordUseCase: Symbol.for("IResetPasswordUseCase"),
     ISetNewTokenUseCase: Symbol.for("ISetNewTokenUseCase"),
+    ICheckUsernameAvailabilityUseCase: Symbol.for("ICheckUsernameAvailabilityUseCase"),
 
     //Google Auth
     IGoogleLoginUseCase: Symbol.for("IGoogleLoginUseCase"),

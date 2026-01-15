@@ -260,6 +260,8 @@ import { AdminController } from "@/presentation/controllers/AdminController";
 import { AuthController } from "@/presentation/controllers/AuthController";
 import { GoogleAuthController } from "@/presentation/controllers/GoogleAuthController";
 import { VideoSessionController } from "@/presentation/controllers/VideoSessionController";
+import { CheckUsernameAvailabilityUseCase } from "@/application/useCases/implements/user/auth/CheckUsernameAvailabilityUseCase";
+import { ICheckUsernameAvailabilityUseCase } from "@/application/useCases/interfaces/user/auth/ICheckUsernameAvailabilityUseCase";
 
 const container = new Container();
 
@@ -297,6 +299,7 @@ container.bind<ILoginUserUseCase>(TYPES.ILoginUserUseCase).to(LoginUserUseCase);
 container.bind<IForgotPasswordUseCase>(TYPES.IForgotPasswordUseCase).to(ForgotPasswordUseCase);
 container.bind<IResetPasswordUseCase>(TYPES.IResetPasswordUseCase).to(ResetPasswordUseCase);
 container.bind<ISetNewTokenUseCase>(TYPES.ISetNewTokenUseCase).to(SetNewTokenUseCase);
+container.bind<ICheckUsernameAvailabilityUseCase>(TYPES.ICheckUsernameAvailabilityUseCase).to(CheckUsernameAvailabilityUseCase);
 
 //Google Auth Usecase
 container.bind<IGoogleLoginUseCase>(TYPES.IGoogleLoginUseCase).to(GoogleLoginUseCase);
