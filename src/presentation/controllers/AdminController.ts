@@ -5,6 +5,8 @@ import { StatusCodes } from 'http-status-codes';
 import { HTTP_STATUS_MESSAGES } from '@/utils/constants';
 import { inject } from 'inversify';
 import { TYPES } from '@/types/types';
+import { startOfDay, endOfDay } from 'date-fns';
+import { IGetAdminSessionsReportUseCase } from '@/application/useCases/interfaces/admin/sessions/IGetAdminSessionsReportUseCase';
 
 import { IAdminLoginUseCase } from '@/application/useCases/interfaces/admin/auth/IAdminLoginUseCase';
 import { IGetUsersUseCase } from '@/application/useCases/interfaces/admin/users/IGetUsersUseCase';
@@ -21,6 +23,7 @@ import { IGetDeveloperLeaderboardUseCase } from '@/application/useCases/interfac
 import { handleControllerError } from '../error/handleControllerError';
 import { setCookie } from '@/utils/cookie.util';
 import { getParamAsString } from '../utils/getParamAsString';
+import { buildSessionReportCsv } from '../utils/sessionReport.util';
 
 export class AdminController{
 
@@ -59,7 +62,10 @@ export class AdminController{
         private _getAdminSessionsUseCase: IGetAdminSessionsUseCase,
 
         @inject(TYPES.IGetDeveloperLeaderboardUseCase)
-        private _getDeveloperLeaderboardUseCase: IGetDeveloperLeaderboardUseCase
+        private _getDeveloperLeaderboardUseCase: IGetDeveloperLeaderboardUseCase,
+
+        @inject(TYPES.IGetAdminSessionsReportUseCase)
+        private _getAdminSessionsReportUseCase: IGetAdminSessionsReportUseCase,
     ) {}
 
     async login(req: Request, res: Response) {
@@ -370,4 +376,42 @@ export class AdminController{
         }
     }
 
+
+    async downloadSessionsReport(req: Request, res: Response): Promise<void> {
+        try {
+          const statusParam = (req.query.status as string | undefined)?.split(',').filter(Boolean);
+          const status = statusParam && statusParam.length > 0
+            ? statusParam
+            : ['pending','approved','rejected','scheduled','completed','active','cancelled','awaiting_payment'];
+      
+          const search = (req.query.search as string) || '';
+          const from = req.query.from as string | undefined;
+          const to = req.query.to as string | undefined;
+          const fromDate = from ? startOfDay(new Date(from)) : undefined;
+          const toDate = to ? endOfDay(new Date(to)) : undefined;
+      
+          const { sessions, totals } = await this._getAdminSessionsReportUseCase.execute({
+            status,
+            search,
+            fromDate,
+            toDate,
+          });
+      
+          const csv = buildSessionReportCsv({
+            sessions,
+            totals,
+            filters: { status, search, from, to },
+          });
+      
+          const filename = `session-report-${new Date().toISOString()}.csv`;
+          res.setHeader('Content-Type', 'text/csv');
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+          res.send(csv);
+        } catch (error: unknown) {
+          handleControllerError(error, res, 'Failed to generate session report');
+        }
+      }
+     
 }
+
+ 

@@ -262,6 +262,8 @@ import { GoogleAuthController } from "@/presentation/controllers/GoogleAuthContr
 import { VideoSessionController } from "@/presentation/controllers/VideoSessionController";
 import { CheckUsernameAvailabilityUseCase } from "@/application/useCases/implements/user/auth/CheckUsernameAvailabilityUseCase";
 import { ICheckUsernameAvailabilityUseCase } from "@/application/useCases/interfaces/user/auth/ICheckUsernameAvailabilityUseCase";
+import { IGetAdminSessionsReportUseCase } from "@/application/useCases/interfaces/admin/sessions/IGetAdminSessionsReportUseCase";
+import { GetAdminSessionsReportUseCase } from "@/application/useCases/implements/admin/sessions/GetAdminSessionsReportUseCase";
 
 const container = new Container();
 
@@ -394,6 +396,7 @@ container.bind<IGetDashboardStatsUseCase>(TYPES.IGetDashboardStatsUseCase).to(Ge
 container.bind<IGetRevenueStatsUseCase>(TYPES.IGetRevenueStatsUseCase).to(GetRevenueStatsUseCase);
 container.bind<IGetAdminSessionsUseCase>(TYPES.IGetAdminSessionsUseCase).to(GetAdminSessionsUseCase);
 container.bind<IGetDeveloperLeaderboardUseCase>(TYPES.IGetDeveloperLeaderboardUseCase).to(GetDeveloperLeaderboardUseCase);
+container.bind<IGetAdminSessionsReportUseCase>(TYPES.IGetAdminSessionsReportUseCase).to(GetAdminSessionsReportUseCase);
 
 //Controllers
 container.bind<AuthController>(TYPES.AuthController).to(AuthController);

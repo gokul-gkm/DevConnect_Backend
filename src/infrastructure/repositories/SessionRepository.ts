@@ -1309,4 +1309,91 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
     }
   }
 
+  async getAdminSessionsReport(
+    status: string[],
+    search: string = '',
+    fromDate?: Date,
+    toDate?: Date
+  ): Promise<IAdminSession[]> {
+    const match: ISessionMatchCondition = {};
+  
+    if (status?.length) match.status = { $in: status };
+    if (fromDate || toDate) {
+      match.sessionDate = {};
+      if (fromDate) match.sessionDate.$gte = fromDate;
+      if (toDate) match.sessionDate.$lt = toDate;
+    }
+    if (search) {
+      match.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
+  
+    const pipeline: PipelineStage[] = [
+      { $match: match },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
+      },
+      { $unwind: '$userInfo' },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'developerId',
+          foreignField: '_id',
+          as: 'developerInfo'
+        }
+      },
+      { $unwind: '$developerInfo' },
+      ...(search
+        ? [{
+            $match: {
+              $or: [
+                { 'userInfo.username': { $regex: search, $options: 'i' } },
+                { 'developerInfo.username': { $regex: search, $options: 'i' } }
+              ]
+            }
+          }]
+        : []),
+      { $sort: { sessionDate: -1, startTime: -1 } },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          description: 1,
+          topics: 1,
+          sessionDate: 1,
+          startTime: 1,
+          duration: 1,
+          price: 1,
+          status: 1,
+          paymentStatus: 1,
+          paymentTransferStatus: 1,
+          rejectionReason: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          user: {
+            _id: '$userInfo._id',
+            username: '$userInfo.username',
+            email: '$userInfo.email',
+            profilePicture: '$userInfo.profilePicture'
+          },
+          developer: {
+            _id: '$developerInfo._id',
+            username: '$developerInfo.username',
+            email: '$developerInfo.email',
+            profilePicture: '$developerInfo.profilePicture'
+          }
+        }
+      }
+    ];
+  
+    return Session.aggregate(pipeline);
+  }
+
 }

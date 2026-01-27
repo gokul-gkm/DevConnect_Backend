@@ -128,6 +128,7 @@ export const TYPES = {
     IGetRevenueStatsUseCase: Symbol.for("IGetRevenueStatsUseCase"),
     IGetAdminSessionsUseCase: Symbol.for("IGetAdminSessionsUseCase"),
     IGetDeveloperLeaderboardUseCase: Symbol.for("IGetDeveloperLeaderboardUseCase"),
+    IGetAdminSessionsReportUseCase: Symbol.for("IGetAdminSessionsReportUseCase"),
 
 
 

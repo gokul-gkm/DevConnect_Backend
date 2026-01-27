@@ -55,5 +55,11 @@ export interface ISessionRepository extends IBaseRepository<ISession>{
           totalItems: number;
         };
     }> 
-    cancelSession(sessionId: string, reason: string): Promise<void>;
+  cancelSession(sessionId: string, reason: string): Promise<void>;
+  getAdminSessionsReport(
+    status: string[],
+    search: string,
+    fromDate?: Date,
+    toDate?: Date
+  ): Promise<IAdminSession[]>;
 }
