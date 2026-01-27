@@ -74,4 +74,8 @@ adminRouter.get('/sessions', adminAuthMiddleware,
   }
 );
 
+adminRouter.get('/sessions/report', adminAuthMiddleware, async (req, res) => {
+    await adminController.downloadSessionsReport(req, res);
+  });
+
 export default adminRouter;
