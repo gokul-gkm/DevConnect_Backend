@@ -58,7 +58,7 @@ export class RateSessionUseCase implements IRateSessionUseCase {
       }
       
       ratingData = await this._ratingRepository.updateRating(
-        existingRating._id as string,
+        existingRating._id.toString(),
         { rating, comment }
       );
       

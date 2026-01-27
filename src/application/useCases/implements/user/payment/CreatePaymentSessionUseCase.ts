@@ -22,7 +22,7 @@ export class CreatePaymentSessionUseCase implements ICreatePaymentSessionUseCase
     private _sessionRepository: ISessionRepository
   ) {}
 
-  async execute(data: CreatePaymentSessionDTO): Promise<string> {
+  async execute(data: CreatePaymentSessionDTO): Promise<{ clientSecret: string }>  {
     if (!Types.ObjectId.isValid(data.sessionId)) {
       throw new AppError('Invalid session ID', StatusCodes.BAD_REQUEST);
     }
@@ -43,7 +43,7 @@ export class CreatePaymentSessionUseCase implements ICreatePaymentSessionUseCase
       throw new AppError('Invalid session data', StatusCodes.BAD_REQUEST);
     }
 
-    const checkoutUrl = await this._paymentService.createCheckoutSession({
+    const { clientSecret } = await this._paymentService.createPaymentIntent({
       sessionId: new Types.ObjectId(data.sessionId),
       amount: session.price,
       currency: 'USD',
@@ -55,6 +55,6 @@ export class CreatePaymentSessionUseCase implements ICreatePaymentSessionUseCase
       }
     });
 
-    return checkoutUrl;
+    return {clientSecret};
   }
 }

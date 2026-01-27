@@ -30,11 +30,11 @@ export class StartSessionUseCase implements IStartSessionUseCase{
 
     //   await this.sessionRepository.updateSessionStatus(objectId, 'active');
       
-    if (session.userId) {
-      this._socketService.emitToUser(session.userId.toString(), 'session:started', {
-        sessionId,
-        message: 'Your session is ready to join'
-      });
-    }
+    // if (session.userId) {
+    //   this._socketService.emitToUser(session.userId.toString(), 'session:started', {
+    //     sessionId,
+    //     message: 'Your session is ready to join'
+    //   });
+    // }
   }
 }

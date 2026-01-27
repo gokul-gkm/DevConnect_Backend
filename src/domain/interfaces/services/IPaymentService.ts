@@ -11,6 +11,7 @@ export interface CreateCheckoutSessionParams {
 
 export interface IPaymentService {
   createCheckoutSession(params: CreateCheckoutSessionParams): Promise<string>;
+  createPaymentIntent(params: CreateCheckoutSessionParams): Promise<{ clientSecret: string;}>
   handleWebhookEvent(payload: Buffer | string, signature: string): Promise<void>;
   validateWebhookSignature(payload: string, signature: string): boolean;
   refundPayment(paymentId: string, amount?: number): Promise<void>;

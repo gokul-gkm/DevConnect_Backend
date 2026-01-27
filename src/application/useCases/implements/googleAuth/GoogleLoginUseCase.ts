@@ -1,6 +1,5 @@
 import { injectable, inject } from "inversify";
 import { OAuth2Client } from "google-auth-library";
-import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
 import { AppError } from "@/domain/errors/AppError";
 import { StatusCodes } from "http-status-codes";
@@ -9,6 +8,13 @@ import { IWalletRepository } from "@/domain/interfaces/repositories/IWalletRepos
 import { User } from "@/domain/entities/User";
 import { IGoogleLoginUseCase, IGoogleLoginResponse } from "@/application/useCases/interfaces/googleAuth/IGoogleLoginUseCase";
 import { TYPES } from "@/types/types";
+import jwt from 'jsonwebtoken'
+import {
+  JWT_ACCESS_SECRET,
+  JWT_REFRESH_SECRET,
+  accessSignOptions,
+  refreshSignOptions,
+} from "@/infrastructure/config/jwt";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -96,7 +102,7 @@ export class GoogleLoginUseCase implements IGoogleLoginUseCase {
                 await this._walletRepository.create(new Types.ObjectId(user._id));
             } catch (_error) {
                 if (!user.createdAt) {
-                    await this._userRepository.deleteById(user._id);
+                    await this._userRepository.deleteById(user._id.toString());
                 }
                 throw new AppError("Failed to create user wallet", StatusCodes.INTERNAL_SERVER_ERROR);
             }
@@ -104,14 +110,14 @@ export class GoogleLoginUseCase implements IGoogleLoginUseCase {
 
         const accessToken = jwt.sign(
             { userId: user._id, role: "user" },
-            process.env.JWT_ACCESS_SECRET as string,
-            { expiresIn: process.env.ACCESS_EXPIRES_IN }
+            JWT_ACCESS_SECRET,
+            accessSignOptions
         );
 
         const refreshToken = jwt.sign(
             { userId: user._id, role: "user" },
-            process.env.JWT_REFRESH_SECRET as string,
-            { expiresIn: process.env.REFRESH_EXPIRES_IN }
+            JWT_REFRESH_SECRET,
+            refreshSignOptions
         );
 
         return { user, accessToken, refreshToken };

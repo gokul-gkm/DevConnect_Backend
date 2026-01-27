@@ -9,6 +9,12 @@ import bcrypt from 'bcryptjs'
 import { StatusCodes } from "http-status-codes";
 import { inject, injectable } from "inversify";
 import jwt from 'jsonwebtoken'
+import {
+  JWT_ACCESS_SECRET,
+  JWT_REFRESH_SECRET,
+  accessSignOptions,
+  refreshSignOptions,
+} from "@/infrastructure/config/jwt";
 
 @injectable()
 export class DevLoginUseCase implements IDevLoginUseCase{
@@ -35,7 +41,7 @@ export class DevLoginUseCase implements IDevLoginUseCase{
             throw new AppError('Invalid credentials')
         }
 
-        const developer = await this._developerRepository.findByUserId(user._id);
+        const developer = await this._developerRepository.findByUserId(user._id.toString());
         if (!developer) {
             throw new AppError('Developer profile not found. Please register as a developer first.', StatusCodes.BAD_REQUEST);
         }
@@ -56,10 +62,11 @@ export class DevLoginUseCase implements IDevLoginUseCase{
                 throw new AppError('Invalid developer status', StatusCodes.BAD_REQUEST);
         }
 
+
         const accessToken = jwt.sign(
             { userId: user._id, role: 'developer', developerId: developer._id },
-            process.env.JWT_ACCESS_SECRET as string,
-            {expiresIn : process.env.ACCESS_EXPIRES_IN}
+            JWT_ACCESS_SECRET,
+            accessSignOptions
         );
         const refreshToken = jwt.sign(
             {
@@ -67,11 +74,11 @@ export class DevLoginUseCase implements IDevLoginUseCase{
                 role: 'developer',
                 developerId: developer._id
             },
-            process.env.JWT_REFRESH_SECRET as string,
-            {expiresIn: process.env.REFRESH_EXPIRES_IN}
+            JWT_REFRESH_SECRET,
+            refreshSignOptions
         )
         
-        console.log(jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string));
+        console.log(jwt.verify(refreshToken, JWT_REFRESH_SECRET));
         return { accessToken, refreshToken, user }
     }
 }

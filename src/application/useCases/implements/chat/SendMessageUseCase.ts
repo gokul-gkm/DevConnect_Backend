@@ -62,22 +62,39 @@ export class SendMessageUseCase implements ISendMessageUseCase {
                 chat
             });
             
-            if (senderType === 'user') {
-                this._socketService.emitToDeveloper(chat.developerId.toString(), 'new-message-notification', {
-                    chatId,
-                    message,
-                    sender: chat.userId
-                });
-            } else {
-                this._socketService.emitToUser(chat.userId.toString(), 'new-message-notification', {
-                    chatId,
-                    message,
-                    sender: chat.developerId
-                });
+           const recipientId =
+              senderType === 'user'
+                ? chat.developerId.toString()
+                : chat.userId.toString();
+
+            if (this._socketService.isOnline(recipientId)) {
+              this._socketService.emitNotification(recipientId, {
+                type: 'chat:new-message',
+                payload: {
+                  chatId,
+                  message,
+                  senderId
+                }
+              });
             }
+
+            const unreadCount =
+              senderType === 'user'
+                ? await this._chatRepository.getTotalUnreadCountForDeveloper(recipientId)
+                : await this._chatRepository.getTotalUnreadCountForUser(recipientId);
+
+            if (this._socketService.isOnline(recipientId)) {
+              this._socketService.emitNotification(recipientId, {
+                type: 'chat:unread-count',
+                payload: {
+                  count: unreadCount
+                }
+              });
+            }
+
             return message
         } catch (error) {
-            console.error('💬 ERROR SENDING MESSAGE', error);
+            console.error('�� ERROR SENDING MESSAGE', error);
             throw new AppError('Failed to send message', StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }

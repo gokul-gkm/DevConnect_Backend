@@ -38,7 +38,7 @@ export class AddProjectUseCase implements IAddProjectUseCase {
                 coverImage: coverImageKey 
             });
 
-            await this._developerRepository.addProjectToPortfolio(developerId, project._id as string);
+            await this._developerRepository.addProjectToPortfolio(developerId, project._id.toString());
 
             return { ...(project.toObject?.() ?? project), coverImageUrl };
         } catch (_error) {

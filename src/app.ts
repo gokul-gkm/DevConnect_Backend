@@ -42,7 +42,7 @@ export const io = new SocketServer(httpServer, {
 
 const socketService = container.get<SocketService>(TYPES.ISocketService);
 
-socketService.initialize(httpServer, io);
+socketService.initialize(io);
 
 const morganFormat = ":method :url :status :response-time ms";
 

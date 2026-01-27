@@ -19,6 +19,7 @@ import { IGetDeveloperUpcomingSessionsUseCase } from "@/application/useCases/int
 import { IGetDeveloperProjectUseCase } from "@/application/useCases/interfaces/developer/profile/IGetDeveloperProjectUseCase";
 import { handleControllerError } from "../error/handleControllerError";
 import { IChangePasswordUseCase } from "@/application/useCases/interfaces/shared/profile/IChangePasswordUseCase";
+import { getParamAsString } from "../utils/getParamAsString";
 
 interface MulterFiles {
     profilePicture?: Express.Multer.File[];
@@ -212,7 +213,7 @@ export class DevController {
     async getProject(req: Request, res: Response) {
         try {
             const projectId = req.params.projectId;
-            const project = await this._getDeveloperProjectUseCase.execute(projectId);
+            const project = await this._getDeveloperProjectUseCase.execute(projectId as string);
 
 
             return res.status(StatusCodes.OK).json({
@@ -227,7 +228,11 @@ export class DevController {
 
     async updateProject(req: Request, res: Response) {
         try {
-            const projectId = req.params.projectId;
+            const projectId = getParamAsString(
+                req.params.projectId,
+                "projectId"
+            );
+
             const { title, category, description, projectLink } = req.body;
             const coverImage = req.file;
             
@@ -257,7 +262,7 @@ export class DevController {
             if (!developerId) {
                 throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
             }
-            await this._deleteProjectUseCase.execute(developerId, projectId);
+            await this._deleteProjectUseCase.execute(developerId, projectId as string);
     
             return res.status(StatusCodes.OK).json({
                 success: true,

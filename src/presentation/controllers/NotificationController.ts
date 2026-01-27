@@ -12,6 +12,7 @@ import { IGetUnreadCountUseCase } from '@/application/useCases/interfaces/notifi
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
 import { handleControllerError } from '../error/handleControllerError';
+import { getParamAsString } from '../utils/getParamAsString';
 
 @injectable()
 export class NotificationController {
@@ -63,8 +64,10 @@ export class NotificationController {
         throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
       }
 
-      const { notificationId } = req.params;
-      
+      const notificationId = getParamAsString(
+        req.params.notificationId,
+        "notificationId"
+      );            
       const notification = await this._markNotificationAsReadUseCase.execute(notificationId, userId);
       
       return res.status(StatusCodes.OK).json({
@@ -103,8 +106,10 @@ export class NotificationController {
         throw new AppError('Unauthorized', StatusCodes.UNAUTHORIZED);
       }
 
-      const { notificationId } = req.params;
-      
+      const notificationId = getParamAsString(
+        req.params.notificationId,
+        "notificationId"
+      );      
       const deleted = await this._deleteNotificationUseCase.execute(notificationId, userId);
       
       return res.status(StatusCodes.OK).json({

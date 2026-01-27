@@ -9,6 +9,14 @@ import { StatusCodes } from 'http-status-codes';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
 
+type CheckoutSessionParamsWithAPM =
+  Stripe.Checkout.SessionCreateParams & {
+    automatic_payment_methods?: {
+      enabled: boolean;
+    };
+  };
+
+
 @injectable()
 export class StripeService implements IPaymentService {
   private stripe: Stripe;
@@ -21,33 +29,43 @@ export class StripeService implements IPaymentService {
     @inject(TYPES.ISessionRepository)
     private _sessionRepository: ISessionRepository,
   ) {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: '2025-01-27.acacia',
-    });
+    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
   }
 
   async createCheckoutSession(params: CreateCheckoutSessionParams): Promise<string> {
     try {
-      const session = await this.stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: params.currency,
-            product_data: {
-              name: 'Developer Session',
-            },
-            unit_amount: Math.round(params.amount * 100),
-          },
-          quantity: 1,
-        }],
-        mode: 'payment',
-        success_url: params.successUrl,
-        cancel_url: params.cancelUrl,
-        metadata: {
-          sessionId: params.sessionId.toString(),
-          ...params.metadata
+      
+const checkoutParams: CheckoutSessionParamsWithAPM  = {
+  mode: 'payment',
+
+  automatic_payment_methods: {
+    enabled: true,
+  },
+
+  line_items: [
+    {
+      price_data: {
+        currency: params.currency,
+        product_data: {
+          name: 'Developer Session',
         },
-      });
+        unit_amount: Math.round(params.amount * 100),
+      },
+      quantity: 1,
+    },
+  ],
+
+  success_url: params.successUrl,
+  cancel_url: params.cancelUrl,
+
+  metadata: {
+    sessionId: params.sessionId.toString(),
+    ...params.metadata,
+  },
+};
+
+const session = await this.stripe.checkout.sessions.create(checkoutParams);
+
 
 
       await this._paymentRepository.create({
@@ -66,15 +84,96 @@ export class StripeService implements IPaymentService {
     }
   }
 
+  async createPaymentIntent(params: CreateCheckoutSessionParams): Promise<{
+  clientSecret: string;
+}> {
+  try {
+    const paymentIntent = await this.stripe.paymentIntents.create({
+      amount: Math.round(params.amount * 100),
+      currency: params.currency,
+      automatic_payment_methods: {
+        enabled: true,
+      },
+      metadata: {
+        sessionId: params.sessionId.toString(),
+        ...params.metadata,
+      },
+    });
+
+    await this._paymentRepository.create({
+      sessionId: params.sessionId,
+      amount: params.amount,
+      currency: params.currency,
+      status: "pending",
+      stripePaymentIntentId: paymentIntent.id,
+      metadata: params.metadata,
+    });
+
+    return {
+      clientSecret: paymentIntent.client_secret!,
+    };
+  } catch (error) {
+    console.error("PaymentIntent creation error:", error);
+    throw new AppError(
+      "Failed to create payment intent",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+
   async handleWebhookEvent(payload: Buffer | string, signature: string): Promise<void> {
     try {
+
       const event = this.stripe.webhooks.constructEvent(
         payload,
         signature,
         process.env.STRIPE_WEBHOOK_SECRET!
       );
 
+      console.log("event : ", event)
+
       switch (event.type) {
+        case "payment_intent.succeeded": {
+          console.log("payment intent success webhook✅")
+          const intent = event.data.object as Stripe.PaymentIntent;
+
+          const sessionId = new Types.ObjectId(intent.metadata.sessionId);
+          const amount = intent.amount / 100;
+
+          const payment = await this._paymentRepository.findByStripePaymentIntentId(
+            intent.id
+          );
+
+          if (!payment) {
+            throw new AppError("Payment record not found", StatusCodes.NOT_FOUND);
+          }
+
+          await this._paymentRepository.updateStatus(payment._id, "completed");
+
+          const adminWallet = await this._walletRepository.findByAdminId(
+            process.env.ADMIN_ID!
+          );
+
+          if (!adminWallet) {
+            throw new AppError("Admin wallet not found", StatusCodes.NOT_FOUND);
+          }
+
+          await this._walletRepository.addTransaction(adminWallet._id, {
+            amount,
+            type: "credit",
+            status: "completed",
+            description: "Payment received for session booking",
+            sessionId,
+            metadata: { stripePaymentIntentId: intent.id },
+          });
+
+          await this._sessionRepository.updatePaymentStatus(sessionId, "completed");
+          await this._sessionRepository.updateSessionStatus(sessionId, "scheduled");
+
+          break;
+        }
+
         case 'checkout.session.completed': {
           const session = event.data.object as Stripe.Checkout.Session;
           const sessionId = new Types.ObjectId(session.metadata?.sessionId);
@@ -117,6 +216,8 @@ export class StripeService implements IPaymentService {
           }
           break;
         }
+        
+        
 
         case 'payment_intent.payment_failed': {
           const paymentIntent = event.data.object as Stripe.PaymentIntent;
@@ -129,7 +230,7 @@ export class StripeService implements IPaymentService {
         }
       }
     } catch (error) {
-      console.error('Webhook handling error:', error);
+      console.error("❌ constructEvent failed:", error);
       throw new AppError('Failed to process webhook event', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }

@@ -1,11 +1,17 @@
 import { LoginAdminDTO } from "@/application/dto/admin/LoginAdminDTO";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { IAdminRepository } from "@/domain/interfaces/repositories/IAdminRepository";
 import { IAdminLoginUseCase } from "../../../interfaces/admin/auth/IAdminLoginUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
 import { IAdmin } from "@/domain/entities/Admin";
+import jwt,  { SignOptions } from 'jsonwebtoken'
+import {
+  JWT_ADMIN_ACCESS_SECRET,
+  JWT_ADMIN_REFRESH_SECRET,
+  accessSignOptions,
+  refreshSignOptions,
+} from "@/infrastructure/config/jwt";
 
 export type AdminLoginResponse = {
   accessToken: string;
@@ -35,14 +41,16 @@ export class AdminLoginUseCase implements IAdminLoginUseCase {
 
     const accessToken = jwt.sign(
       { adminId: admin._id },
-      process.env.JWT_ADMIN_ACCESS_SECRET as string,
-      { expiresIn: process.env.ACCESS_EXPIRES_IN }
+      JWT_ADMIN_ACCESS_SECRET,
+      accessSignOptions
     );
+
     const refreshToken = jwt.sign(
       { adminId: admin._id },
-      process.env.JWT_ADMIN_REFRESH_SECRET as string,
-      { expiresIn: process.env.REFRESH_EXPIRES_IN }
+      JWT_ADMIN_REFRESH_SECRET,
+      refreshSignOptions
     );
+
     return {
       accessToken,
       refreshToken,

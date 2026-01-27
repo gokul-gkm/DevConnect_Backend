@@ -1,5 +1,6 @@
 import { IProjectRepository } from "@/domain/interfaces/repositories/IProjectRepository";
 import { IProject, Project } from "@/domain/entities/Project";
+import { IProject as IProjectDTO } from "@/domain/types/project";
 import { AppError } from "@/domain/errors/AppError";
 import Developer from "@/domain/entities/Developer";
 import { ProjectsResponse } from "@/domain/types/project";
@@ -7,6 +8,7 @@ import { StatusCodes } from "http-status-codes";
 import { ERROR_MESSAGES } from "@/utils/constants";
 import { BaseRepository } from "./BaseRepository";
 import { injectable } from "inversify";
+import { Types } from "mongoose";
 
 @injectable()
 export class ProjectRepository extends BaseRepository<IProject> implements IProjectRepository {
@@ -30,63 +32,81 @@ export class ProjectRepository extends BaseRepository<IProject> implements IProj
         }
     }
 
-    async getDeveloperProjects(userId: string, page: number, limit: number): Promise<ProjectsResponse> {
-        try {
-            const developer = await Developer.findOne({ userId });
-            
-            if (!developer) {
-                throw new AppError(ERROR_MESSAGES.DEVELOPER_NOT_FOUND, StatusCodes.NOT_FOUND);
-            }
+    async getDeveloperProjects(
+  userId: string,
+  page: number,
+  limit: number
+): Promise<ProjectsResponse> {
+  try {
+    const developer = await Developer.findOne({ userId });
 
-            const projectIds = developer.portfolio;
-            
-            if (!projectIds || projectIds.length === 0) {
-                return {
-                    projects: [],
-                    pagination: {
-                        currentPage: page,
-                        totalPages: 0,
-                        totalProjects: 0,
-                        hasNextPage: false,
-                        hasPrevPage: false,
-                        limit
-                    }
-                };
-            }
-
-            const skip = (page - 1) * limit;
-            const objectIds = projectIds;
-
-            const [projects, totalCount] = await Promise.all([
-                Project.find({
-                    _id: { $in: objectIds }
-                })
-                    .sort({ createdAt: -1 })
-                    .skip(skip)
-                    .limit(limit)
-                    .lean() as Promise<IProject[]>,
-                Project.countDocuments({
-                    _id: { $in: objectIds }
-                })
-            ]);
-
-            const totalPages = Math.ceil(totalCount / limit);
-            return {
-                projects,
-                pagination: {
-                    currentPage: page,
-                    totalPages,
-                    totalProjects: totalCount,
-                    hasNextPage: page < totalPages,
-                    hasPrevPage: page > 1,
-                    limit
-                }
-            };
-        } catch (error) {
-            if (error instanceof AppError) throw error;
-            throw new AppError('Failed to fetch developer projects', StatusCodes.INTERNAL_SERVER_ERROR);
-        }
+    if (!developer) {
+      throw new AppError(
+        ERROR_MESSAGES.DEVELOPER_NOT_FOUND,
+        StatusCodes.NOT_FOUND
+      );
     }
+
+    const projectIds = developer.portfolio as Types.ObjectId[];
+
+    if (!projectIds || projectIds.length === 0) {
+      return {
+        projects: [],
+        pagination: {
+          currentPage: page,
+          totalPages: 0,
+          totalProjects: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+          limit,
+        },
+      };
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [projectsFromDb, totalCount] = await Promise.all([
+      Project.find({ _id: { $in: projectIds } })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
+      Project.countDocuments({ _id: { $in: projectIds } }),
+    ]);
+
+    const projects: IProjectDTO[] = projectsFromDb.map((project) => ({
+        _id: project._id.toString(),
+        title: project.title,
+        description: project.description,
+        category: project.category,
+        coverImage: project.coverImage,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+    }));
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      projects,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalProjects: totalCount,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        limit,
+      },
+    };
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+
+    throw new AppError(
+      'Failed to fetch developer projects',
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
 
     async getProjectById(projectId: string):Promise<IProject> {
         try {

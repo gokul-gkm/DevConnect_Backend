@@ -1,7 +1,8 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, ObjectId, Types } from 'mongoose';
 
 export interface IDeveloper extends Document {
-  _id: string;
+  // _id: string;
+  _id: Types.ObjectId;
   expertise: string[] | null;
   hourlyRate: number | null;
   rating: number | null;
@@ -17,7 +18,7 @@ export interface IDeveloper extends Document {
   defaultUnavailableSlots: string[];
   totalSessions: number | null;
   availability: Record<string, any>;
-  portfolio: ObjectId[] | null;
+  portfolio: Types.ObjectId[] | null;
   status: 'pending' | 'approved' | 'rejected';
   userId: ObjectId | null;
   languages: string[] | null;

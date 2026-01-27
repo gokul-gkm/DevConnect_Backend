@@ -1,7 +1,8 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IProject extends Document {
-  _id: string;
+  // _id: string;
+  _id: Types.ObjectId;
   title: string;
   category: string;
   description: string;

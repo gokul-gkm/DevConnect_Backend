@@ -7,6 +7,7 @@ import { Types } from 'mongoose';
 import { ICreateNotificationUseCase } from '../../interfaces/notification/ICreateNotificationUseCase';
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types/types';
+import logger from '@/utils/logger';
 
 @injectable()
 export class CreateNotificationUseCase implements ICreateNotificationUseCase {
@@ -58,27 +59,17 @@ export class CreateNotificationUseCase implements ICreateNotificationUseCase {
       }
 
       const notification = await this._notificationRepository.create(notificationData);
-      console.log("recipientId: ",recipientId)
-      console.log(this._socketService.isUserOnline(recipientId), "User online check create noti")
-      console.log(this._socketService.isDeveloperOnline(recipientId), "developer online check create noti")
-      if (this._socketService.isUserOnline(recipientId)) {
-        console.log('user is online. emitting notification')
-        this._socketService.emitToUser(recipientId, 'notification:new', {
-          notification: {
-            id: notification._id,
-            title: notification.title,
-            message: notification.message,
-            type: notification.type,
-            isRead: notification.isRead,
-            timestamp: notification.createdAt,
-            sender: notification.sender
-          }
-        });
-      }
+      logger.info("📦 NOTIFICATION_CREATED", {
+        notificationId: notification._id,
+        recipientId,
+        type
+      });
+      if (this._socketService.isOnline(recipientId)) {
+          logger.info("🟢 USER_ONLINE", { recipientId });
 
-      if (this._socketService.isDeveloperOnline(recipientId)) {
-        console.log('developer is online. emitting notification')
-        this._socketService.emitToDeveloper(recipientId, 'notification:new', {
+      this._socketService.emitNotification(recipientId, {
+        type: 'notification:new',
+        payload: {
           notification: {
             id: notification._id,
             title: notification.title,
@@ -88,8 +79,11 @@ export class CreateNotificationUseCase implements ICreateNotificationUseCase {
             timestamp: notification.createdAt,
             sender: notification.sender
           }
-        });
-      }
+        }
+      });
+} else {
+  logger.warn("🔴 USER_OFFLINE", { recipientId });
+}
 
       console.log('notification created and emitted')
 

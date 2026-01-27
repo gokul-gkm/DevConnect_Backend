@@ -1,3 +1,4 @@
+import { accessSignOptions, JWT_ACCESS_SECRET } from "@/infrastructure/config/jwt";
 import { setCookie } from "@/utils/cookie.util";
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
@@ -42,9 +43,9 @@ export const authMiddleware = (
                 {
                     userId: decodedRefreshToken.userId,
                     role: decodedRefreshToken.role
-                }, 
-                process.env.JWT_ACCESS_SECRET as string, 
-                { expiresIn: process.env.ACCESS_EXPIRES_IN }
+                },
+                JWT_ACCESS_SECRET,
+                accessSignOptions
             );
 
             setCookie(res, "accessToken",newAccessToken)

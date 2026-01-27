@@ -15,6 +15,7 @@ import { IMarkMessagesAsReadUseCase } from "@/application/useCases/interfaces/ch
 import { TYPES } from "@/types/types";
 import { inject, injectable } from "inversify";
 import { IGetChatByIdUseCase } from "@/application/useCases/interfaces/chat/IGetChatByIdUseCase";
+import { getParamAsString } from "../utils/getParamAsString";
 
 @injectable()
 export class ChatController {
@@ -108,7 +109,10 @@ export class ChatController {
                 limit: z.string().optional().transform(val => parseInt(val || '50'))
             });
 
-            const { chatId } = req.params;
+            const chatId = getParamAsString(
+                req.params.chatId,
+                "chatId"
+            );      
             const { page, limit } = schema.parse(req.query);
 
             const result = await this._getChatMessagesUseCase.execute({
@@ -170,7 +174,10 @@ export class ChatController {
 
     async markMessagesAsRead(req: Request, res: Response, next: NextFunction) {
         try {
-            const { chatId } = req.params;
+            const chatId = getParamAsString(
+                req.params.chatId,
+                "chatId"
+            );      
             const chat = await this._getChatByIdUseCase.execute(chatId);
             if (!chat) {
                 throw new AppError('Chat not found', StatusCodes.NOT_FOUND)
@@ -192,6 +199,24 @@ export class ChatController {
             })
         } catch (error) {
             next(error)
+        }
+    }
+
+    async getUnreadCount(req: Request, res: Response, next: NextFunction) {
+        try {
+            const userId = req.userId;
+            if (!userId) {
+                throw new AppError(ERROR_MESSAGES.USER_REQUIRED, StatusCodes.BAD_REQUEST);
+            }
+            const chats = await this._getUserChatsUseCase.execute(userId) as unknown as IChats[];
+            const totalUnread = chats.reduce((sum, chat) => sum + (chat.userUnreadCount || 0), 0);
+            
+            return res.status(StatusCodes.OK).json({
+                success: true,
+                data: { count: totalUnread }
+            });
+        } catch (error) {
+            next(error);
         }
     }
 }

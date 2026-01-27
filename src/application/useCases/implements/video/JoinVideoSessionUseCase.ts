@@ -35,14 +35,19 @@ export class JoinVideoSessionUseCase implements IJoinVideoSessionUseCase {
                 await this._videoSessionRepository.updateHostJoinedAt(new Types.ObjectId(sessionId)) :
                 await this._videoSessionRepository.updateParticipantJoinedAt(new Types.ObjectId(sessionId));
 
-            const otherParticipantId = isHost ? 
-                videoSession.participantId.toString() : 
-                videoSession.hostId.toString();
-            
-            this._socketService.emitToUser(otherParticipantId, 'video:session:participant_joined', {
-                sessionId,
-                userId
-            });
+            const otherParticipantId = isHost
+                ? videoSession.participantId.toString()
+                : videoSession.hostId.toString();
+
+                if (this._socketService.isOnline(otherParticipantId)) {
+                this._socketService.emitNotification(otherParticipantId, {
+                    type: 'video:session:participant_joined',
+                    payload: {
+                    sessionId,
+                    userId
+                    }
+                });
+                }
 
             return updatedSession;
         } catch (error) {

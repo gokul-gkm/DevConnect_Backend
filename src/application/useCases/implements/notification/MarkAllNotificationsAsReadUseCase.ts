@@ -19,11 +19,13 @@ export class MarkAllNotificationsAsReadUseCase implements IMarkAllNotificationsA
     try {
       await this._notificationRepository.markAllAsRead(userId);
       
-      if (this._socketService.isUserOnline(userId)) {
-        this._socketService.emitToUser(userId, 'notification:all-read', null);
-      } else if (this._socketService.isDeveloperOnline(userId)) {
-        this._socketService.emitToDeveloper(userId, 'notification:all-read', null);
+      if (this._socketService.isOnline(userId)) {
+        this._socketService.emitNotification(userId, {
+          type: 'notification:all-read',
+          payload: null
+        });
       }
+
     } catch (error) {
       console.error('Error in MarkAllNotificationsAsReadUseCase:', error);
       throw error instanceof AppError 

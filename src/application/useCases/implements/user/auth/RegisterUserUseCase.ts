@@ -41,7 +41,7 @@ export class RegisterUserUseCase implements IRegisterUserUseCase{
                 throw new AppError('Email already registered',StatusCodes.BAD_REQUEST)
             }
             if (existingUser.verificationExpires < new Date()) {
-                await this._userRepository.deleteById(existingUser._id)
+                await this._userRepository.deleteById(existingUser._id.toString())
             } else {
                 const otp = generateOTP();
                 const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
@@ -96,7 +96,7 @@ export class RegisterUserUseCase implements IRegisterUserUseCase{
         try {
             await this._walletRepository.create(new Types.ObjectId(savedUser._id));
         } catch (_error) {
-            await this._userRepository.deleteById(savedUser._id);
+            await this._userRepository.deleteById(savedUser._id.toString());
             throw new AppError('Failed to create user wallet', StatusCodes.INTERNAL_SERVER_ERROR);
         }
         

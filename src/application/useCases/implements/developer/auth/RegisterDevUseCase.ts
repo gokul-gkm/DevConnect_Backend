@@ -34,7 +34,7 @@ export class RegisterDevUseCase implements IRegisterDevUseCase{
                 throw new AppError('Email already registered',StatusCodes.BAD_REQUEST)
             }
             if (existingUser.verificationExpires < new Date()) {
-                await this._userRepository.deleteById(existingUser._id)
+                await this._userRepository.deleteById(existingUser._id.toString())
             } else {
                 const otp = generateOTP();
                 const expiresAt = new Date(Date.now() + 1 * 60 * 1000);

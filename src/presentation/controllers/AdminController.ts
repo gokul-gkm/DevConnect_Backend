@@ -20,6 +20,7 @@ import { IGetAdminSessionsUseCase } from '@/application/useCases/interfaces/admi
 import { IGetDeveloperLeaderboardUseCase } from '@/application/useCases/interfaces/admin/leaderboard/IGetDeveloperLeaderboardUseCase';
 import { handleControllerError } from '../error/handleControllerError';
 import { setCookie } from '@/utils/cookie.util';
+import { getParamAsString } from '../utils/getParamAsString';
 
 export class AdminController{
 
@@ -111,7 +112,11 @@ export class AdminController{
     
     async toggleUserStatus(req: Request, res: Response) { 
         try {
-            const userId = req.params.id;
+
+            const userId = getParamAsString(
+                req.params.id,
+                "userId"
+            );
             await this._toggleUserStatusUseCase.execute(userId);
             return res.status(StatusCodes.OK).json({ message: "User Status Updated Successfully", success: true });
         } catch (error: unknown) {
@@ -121,7 +126,10 @@ export class AdminController{
 
     async getUserDetails(req: Request, res: Response) {
         try {
-            const userId = req.params.id;
+            const userId = getParamAsString(
+                req.params.id,
+                "userId"
+            );
             const user = await this._getUserDetailsUseCase.execute(userId);
             return res.status(StatusCodes.OK).json({user, success: true})
         } catch (error: unknown) {
@@ -183,7 +191,10 @@ export class AdminController{
 
     async approveRequest(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const id = getParamAsString(
+                req.params.id,
+                "id"
+            );
             const developer = await this._manageDeveloperRequestsUseCase.approveRequest(id);
 
             return res.status(StatusCodes.OK).json({
@@ -207,7 +218,10 @@ export class AdminController{
 
     async rejectRequest(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const id = getParamAsString(
+                req.params.id,
+                "id"
+            );
             const { reason } = req.body;
 
             const developer = await this._manageDeveloperRequestsUseCase.rejectRequest(id, reason);
@@ -233,7 +247,10 @@ export class AdminController{
 
     async getDeveloperDetails(req: Request, res: Response) {
         try {
-            const developerId = req.params.id;
+            const developerId = getParamAsString(
+                req.params.id,
+                "developerId"
+            );
             const developer = await this._getDeveloperDetailsUseCase.execute(developerId);
             
             return res.status(StatusCodes.OK).json({
@@ -256,7 +273,10 @@ export class AdminController{
 
     async getDeveloperRequestDetails(req: Request, res: Response) {
         try {
-            const developerId = req.params.id;
+            const developerId = getParamAsString(
+                req.params.id,
+                "developerId"
+            );
             const developer = await this._getDeveloperRequestDetailsUseCase.execute(developerId);
             
             return res.status(StatusCodes.OK).json({
