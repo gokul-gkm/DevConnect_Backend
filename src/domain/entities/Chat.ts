@@ -3,7 +3,8 @@ import { IUserRef } from '../interfaces/types/IUserRefs';
 
 export interface IChat extends Document {
   // _id?: string;
-  _id: string;
+  // _id: string;
+  _id: Types.ObjectId;
   userId: Types.ObjectId | IUserRef;
   developerId: Types.ObjectId | IUserRef;
   lastMessage?: string;

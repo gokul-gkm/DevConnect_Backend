@@ -8,6 +8,7 @@ import { ISocketService } from "@/domain/interfaces/services/ISocketService";
 import { IInitVideoSessionUseCase } from "../../interfaces/video/IInitVideoSessionUseCase";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types/types";
+import logger from "@/utils/logger";
 
 @injectable()
 export class InitVideoSessionUseCase implements IInitVideoSessionUseCase {
@@ -45,13 +46,47 @@ export class InitVideoSessionUseCase implements IInitVideoSessionUseCase {
 
             await this._sessionRepository.updateSessionStatus(new Types.ObjectId(sessionId), 'active');
 
-            this._socketService.emitToUser(session.userId.toString(), 'video:session:initiated', {
-                sessionId,
-                roomId: videoSession.roomId
-            });
+            const userId = session.userId.toString();
+        const eventData = {
+            sessionId,
+            roomId: videoSession.roomId
+        };
+
+        console.log("📞 [InitVideoSession] Emitting video:session:initiated event", {
+            userId,
+            sessionId,
+            roomId: videoSession.roomId,
+            timestamp: new Date().toISOString()
+        });
+
+            if (this._socketService.isOnline(userId)) {
+           logger.info("🟢 USER_ONLINE", { userId });
+//   this._socketService.emitNotification(userId, {
+//     type: 'video:session:initiated',
+//     payload: {
+//       sessionId,
+//       roomId: videoSession.roomId
+//     }
+//   });
+     this._socketService.emitToUser(
+        userId,
+        "video:session:initiated",
+        {
+            sessionId,
+            roomId: videoSession.roomId
+        }
+        );
+
+            } else {
+             logger.warn("🔴 USER_OFFLINE", { userId });
+       }
+
+
+        console.log("📞 [InitVideoSession] ✅ Event emitted successfully");
 
             return videoSession;
         } catch (error) {
+            console.error("📞 [InitVideoSession] ❌ Error:", error);
             if (error instanceof AppError) throw error;
             throw new AppError("Failed to initialize video session", StatusCodes.INTERNAL_SERVER_ERROR);
         }

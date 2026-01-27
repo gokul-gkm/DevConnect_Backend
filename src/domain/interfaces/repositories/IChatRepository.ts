@@ -9,4 +9,6 @@ export interface IChatRepository {
   updateLastMessage(chatId: string, message: string, senderType: 'user' | 'developer'): Promise<void>;
   resetUnreadCount(chatId: string, type: 'user' | 'developer'): Promise<void>;
   findChatByParticipants(userId: string, developerId: string): Promise<IChat | null>;
+  getTotalUnreadCountForUser(userId: string): Promise<number>;
+  getTotalUnreadCountForDeveloper(developerId: string): Promise<number>;
 }

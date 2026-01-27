@@ -30,7 +30,11 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
 
     async findByUsername(username: string): Promise<IUser | null>{
         try {
-            return await User.findOne({username})
+            return User.findOne(
+                { username: username.trim() },
+                null,
+                { collation: { locale: "en", strength: 2 } }
+            );
         } catch (error) {
             console.error('Error fetching User by username:', error);
             throw new AppError('Failed to fetch user', StatusCodes.INTERNAL_SERVER_ERROR);

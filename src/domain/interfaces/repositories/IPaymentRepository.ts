@@ -8,4 +8,5 @@ export interface IPaymentRepository extends IBaseRepository<IPayment> {
   findBySessionId(sessionId: Types.ObjectId): Promise<IPayment | null>;
   updateStatus(id: Types.ObjectId, status: string): Promise<IPayment | null>;
   findByStripeSessionId(stripeSessionId: string): Promise<IPayment | null>;
+  findByStripePaymentIntentId(stripePaymentIntentId: string): Promise<IPayment | null>;
 }

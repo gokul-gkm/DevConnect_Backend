@@ -1,3 +1,4 @@
+import { accessSignOptions, JWT_ADMIN_ACCESS_SECRET } from "@/infrastructure/config/jwt";
 import { setCookie } from "@/utils/cookie.util";
 import { Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
@@ -34,7 +35,11 @@ export const adminAuthMiddleware = async (
         try {
             const decodedRefreshToken = jwt.verify(adminRefreshToken, process.env.JWT_ADMIN_REFRESH_SECRET as string) as DecodedJwt;
 
-            const newAdminAccessToken = jwt.sign({ adminId: decodedRefreshToken.adminId }, process.env.JWT_ADMIN_ACCESS_SECRET as string, { expiresIn: process.env.ACCESS_EXPIRES_IN });
+            const newAdminAccessToken = jwt.sign(
+                { adminId: decodedRefreshToken.adminId },
+                JWT_ADMIN_ACCESS_SECRET,
+                accessSignOptions
+            );
 
             setCookie(res, "adminAccessToken",newAdminAccessToken)
 

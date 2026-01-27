@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, ObjectId, Types } from "mongoose";
 
 export interface IVideoSession extends Document {
-    _id: ObjectId;
+    _id: Types.ObjectId;
     sessionId: Types.ObjectId;
     roomId: string;          
     status: "pending" | "active" | "ended";

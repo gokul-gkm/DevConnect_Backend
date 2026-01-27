@@ -75,13 +75,17 @@ export class EndVideoSessionUseCase implements IEndVideoSessionUseCase {
         session._id
       );
 
-      this._socketService.emitToUser(
-        videoSession.participantId._id.toString(),
-        "video:session:ended",
-        {
-          sessionId,
-        }
-      );
+      const participantId = videoSession.participantId._id.toString();
+
+      if (this._socketService.isOnline(participantId)) {
+        this._socketService.emitNotification(participantId, {
+          type: "video:session:ended",
+          payload: {
+            sessionId,
+          },
+        });
+      }
+
 
       return updatedVideoSession;
     } catch (error) {

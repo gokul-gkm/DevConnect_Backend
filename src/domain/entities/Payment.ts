@@ -8,7 +8,9 @@ export interface IPayment extends Document {
   currency: string;
   status: PaymentStatus;
   stripePaymentId: string;
-  stripeSessionId: string;
+  // stripeSessionId: string;
+  stripeSessionId?: string;
+  stripePaymentIntentId?: string;
   metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
@@ -32,7 +34,9 @@ export type PaymentStatus =
       default: 'pending'
     },
     stripePaymentId: { type: String },
-    stripeSessionId: { type: String, required: true },
+    // stripeSessionId: { type: String, required: true },
+    stripeSessionId: { type: String },
+    stripePaymentIntentId: { type: String },
     metadata: { type: Map, of: Schema.Types.Mixed },
   }, {
     timestamps: true,
@@ -40,6 +44,7 @@ export type PaymentStatus =
   });
   
   PaymentSchema.index({ sessionId: 1 });
-  PaymentSchema.index({ stripeSessionId: 1 });
+// PaymentSchema.index({ stripeSessionId: 1 });
+  PaymentSchema.index({ stripePaymentIntentId: 1 });
   
   export const PaymentModel = model<IPayment>('Payment', PaymentSchema);

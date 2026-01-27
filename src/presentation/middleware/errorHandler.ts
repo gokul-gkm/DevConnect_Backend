@@ -29,7 +29,6 @@ export const errorHandler: ErrorRequestHandler = (
     return;
   }
 
-
   if (err instanceof MulterError) {
     res.status(StatusCodes.BAD_REQUEST).json({
       success: false,

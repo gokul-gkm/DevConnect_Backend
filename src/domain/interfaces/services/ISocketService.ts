@@ -1,15 +1,15 @@
-export interface ISocketService {
-    emitToUser(userId: string, event: string, data: any): void;
-    emitToDeveloper(developerId: string, event: string, data: any): void;
-    emitToChat(chatId: string, event: string, data: any): void;
+import { Server as SocketServer } from "socket.io";
 
-    isUserOnline(userId: string): boolean;
-    isDeveloperOnline(developerId: string): boolean;
-    emitUserBlocked(userId: string): void; 
-    
-    emitNewNotification(userId: string, notification: any): void;
-    emitNotificationRead(userId: string, notificationId: string): void;
-    emitAllNotificationsRead(userId: string): void;
-    emitUnreadNotificationCount(userId: string, count: number): void;
-  }
-  
+export interface ISocketService {
+  initialize(io: SocketServer): void;
+
+  emitToChat(chatId: string, event: string, data: any): void;
+
+  emitNotification(userId: string, payload: any): void;
+  emitNotificationRead(userId: string, notificationId: string): void;
+  emitUnreadCount(userId: string, count: number): void;
+
+  emitToUser(userId: string, event: string, payload: any): void;
+
+  isOnline(userId: string): boolean;
+}

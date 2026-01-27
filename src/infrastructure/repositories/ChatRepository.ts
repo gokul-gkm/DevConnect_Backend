@@ -169,4 +169,67 @@ async updateLastMessage(
             throw new AppError('Failed to find chat', StatusCodes.INTERNAL_SERVER_ERROR)
         }
     }
+
+    async getTotalUnreadCountForUser(userId: string): Promise<number> {
+        try {
+            const result = await Chat.aggregate([
+                {
+                    $match: { userId }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalUnread: { 
+                            $sum: { 
+                                $ifNull: ['$userUnreadCount', 0] 
+                            } 
+                        }
+                    }
+                }
+            ]);
+
+            console.log("Total unread count for user:", result);
+            
+            return result.length > 0 ? (result[0].totalUnread || 0) : 0;
+        } catch (error) {
+            console.error('Error in getTotalUnreadCountForUser:', error);
+            if (error instanceof Error) {
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+            }
+            throw new AppError('Failed to get total unread count', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async getTotalUnreadCountForDeveloper(developerId: string): Promise<number> {
+        try {
+            const result = await Chat.aggregate([
+                {
+                    $match: { developerId}
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalUnread: { 
+                            $sum: { 
+                                $ifNull: ['$developerUnreadCount', 0] 
+                            } 
+                        }
+                    }
+                }
+            ]);
+
+            console.log("Total unread count for developer:", result)
+            
+            return result.length > 0 ? (result[0].totalUnread || 0) : 0;
+        } catch (error) {
+            console.error('Error in getTotalUnreadCountForDeveloper:', error);
+            if (error instanceof Error) {
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+            }
+            throw new AppError('Failed to get total unread count', StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
 }

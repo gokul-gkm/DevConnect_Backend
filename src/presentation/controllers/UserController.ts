@@ -132,7 +132,7 @@ export class UserController {
     async getPublicProfile(req: Request, res: Response) {
         try {
             const { developerId } = req.params;
-            const profile = await this._getPublicProfileUseCase.execute(developerId);
+            const profile = await this._getPublicProfileUseCase.execute(developerId as string);
     
             return res.status(StatusCodes.OK).json({
                 success: true,

@@ -10,6 +10,7 @@ import { IJoinVideoSessionUseCase } from '@/application/useCases/interfaces/vide
 import { IEndVideoSessionUseCase } from '@/application/useCases/interfaces/video/IEndVideoSessionUseCase';
 import { ILeaveVideoSessionUseCase } from '@/application/useCases/interfaces/video/ILeaveVideoSessionUseCase';
 import { IGetVideoSessionUseCase } from '@/application/useCases/interfaces/video/IGetVideoSessionUseCase';
+import { getParamAsString } from '../utils/getParamAsString';
 
 @injectable()
 export class VideoSessionController {
@@ -33,7 +34,10 @@ export class VideoSessionController {
 
     async initVideoSession(req: Request, res: Response) {
         try {
-            const { sessionId } = req.params;
+            const sessionId = getParamAsString(
+                req.params.sessionId,
+                "sessionId"
+            );
             const developerId = req.userId;
 
             if (!developerId) {
@@ -55,7 +59,10 @@ export class VideoSessionController {
 
     async joinVideoSession(req: Request, res: Response) {
         try {
-            const { sessionId } = req.params;
+            const sessionId = getParamAsString(
+                req.params.sessionId,
+                "sessionId"
+            );
             const userId = req.userId;
             const { isHost } = req.body;
 
@@ -78,7 +85,10 @@ export class VideoSessionController {
 
     async endVideoSession(req: Request, res: Response) {
         try {
-            const { sessionId } = req.params;
+            const sessionId = getParamAsString(
+                req.params.sessionId,
+                "sessionId"
+            );
             const developerId = req.userId;
 
             if (!developerId) {
@@ -100,7 +110,10 @@ export class VideoSessionController {
 
     async getVideoSessionDetails(req: Request, res: Response) {
         try {
-            const { sessionId } = req.params;
+            const sessionId = getParamAsString(
+                req.params.sessionId,
+                "sessionId"
+            );
 
             const videoSession = await this._getVideoSessionUseCase.execute(sessionId);
 
@@ -122,7 +135,10 @@ export class VideoSessionController {
 
     async getVideoSessionStatus(req: Request, res: Response) {
         try {
-            const { sessionId } = req.params;
+            const sessionId = getParamAsString(
+                req.params.sessionId,
+                "sessionId"
+            );
 
             const videoSession = await this._getVideoSessionUseCase.execute(sessionId);
 
@@ -150,7 +166,10 @@ export class VideoSessionController {
 
     async leaveVideoSession(req: Request, res: Response) {
         try {
-            const { sessionId } = req.params;
+            const sessionId = getParamAsString(
+                req.params.sessionId,
+                "sessionId"
+            );
             const userId = req.userId;
 
             if (!userId) {

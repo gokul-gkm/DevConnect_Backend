@@ -11,6 +11,7 @@ import { ITransferToDevWalletUseCase } from '@/application/useCases/interfaces/u
 import { IGetWalletDetailsUseCase } from '@/application/useCases/interfaces/user/payment/IGetWalletDetailsUseCase';
 import { IGetAdminWalletDetailsUseCase } from '@/application/useCases/interfaces/user/payment/IGetAdminWalletDetailsUseCase';
 import { handleControllerError } from '../error/handleControllerError';
+import { getParamAsString } from '../utils/getParamAsString';
 
 @injectable()
 export class PaymentController {
@@ -34,15 +35,21 @@ export class PaymentController {
 
   async createPaymentSession(req: Request, res: Response): Promise<void> {
     try {
-      const { sessionId } = req.params;
-     
-      const checkoutUrl = await this._createPaymentSessionUseCase.execute({
+      const sessionId = getParamAsString(
+        req.params.sessionId,
+        "sessionId"
+      );     
+      const {clientSecret} = await this._createPaymentSessionUseCase.execute({
         sessionId,
         successUrl: `${process.env.FRONTEND_URL}/payment/success?session_id=${sessionId}`,
         cancelUrl: `${process.env.FRONTEND_URL}/payment/cancel?session_id=${sessionId}`
       });
 
-      res.json({ url: checkoutUrl });
+       res.status(StatusCodes.OK).json({
+      success: true,
+      clientSecret,
+    });
+
     } catch (error: unknown) {
       handleControllerError(error, res, 'Failed to create payment session')
     }
@@ -69,8 +76,10 @@ export class PaymentController {
 
   async transferToDevWallet(req: Request, res: Response): Promise<void> {
     try {
-      const { sessionId } = req.params;
-      
+      const sessionId = getParamAsString(
+        req.params.sessionId,
+        "sessionId"
+      );      
       await this._transferToDevWalletUseCase.execute(sessionId);
 
       res.json({ message: 'Payment transferred successfully' });

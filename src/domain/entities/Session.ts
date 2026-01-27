@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document, ObjectId ,Types} from "mongoose";
 
 export interface ISession extends Document {
-    _id: ObjectId;
+  // _id: ObjectId;
+    _id: Types.ObjectId;
     title: string;
     description: string;
     duration: number;

@@ -8,6 +8,12 @@ import bcrypt from 'bcryptjs'
 import { StatusCodes } from "http-status-codes";
 import { inject, injectable } from "inversify";
 import jwt from 'jsonwebtoken'
+import {
+  JWT_ACCESS_SECRET,
+  JWT_REFRESH_SECRET,
+  accessSignOptions,
+  refreshSignOptions,
+} from "@/infrastructure/config/jwt";
 
 @injectable()
 export class LoginUserUseCase implements ILoginUserUseCase{
@@ -37,18 +43,19 @@ export class LoginUserUseCase implements ILoginUserUseCase{
         if (!isPasswordValid) {
             throw new AppError('Invalid credentials')
         }
+      
         const accessToken = jwt.sign(
             { userId: user._id, role: user.role },
-            process.env.JWT_ACCESS_SECRET as string,
-            {expiresIn : process.env.ACCESS_EXPIRES_IN}
+            JWT_ACCESS_SECRET,
+            accessSignOptions
         );
         const refreshToken = jwt.sign(
             { userId: user._id, role: 'user' },
-            process.env.JWT_REFRESH_SECRET as string,
-            {expiresIn: process.env.REFRESH_EXPIRES_IN}
+            JWT_REFRESH_SECRET,
+            refreshSignOptions
         )
         
-        console.log(jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string));
+        console.log(jwt.verify(refreshToken, JWT_REFRESH_SECRET));
         return { accessToken, refreshToken, user }
         } catch (error) {
             if (error instanceof AppError) throw error;

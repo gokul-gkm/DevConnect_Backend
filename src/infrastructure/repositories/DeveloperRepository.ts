@@ -191,7 +191,7 @@ export class DeveloperRepository extends BaseRepository<IDeveloper> implements I
             const user = await User.findById(developer.userId)
                 .select('socialLinks');
             
-            const developerSessionCount = await this.getDeveloperCompletedSessionsCount(developer.userId._id);
+            const developerSessionCount = await this.getDeveloperCompletedSessionsCount(developer.userId._id.toString());
             
             if (user && developer.userId) {
                 (developer.userId ).socialLinks = user.socialLinks;

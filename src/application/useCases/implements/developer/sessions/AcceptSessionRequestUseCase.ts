@@ -59,13 +59,17 @@ export class AcceptSessionRequestUseCase implements IAcceptSessionRequestUseCase
             sessionId
           );
 
-          if (this._socketService.isUserOnline(recipientId)) {
-            console.log('user is online. emitting session updated')
-            this._socketService.emitToUser(recipientId, 'session:updated', {
-              sessionId: sessionId,
+          if (this._socketService.isOnline(recipientId)) {
+
+          this._socketService.emitNotification(recipientId, {
+            type: 'session:updated',
+            payload: {
+              sessionId,
               status: 'approved',
-            });
-          }
+            },
+          });
+        }
+
 
 
         } catch (notificationError) {

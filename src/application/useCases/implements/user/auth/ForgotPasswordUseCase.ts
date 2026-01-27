@@ -20,7 +20,7 @@ export class ForgotPasswordUseCase implements IForgotPasswordUseCase{
         if (!user) {
             throw new AppError(ERROR_MESSAGES.USER_NOT_FOUND,StatusCodes.BAD_REQUEST)
         }
-        const resetToken = generatePasswordResetToken(user._id, email);
+        const resetToken = generatePasswordResetToken(user._id.toString(), email);
         const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}`;
         await this._mailService.sendPasswordResetLink(email,resetLink)
         return resetToken

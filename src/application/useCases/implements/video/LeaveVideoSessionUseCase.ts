@@ -29,10 +29,17 @@ export class LeaveVideoSessionUseCase implements ILeaveVideoSessionUseCase {
             if (videoSession.participantId._id.toString() !== userId) {
                 throw new AppError("Unauthorized to leave this session", StatusCodes.FORBIDDEN);
             }
+        const hostId = videoSession.hostId.toString();
 
-            this._socketService.emitToDeveloper(videoSession.hostId.toString(), 'video:session:participant_left', {
-                sessionId
-            });
+        if (this._socketService.isOnline(hostId)) {
+        this._socketService.emitNotification(hostId, {
+            type: 'video:session:participant_left',
+            payload: {
+            sessionId
+            }
+        });
+        }
+
 
             return { success: true };
         } catch (error) {

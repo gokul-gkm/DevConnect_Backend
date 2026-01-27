@@ -23,6 +23,7 @@ import { IGetDeveloperSessionHistoryDetailsUseCase } from '@/application/useCase
 import { IStartSessionUseCase } from '@/application/useCases/interfaces/developer/sessions/IStartSessionUseCase';
 import { ICancelSessionUseCase } from '@/application/useCases/interfaces/user/session/ICancelSessionUseCase';
 import { IGetBookedSlotsUseCase } from '@/application/useCases/interfaces/user/session/IGetBookedSlotsUseCase';
+import { getParamAsString } from '../utils/getParamAsString';
 
 
 export class SessionController {
@@ -237,7 +238,10 @@ export class SessionController {
 
   acceptSessionRequest = async (req: Request, res: Response) => {
     try {
-      const { sessionId } = req.params;
+      const sessionId = getParamAsString(
+      req.params.sessionId,
+      "sessionId"
+    );
       const developerId = req.userId;
 
       if (!sessionId || !developerId) {
@@ -265,7 +269,11 @@ export class SessionController {
 
   rejectSessionRequest = async (req: Request, res: Response) => {
     try {
-      const { sessionId } = req.params;
+      const sessionId = getParamAsString(
+      req.params.sessionId,
+      "sessionId"
+    );
+
       const { rejectionReason } = req.body;
       const developerId = req.userId;
 
@@ -300,7 +308,10 @@ export class SessionController {
 
   async getSessionDetails(req: Request, res: Response) {
     try {
-      const { sessionId } = req.params;
+const sessionId = getParamAsString(
+      req.params.sessionId,
+      "sessionId"
+      );
       const session = await this._getSessionDetailsUseCase.execute(sessionId);
       res.json(session);
     } catch (error) {
@@ -319,8 +330,10 @@ export class SessionController {
 
   async getSessionRequestDetails (req: Request, res: Response) {
     try {
-      const { sessionId } = req.params;
-      const session = await this._getSessionRequestDetailsUseCase.execute(sessionId);
+const sessionId = getParamAsString(
+      req.params.sessionId,
+      "sessionId"
+    );      const session = await this._getSessionRequestDetailsUseCase.execute(sessionId);
       res.json(session);
     } catch (error) {
       if (error instanceof AppError) {
@@ -372,7 +385,10 @@ export class SessionController {
   getScheduledSessionDetails = async (req: Request, res: Response) => {
     try {
       const developerId = req.userId;
-      const { sessionId } = req.params;
+      const sessionId = getParamAsString(
+          req.params.sessionId,
+          "sessionId"
+      );
       
       if (!developerId) {
         throw new AppError(ERROR_MESSAGES.DEVELOPER_REQUIRED, StatusCodes.BAD_REQUEST);
@@ -471,7 +487,10 @@ export class SessionController {
 
   async rateSession(req: Request, res: Response) {
     try {
-      const { sessionId } = req.params;
+      const sessionId = getParamAsString(
+        req.params.sessionId,
+        "sessionId"
+      );
       const userId = req.userId;
       const { rating, feedback } = req.body;
       
@@ -512,7 +531,10 @@ export class SessionController {
 
   async updateRating(req: Request, res: Response) {
     try {
-      const { sessionId } = req.params;
+      const sessionId = getParamAsString(
+        req.params.sessionId,
+        "sessionId"
+      );      
       const userId = req.userId;
       const { rating, feedback } = req.body;
       
@@ -580,7 +602,10 @@ export class SessionController {
   getDeveloperSessionHistoryDetails = async (req: Request, res: Response) => {
     try {
       const developerId = req.userId;
-      const { sessionId } = req.params;
+      const sessionId = getParamAsString(
+        req.params.sessionId,
+        "sessionId"
+      );
       if (!developerId || !sessionId) {
         throw new AppError('Developer ID and Session ID are required', StatusCodes.BAD_REQUEST);
       }
@@ -605,7 +630,10 @@ export class SessionController {
 
   async startSession(req: Request, res: Response) {
     try {
-      const { sessionId } = req.params;
+      const sessionId = getParamAsString(
+        req.params.sessionId,
+        "sessionId"
+      );
       
       if (!sessionId) {
         throw new AppError('Session ID is required', StatusCodes.BAD_REQUEST);
@@ -633,7 +661,10 @@ export class SessionController {
 
   async cancelSession(req: Request, res: Response) {
     try {
-      const { sessionId } = req.params;
+      const sessionId = getParamAsString(
+        req.params.sessionId,
+        "sessionId"
+      );
       const userId = req.userId;
       const { reason } = req.body;
 

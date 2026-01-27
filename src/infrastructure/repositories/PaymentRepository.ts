@@ -56,4 +56,11 @@ export class PaymentRepository extends BaseRepository<IPayment> implements IPaym
       throw new AppError('Failed to fetch payment by Stripe session ID', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
+  async findByStripePaymentIntentId(stripePaymentIntentId: string): Promise<IPayment | null> {
+    try {
+      return await PaymentModel.findOne({ stripePaymentIntentId });
+    } catch (_error) {
+      throw new AppError('Failed to fetch payment by Stripe payment intent ID', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
 }

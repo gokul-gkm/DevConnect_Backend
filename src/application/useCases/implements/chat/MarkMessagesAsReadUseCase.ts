@@ -21,14 +21,32 @@ export class MarkMessagesAsReadUseCase implements IMarkMessagesAsReadUseCase{
         try {
             
             const updatedMessages = await this._messageRepository.markMessagesAsRead(chatId, recipientType);
-            
+
             await this._chatRepository.resetUnreadCount(chatId, recipientType);
-            
+           
             this._socketService.emitToChat(chatId, 'messages-read', {
                 chatId,
                 recipientType,
                 messageIds: updatedMessages
             });
+            
+            const chat = await this._chatRepository.getChatById(chatId);
+           if (chat) {
+              if (recipientType === 'user') {
+                const userId = chat.userId.toString();
+                const unreadCount =
+                  await this._chatRepository.getTotalUnreadCountForUser(userId);
+
+                this._socketService.emitUnreadCount(userId, unreadCount);
+              } else {
+                const developerId = chat.developerId.toString();
+                const unreadCount =
+                  await this._chatRepository.getTotalUnreadCountForDeveloper(developerId);
+
+                this._socketService.emitUnreadCount(developerId, unreadCount);
+              }
+            }
+
             
             return updatedMessages;
         } catch (error) {
