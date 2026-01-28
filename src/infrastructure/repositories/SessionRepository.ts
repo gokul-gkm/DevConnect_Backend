@@ -1217,10 +1217,6 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       .sort({ sessionDate: 1, startTime: 1 })
       .lean<IUpcomingSession[]>();
 
-    if (!sessions.length) {
-      throw new AppError("No upcoming sessions found", StatusCodes.NOT_FOUND);
-    }
-
     return sessions.map((s) => ({
       ...s,
       userId: s.userId,
