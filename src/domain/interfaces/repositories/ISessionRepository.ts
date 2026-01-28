@@ -1,11 +1,12 @@
 import { ISession } from "@/domain/entities/Session";
 import { Types } from "mongoose";
-import { IAdminSession, IPagination, ITopEarningDeveloper, IUpcomingSession, SessionDetails } from "../../types/session";
+import { IAdminSession, IPagination, ISessionBase, ITopEarningDeveloper, IUpcomingSession, SessionDetails } from "../../types/session";
 import { IBaseRepository } from "./IBaseRepository";
 import { IPopulatedSession } from "@/infrastructure/repositories/SessionRepository";
 import { ISessionDetails } from "../types/ISessionTypes";
 
 export interface ISessionRepository extends IBaseRepository<ISession>{
+  
     createSession(sessionData: Partial<ISession>): Promise<ISession>
     getBookedSlots(developerId: string, date: Date): Promise<Pick<ISession, 'startTime' | 'duration'>[]>
     checkSlotAvailability(developerId: string, sessionDate: Date | string, startTime: Date | string, duration: number): Promise<boolean>
@@ -62,4 +63,14 @@ export interface ISessionRepository extends IBaseRepository<ISession>{
     fromDate?: Date,
     toDate?: Date
   ): Promise<IAdminSession[]>;
+
+  findUpcomingByDeveloperId(
+      developerId: string,
+  ): Promise<IUpcomingSession[]>
+  
+  updateById(
+  sessionId: string,
+  update: Partial<ISessionBase>
+): Promise<void>;
+
 }

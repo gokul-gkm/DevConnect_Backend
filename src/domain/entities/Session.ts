@@ -8,6 +8,12 @@ export interface ISession extends Document {
     duration: number;
     price: number;
     status: "pending" | "approved" | "rejected" | "scheduled" | "completed" | "active" | "cancelled";
+    cancellationReason?: 
+    | "DEVELOPER_BLOCKED"
+    | "DEVELOPER_CANCELLED"
+    | "USER_CANCELLED"
+    | "ADMIN_CANCELLED";
+    cancelledBy?: "USER" | "DEVELOPER" | "ADMIN";
     paymentStatus: "pending" | "completed";
     paymentTransferStatus?: "pending" | "transferred";
     rejectionReason: string;
@@ -53,6 +59,19 @@ const SessionSchema: Schema = new Schema({
     type: String,
     enum: ['pending', 'approved', 'rejected', 'completed', 'scheduled', 'awaiting_payment','active', 'cancelled'],
     default: 'pending'
+  },
+  cancellationReason: {
+    type: String,
+    enum: [
+      "DEVELOPER_BLOCKED",
+      "DEVELOPER_CANCELLED",
+      "USER_CANCELLED",
+      "ADMIN_CANCELLED"
+    ]
+  },
+  cancelledBy: {
+    type: String,
+    enum: ["USER", "DEVELOPER", "ADMIN"]
   },
   paymentStatus: {
     type: String,
