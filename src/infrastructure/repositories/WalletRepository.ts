@@ -224,7 +224,6 @@ export class WalletRepository extends BaseRepository<IWallet> implements IWallet
     try {
       
       const adminWallet = await WalletModel.findOne({ adminId: process.env.ADMIN_ID });
-      console.log('adminWallet', adminWallet);
       if (!adminWallet) {
         throw new AppError('Admin wallet not found', StatusCodes.INTERNAL_SERVER_ERROR);
       }

@@ -2,7 +2,7 @@ import Developer from '@/domain/entities/Developer';
 import { Session, ISession } from '@/domain/entities/Session';
 import { AppError } from '@/domain/errors/AppError';
 import { ISessionRepository } from '@/domain/interfaces/repositories/ISessionRepository';
-import { SessionDetails, SessionDocument, UserInfo, IUserData, IAdminSession, IPagination, ITopEarningDeveloper, IUpcomingSession, IUserInfo, ISessionMatchCondition, IDeveloperSessionMatch } from '@/domain/types/session';
+import { SessionDetails, SessionDocument, UserInfo, IUserData, IAdminSession, IPagination, ITopEarningDeveloper, IUpcomingSession, IUserInfo, ISessionMatchCondition, IDeveloperSessionMatch, ISessionBase } from '@/domain/types/session';
 import { startOfDay, endOfDay } from 'date-fns';
 import { StatusCodes } from 'http-status-codes';
 import mongoose, { PipelineStage, Types } from 'mongoose';
@@ -55,6 +55,10 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       throw new AppError('Failed to create session', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async updateById(sessionId: string, update: Partial<ISessionBase>) {
+  await Session.findByIdAndUpdate(sessionId, update);
+}
 
   async getBookedSlots(developerId: string, date: Date) : Promise<Pick<ISession, 'startTime' | 'duration'>[]>{
     try {
@@ -513,7 +517,8 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
         developerId: developerInfo,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
-        rejectionReason: session.rejectionReason
+        rejectionReason: session.rejectionReason,
+        cancellationReason: session.cancellationReason
       };
   
       return sessionDetails;
@@ -1184,6 +1189,32 @@ export class SessionRepository extends BaseRepository<ISession> implements ISess
       .populate<{ userId: IUserInfo }>("userId", "username profilePicture")
       .sort({ sessionDate: 1, startTime: 1 })
       .limit(limit)
+      .lean<IUpcomingSession[]>();
+
+    if (!sessions.length) {
+      throw new AppError("No upcoming sessions found", StatusCodes.NOT_FOUND);
+    }
+
+    return sessions.map((s) => ({
+      ...s,
+      userId: s.userId,
+    }));
+
+  }
+
+  async findUpcomingByDeveloperId(
+    developerId: string,
+  ): Promise<IUpcomingSession[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const sessions = await Session.find({
+      developerId: new Types.ObjectId(developerId),
+      sessionDate: { $gte: today },
+      status: { $in: ["scheduled", "approved", "pending"] },
+    })
+      .populate<{ userId: IUserInfo }>("userId", "username profilePicture")
+      .sort({ sessionDate: 1, startTime: 1 })
       .lean<IUpcomingSession[]>();
 
     if (!sessions.length) {

@@ -32,6 +32,7 @@ export interface SessionDetails {
   createdAt: Date;
   updatedAt: Date;
   rejectionReason?: string;
+  cancellationReason?: string;
   rating?: number; 
   feedback?: string;
 }
@@ -52,6 +53,7 @@ export type SessionDocument = {
   createdAt: Date;
   updatedAt: Date;
   rejectionReason?: string;
+  cancellationReason?: string;
 }
 
 export interface IUserData {
@@ -113,6 +115,12 @@ export interface ISessionBase {
     | "completed"
     | "active"
     | "cancelled";
+  cancellationReason?: "DEVELOPER_BLOCKED"|
+    "DEVELOPER_CANCELLED"|
+    "USER_CANCELLED"|
+    "ADMIN_CANCELLED"
+  cancelledBy?:"USER"| "DEVELOPER"| "ADMIN"
+  refundStatus?: "pending" | "completed";
   paymentStatus: "pending" | "completed";
   paymentTransferStatus?: "pending" | "transferred";
   rejectionReason?: string;
@@ -147,5 +155,7 @@ export interface IDeveloperSessionMatch {
     'user.username'?: { $regex: string; $options: string };
   }[];
 }
+
+
 
 
