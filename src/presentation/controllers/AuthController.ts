@@ -13,7 +13,7 @@ import { IForgotPasswordUseCase } from "@/application/useCases/interfaces/user/a
 import { IResetPasswordUseCase } from "@/application/useCases/interfaces/user/auth/IResetPasswordUseCase";
 import { ISetNewTokenUseCase } from "@/application/useCases/interfaces/user/auth/ISetNewTokenUseCase";
 import { setCookie } from "@/utils/cookie.util";
-import { CheckUsernameAvailabilityUseCase } from "@/application/useCases/implements/user/auth/CheckUsernameAvailabilityUseCase";
+import { ICheckUsernameAvailabilityUseCase } from "@/application/useCases/interfaces/user/auth/ICheckUsernameAvailabilityUseCase";
 
 @injectable()
 export class AuthController {
@@ -33,7 +33,7 @@ export class AuthController {
     @inject(TYPES.ISetNewTokenUseCase)
     private _setNewTokenUseCase: ISetNewTokenUseCase,
     @inject(TYPES.ICheckUsernameAvailabilityUseCase)
-    private checkUsernameAvailabilityUseCase: CheckUsernameAvailabilityUseCase
+    private _checkUsernameAvailabilityUseCase: ICheckUsernameAvailabilityUseCase
   ) {}
 
   async register(req: Request, res: Response) {
@@ -257,7 +257,7 @@ export class AuthController {
       }
 
       const available =
-        await this.checkUsernameAvailabilityUseCase.execute(username, excludeUserId as string | undefined);
+        await this._checkUsernameAvailabilityUseCase.execute(username, excludeUserId as string | undefined);
       
       console.log("👤 available in controller : ", available)
 

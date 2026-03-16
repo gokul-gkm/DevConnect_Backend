@@ -1,9 +1,10 @@
 import { inject, injectable } from "inversify";
 import { IUserRepository } from "@/domain/interfaces/repositories/IUserRepository";
 import { TYPES } from "@/types/types";
+import { ICheckUsernameAvailabilityUseCase } from "@/application/useCases/interfaces/user/auth/ICheckUsernameAvailabilityUseCase";
 
 @injectable()
-export class CheckUsernameAvailabilityUseCase {
+export class CheckUsernameAvailabilityUseCase implements ICheckUsernameAvailabilityUseCase {
   constructor(
     @inject(TYPES.IUserRepository)
     private readonly _userRepository: IUserRepository
